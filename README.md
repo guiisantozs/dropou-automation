@@ -17,6 +17,8 @@ Abra http://127.0.0.1:3000. Sem configuração a aplicação explica o que falta
 
 ## Banco e autenticação
 
+O projeto do Dropou já está configurado em [Supabase](https://supabase.com/dashboard/project/wqpdyfipjsnyzxktacqh), organização `dropou-automation`. O schema foi aplicado remotamente e o primeiro GTA 6 foi salvo como rascunho histórico, sem publicação. Não reaplique o schema inicial nesse projeto. Nesta máquina, `.env.local` já está preenchido e permanece fora do Git. Em outro computador, obtenha a chave **publicável** no painel e preencha sua cópia local de `.env.local`.
+
 1. Em um projeto Supabase novo, aplique `supabase/schema.sql` e depois `supabase/whatsapp-flow.sql`. Se o schema inicial já existir, aplique somente o segundo arquivo, que é idempotente. Não execute em outra aplicação sem conferir conflitos de tabelas.
 2. Em Authentication → Users, crie seu usuário com email/senha, usando as opções do painel para confirmar o email conforme sua política. Faça login no aplicativo. Não compartilhe a senha no chat ou no repositório.
 3. Configure `NEXT_PUBLIC_SUPABASE_URL` e `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` em `.env.local`. São configurações públicas: o acesso aos dados exige sessão e RLS. Reinicie/recompile após alterá-las.
