@@ -15,7 +15,7 @@
 
 ## Limites da verificação
 
-Nenhum navegador está conectado às ferramentas do agente (inventário de apps/browsers vazio). O usuário realizou o login no navegador e confirmou a visualização do GTA 6 após a correção de rede. O teste de cópia automatizado usa um Clipboard substituto; não equivale à colagem no Windows. Os testes transacionais via SQL usam o contexto de RLS, mas não substituem uma sessão Auth real no navegador.
+Nenhum navegador está conectado às ferramentas do agente (inventário de apps/browsers vazio). O usuário realizou o login no navegador, confirmou a visualização do GTA 6 após a correção de rede e confirmou a cópia integral do rascunho para o Bloco de Notas, incluindo o link de afiliado. O teste de cópia automatizado usa um Clipboard substituto; a colagem real foi validada pelo usuário. Os testes transacionais via SQL usam o contexto de RLS; a sessão Auth real foi exercitada pela leitura do catálogo no navegador.
 
 Não revalidamos o anúncio do GTA 6. Os valores R$ 449,90 / R$ 418,41 / 8x de R$ 56,24 continuam históricos. Nenhuma mensagem foi enviada ou publicada no WhatsApp.
 
