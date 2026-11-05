@@ -32,7 +32,19 @@ O teste é uma consulta oficial explícita de permissão, independente do bloque
 
 Resultados de testes de conta/busca anteriores são identificados pelo horário e expiram da exibição após 15 minutos. Sem teste real concluído, o painel informa pendência. Credenciais presentes não significam OAuth autorizado.
 
-Até a última consulta remota antes desta publicação, não existia conexão OAuth salva. Portanto autorização real, chamada autenticada, rotação real de tokens e permissão de busca ainda não foram comprovadas. Para concluir: entrar no site, conectar a conta, concluir o consentimento e clicar em Testar integrações.
+Após a publicação, o administrador concluiu o consentimento e executou o teste no site. O resultado foi confirmado diretamente no banco, pelo log do backend em **05/11/2026 às 17:08:55 (America/Bahia)**:
+
+| Verificação real no servidor Vercel | Resultado |
+| --- | --- |
+| Presença das nove variáveis necessárias | Confirmada, somente booleanos registrados |
+| Leitura autenticada Supabase | Conectado |
+| OAuth/callback e gravação no cofre | Concluídos, conexão ativa |
+| GET autenticado /users/me | HTTP 200; somente ID e nickname retornados |
+| GET autenticado /sites/MLB/search?category=MLB1648&limit=5 | HTTP 403, código forbidden, descrição forbidden |
+
+O HTTP 403 comprova a recusa dessa consulta com a autorização atual. Não permite concluir que faltam scopes específicos ou qual regra da plataforma causou a recusa; isso precisa ser verificado no DevCenter ou com o suporte oficial. A busca automática permanece desativada. Nenhum produto foi importado desse teste e nenhum endpoint alternativo foi usado para contornar a recusa.
+
+A conexão salva tem expiração informada para 05/11/2026 às 23:08:47 (America/Bahia). Não foi forçada renovação antecipada do token real. Rotação e concorrência têm testes automatizados; a renovação real deverá ser confirmada no primeiro uso após o vencimento. Nenhum token foi lido ou exibido durante a verificação do banco.
 
 ## Verificações de código
 
