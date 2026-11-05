@@ -1,0 +1,9 @@
+import {z} from 'zod';
+import {sessionDb,apiError,dbError} from '@/server/session';
+import {oauthAccessToken,oauthError,requireOAuthAdmin,requireOAuthOrigin} from '@/server/mercado-livre/oauth';
+import {OAuthFailure} from '@/server/mercado-livre/oauth-core';
+import {diagnoseMercadoLivre} from '@/server/mercado-livre/diagnose';
+export const runtime='nodejs';
+const headers={'Cache-Control':'no-store','Referrer-Policy':'no-referrer'},event='Diagnóstico Mercado Livre';
+export async function GET(request:Request){try{const {db,user}=await sessionDb(request);requireOAuthAdmin(user.id);const {data,error}=await db.from('logs').select('detail').eq('owner_id',user.id).eq('event',event).order('created_at',{ascending:false}).limit(1).maybeSingle();if(error)throw dbError(error);return Response.json({diagnosis:data?JSON.parse(data.detail):null},{headers});}catch(e){const r=e instanceof OAuthFailure?oauthError(e):apiError(e);for(const [k,v] of Object.entries(headers))r.headers.set(k,v);return r;}}
+export async function POST(request:Request){try{const {db,user}=await sessionDb(request);requireOAuthOrigin(request);requireOAuthAdmin(user.id);const input=z.object({itemId:z.string().regex(/^MLB\d{5,20}$/).optional()}).parse(await request.json());const token=await oauthAccessToken(user.id);if(!token)throw new OAuthFailure('state','Conecte sua conta Mercado Livre antes de diagnosticar.');const diagnosis=await diagnoseMercadoLivre(token,{...input,clientId:process.env.MERCADO_LIVRE_CLIENT_ID||''},[process.env.MERCADO_LIVRE_CLIENT_SECRET||'']);const {error}=await db.from('logs').insert({owner_id:user.id,event,detail:JSON.stringify(diagnosis)});if(error)throw dbError(error);return Response.json({diagnosis},{headers});}catch(e){const r=e instanceof OAuthFailure?oauthError(e):apiError(e);for(const [k,v] of Object.entries(headers))r.headers.set(k,v);return r;}}
