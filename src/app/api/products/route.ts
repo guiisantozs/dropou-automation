@@ -1,0 +1,11 @@
+import {sessionDb,apiError,dbError} from '@/server/session';
+import {productSchema,productKey} from '@/lib/domain';
+export async function POST(request:Request){try{
+ const {db}=await sessionDb(request);
+ const p=productSchema.parse(await request.json());
+ if(p.demo)throw new Error('Dados demonstrativos não podem ser salvos no catálogo real.');
+ if(p.checkedAt && (Date.parse(p.checkedAt)>Date.now()+1000))throw new Error('Data de conferência inválida.');
+ const {data,error}=await db.rpc('dropou_save_product',{p_data:p,p_key:productKey(p)});
+ if(error)throw dbError(error);
+ return Response.json({product:productSchema.parse(data)});
+}catch(e){return apiError(e);}}

@@ -1,0 +1,11 @@
+import {sessionDb,apiError} from '@/server/session';
+import {adapters} from '@/server/adapters';
+import {productSchema} from '@/lib/domain';
+import {z} from 'zod';
+export async function POST(request:Request){try{
+ await sessionDb(request);
+ const {store,url}=z.object({store:z.enum(['Mercado Livre','Shopee']),url:z.string().url()}).parse(await request.json());
+ // Somente o adaptador autorizado pode consultar; nunca fetch arbitrário ou scraping.
+ const product=productSchema.parse(await adapters[store].lookup(url));
+ return Response.json({product});
+}catch(e){return apiError(e);}}

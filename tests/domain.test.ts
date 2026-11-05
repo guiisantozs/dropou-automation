@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { caption, cleanCandidates, defaultSchedule, discount, publicationError, productSchema, scheduleSlot, transitionError } from '../src/lib/domain';
-import { demoProducts } from '../src/lib/demo';
+import { demoProducts } from './fixtures/products';
 import { importCsv } from '../src/lib/csv';
 const base=()=>({...demoProducts()[0],demo:false,status:'pronto' as const,affiliateUrl:'https://meli.la/exemplo-colado-pelo-usuario'});
 test('legenda omite preço anterior e parcelamento sem verificação',()=>{

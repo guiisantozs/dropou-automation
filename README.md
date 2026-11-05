@@ -1,60 +1,72 @@
-# Dropou Automação
+﻿# Dropou Automação
 
-Aplicação Next.js, TypeScript, Tailwind e Supabase para curadoria de ofertas de tecnologia e games. O MVP funciona sem conta externa, com dados explicitamente demonstrativos salvos no navegador. Não publique os valores de exemplo como ofertas reais.
+Cadastro real e geração de ofertas para publicação **manual** no WhatsApp. Next.js, TypeScript, Tailwind e Supabase Auth/Postgres/RLS. O visual foi preservado. Agendamento e publicação automática estão pausados.
 
 ## Executar
 
-Requer Node.js 20.9+ e npm. No PowerShell use `npm.cmd` se a política local bloquear `npm.ps1`.
+Requer Node.js 20.9+ e npm. No Windows, use npm.cmd se o PowerShell bloquear npm.ps1.
 
 ```powershell
 npm.cmd ci
 Copy-Item .env.example .env.local
+# Preencha a URL e a chave publicável do Supabase em .env.local.
 npm.cmd run dev
 ```
 
-Abra http://127.0.0.1:3000. Para validar: `npm.cmd test`, `npm.cmd run typecheck` e `npm.cmd run build`. Produção: `npm.cmd run build` seguido de `npm.cmd start`.
+Abra http://127.0.0.1:3000. Sem configuração a aplicação explica o que falta; não simula salvamentos nem preenche o dashboard com produtos fictícios.
 
-## MVP e fluxo
+## Banco e autenticação
 
-- Cadastro e edição de produto, nicho, preços, estoque, imagem, URLs e parcelamento. Filtros por texto, loja, nicho e status.
-- Fila: encontrado → aguardando link → pronto → agendado → publicado. A prévia permite mover estados. Para pronto/agendado/publicado, confira preço e estoque e adicione link oficial. Alterar preço ou URL original invalida a conferência anterior.
-- Legenda inclui #publi e assinatura; só mostra preço anterior e economia quando a referência foi verificada e supera o preço atual. Parcelamento só aparece quando verificado. O link é omitido enquanto não for fornecido.
-- CSV: até 1.000 linhas/2 MB, UTF-8, cabeçalho conforme [exemplo](public/exemplo-produtos.csv), separador vírgula ou ponto e vírgula detectado pelo parser, decimais com ponto. Campos contendo vírgula devem estar entre aspas. `true/false`, `sim/nao` ou `1/0` nos booleanos. Falhas por linha são informadas; linhas válidas são importadas. CSV nunca registra preço como recém-verificado. Duplicação considera domínio e caminho, ignorando parâmetros. Revise variantes cujo identificador esteja apenas na query.
-- URLs originais precisam pertencer à loja. Links de afiliado são colados pelo usuário, com validação de domínio (não comprova afiliação ou titularidade). Mercado Livre: copie do Portal de Afiliados. Não há geração de links.
-- WhatsApp Channels: copiar legenda, copiar link e registrar manualmente depois da postagem. Sem automação não oficial.
-- A demonstração mantém dados e logs locais, sem executar cron ou enviar Telegram. A fila permite simular os estados sem criar links fictícios. Produtos demo não são enviados pelo servidor. `localStorage.removeItem('dropou-v1')` e recarregar restaura exemplos.
+1. Em um projeto Supabase novo, aplique `supabase/schema.sql` e depois `supabase/whatsapp-flow.sql`. Se o schema inicial já existir, aplique somente o segundo arquivo, que é idempotente. Não execute em outra aplicação sem conferir conflitos de tabelas.
+2. Em Authentication → Users, crie seu usuário com email/senha, usando as opções do painel para confirmar o email conforme sua política. Faça login no aplicativo. Não compartilhe a senha no chat ou no repositório.
+3. Configure `NEXT_PUBLIC_SUPABASE_URL` e `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` em `.env.local`. São configurações públicas: o acesso aos dados exige sessão e RLS. Reinicie/recompile após alterá-las.
+4. O fluxo manual **não necessita de service role**, Telegram, cron ou credenciais de marketplace. Os endpoints verificam o usuário com `getUser(token)` e usam sua sessão, sujeita a RLS.
 
-## Supabase em produção
+O navegador mantém apenas a sessão. Produtos, preços, legendas, status e publicações vêm do banco. O antigo localStorage da demonstração é ignorado. Exemplos fictícios estão apenas em `tests/fixtures`. Registros com `demo=true` não aparecem no workspace real.
 
-1. Crie ou selecione seu projeto Supabase. Execute `supabase/schema.sql` no SQL Editor de um projeto novo. O arquivo não foi aplicado automaticamente a nenhuma conta.
-2. Crie seu usuário no Supabase Auth (email e senha). A aplicação tem login; cadastro público não é necessário.
-3. Configure `NEXT_PUBLIC_DATA_MODE=supabase`, `NEXT_PUBLIC_SUPABASE_URL` e `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`. Recompile: variáveis NEXT_PUBLIC são definidas durante o build.
-4. Configure `SUPABASE_SERVICE_ROLE_KEY` e um `CRON_SECRET` aleatório forte apenas no ambiente do servidor. Nunca use prefixo NEXT_PUBLIC para segredos. Configure também os segredos do Telegram quando for ativá-lo.
-5. Entre no painel. O catálogo começa vazio no modo real. O Supabase guarda produtos e configurações por usuário; RLS restringe leitura e escrita por `auth.uid()`. Logs são inseridos e lidos pelo proprietário. Runs e deliveries têm leitura do proprietário e escrita exclusiva do servidor. A service role só é importada por módulos `server-only`.
-6. Confirme RLS com dois usuários: A insere um produto; B não pode ler, atualizar ou excluir esse produto nem inserir em nome de A. Sem autenticação, nenhuma tabela deve ser acessível. Esse teste requer seu projeto e não foi executado sem credenciais.
+## Fluxo de uma oferta
 
-As tabelas de auditoria não são um registro forense imutável: o usuário pode inserir seus próprios logs. A aplicação não guarda tokens de lojas no navegador. A sessão Supabase usa o cliente oficial com chave publicável e RLS; em máquinas compartilhadas, saia ao terminar.
+1. **Cadastrar produto**: nome, loja, categoria, links, imagem por URL, preços registrados e condição de pagamento. Se só tiver o link de afiliado, deixe o original vazio; não invente uma URL.
+2. Estoque inicia como **não verificado**. O preço só é atual quando o administrador confirma que o conferiu agora na loja. Pix, referência anterior e parcelamento têm confirmações próprias. Uma edição exige nova conferência; sem ela os valores são históricos.
+3. **Salvar produto** grava cadastro e registro de preço em uma transação. A tela recarrega o que foi persistido.
+4. **Gerar legenda**: sem revalidação, gera rascunho com aviso histórico, sem anunciar desconto/Pix/parcelamento como atuais. Com revalidação, usa o formato pedido, calcula a economia em centavos e omite condições não comprovadas.
+5. **Salvar oferta** persiste legenda e cópia dos dados usados. Alterar o produto invalida a oferta. **Copiar legenda completa** e **Copiar link de afiliado** usam a Clipboard API e informam erros de permissão. Use localhost ou HTTPS.
+6. Publique você mesmo no WhatsApp. Marque **Publiquei manualmente…** e **Marcar como publicada**. O banco verifica link, estoque, validade de 15 minutos, Pix e correspondência dos dados. Histórico e estados são gravados em uma transação. Repetir não duplica a publicação.
+7. **Excluir oferta** pede confirmação e remove a oferta da fila por exclusão lógica. Produto, preços e histórico de publicação permanecem. Métricas de publicação vêm do histórico; excluir a oferta não apaga esse fato.
 
-## Agendamento sem computador ligado
+Não há envio ao WhatsApp nem comprovação externa da postagem. O histórico registra a declaração do administrador. RLS separa dados por usuário; o proprietário administra seus registros, que não são prova forense imutável.
 
-O endpoint Node `/api/cron` exige `Authorization: Bearer <CRON_SECRET>`. Hospede a aplicação em Vercel ou em um servidor/container sempre ligado e use um agendador externo. O arquivo `vercel.json` solicita execução a cada minuto; verifique se seu plano oferece essa frequência. Em outros provedores, configure cron gerenciado para chamar o endpoint a cada minuto, com o cabeçalho secreto armazenado no cofre do provedor. Não use tarefa local do Windows como solução de produção.
+## GTA 6 para PS5
 
-Os horários padrão são **09h, 12h, 16h e 20h em America/Bahia**, alteráveis no painel. O handler converte o instante recebido para o fuso e só executa em um minuto configurado. Ele não recupera automaticamente janelas perdidas em indisponibilidades. A restrição única `(owner_id, slot)` impede execução concorrente/repetida da janela; runs falhos exigem análise antes de liberar nova execução. Salve a configuração uma vez por usuário para criar `settings`.
+O formulário permite **Preencher caso GTA 6 (valores históricos)** com os dados do administrador: link `https://meli.la/1oCLqHZ`, preço anterior R$ 449,90, preço Pix registrado R$ 418,41 e condição registrada 8x de R$ 56,24.
 
-O fluxo tenta buscar candidatos, descarta duplicados/esgotados/preços com mais de 15 minutos, mantém o histórico e revalida cada oferta agendada antes de enviá-la. Se o preço mudar ou o estoque acabar, retira a oferta da fila de publicação para revisão. Integração indisponível bloqueia o envio e gera log. Não exclui produtos históricos do catálogo.
+Não afirma estoque, imagem, URL original ou preço atual. Sem conferência, a legenda é rascunho e a publicação fica bloqueada. A diferença matemática é R$ 31,49; só pode ser anunciada após comprovar os preços. Os testes simulam revalidação em banco isolado e não confirmam o anúncio real.
 
-## Integrações: preparação entregue, ativação pendente
+## CSV
 
-`src/server/adapters.ts` define `search` e `revalidate` para cada loja. Os adaptadores **lançam erro de configuração** de propósito: não há endpoint suposto, scraping ou busca real. Para ativar, obtenha autorização, consulte a documentação oficial liberada à sua conta e implemente/teste o contrato com respostas reais, ID estável, preço, estoque, referência histórica e data de conferência. A Open API da Shopee depende de aprovação e credenciais. Não confunda API de vendedor com acesso de afiliado. Só considere um preço anterior verificado quando houver evidência autorizada.
+Até 1.000 linhas/2 MB. UTF-8 e cabeçalho de `public/exemplo-produtos.csv`; decimais com ponto, booleanos true/false, sim/nao ou 1/0. O parser detecta vírgula/ponto e vírgula. Linhas válidas vão para o banco e falhas são informadas. CSV não confirma preço atual nem presume estoque ausente.
 
-Telegram usa exclusivamente `https://api.telegram.org/bot<TOKEN>/sendMessage`. Configure `TELEGRAM_BOT_TOKEN`, `TELEGRAM_CHAT_ID`, dê permissão ao bot no canal e habilite o envio em Agendamento. A oferta deve ter link oficial, status agendado, horário devido e revalidação oficial concluída. Enquanto os adaptadores estiverem bloqueados, nenhuma publicação automática ocorrerá.
+Duplicatas usam domínio/caminho do link original ou, se ausente, do afiliado. Links encurtados diferentes para o mesmo produto ainda exigem revisão; a integração futura usará o ID oficial da loja.
 
-Uma chave única por produto/canal em `deliveries` impede reenvio automático. Em timeout, o registro permanece `sending`: o Telegram pode ter aceitado a mensagem. Confira o canal antes de intervir. Não é possível prometer entrega exatamente uma vez em uma API externa sem idempotência. Não há retry cego. Para republicar o mesmo item futuramente, desenhe primeiro uma política de campanha/cooldown; o MVP bloqueia repetição permanente por produto/canal.
+## Integrações
 
-## Implantação e verificações
+**Consultar fonte oficial** só chama o adaptador no servidor. Mercado Livre e Shopee permanecem indisponíveis até autorização/configuração. O erro preserva o formulário e permite cadastro manual. Não há endpoints de marketplace inventados, scraping ou coleta automática pelo link encurtado.
 
-Suba este repositório em seu provedor Next.js, configure variáveis e segredos e aplique o schema no Supabase. Não envie `.env.local`. Ative cron na nuvem e teste primeiro com canal Telegram privado após concluir os adaptadores. Veja os logs de execução do provedor e a tela de logs do aplicativo. As chamadas não registram URLs que contenham o token do bot.
+Contrato lookup/search/revalidate em `src/server/adapters.ts`. Preparação da próxima etapa em `docs/proxima-etapa.md`. Busca instantânea não está ativa.
 
-Não há projeto Supabase criado, credenciais configuradas ou publicação real ativada por este código. A demonstração é independente do banco. Testes automatizados cobrem legendas, verificações de preço, links, CSV, deduplicação e fuso do agendador; banco real e integrações exigem validação no ambiente autorizado.
+## Testar e implantar
 
-Referências oficiais consultadas: [Next.js](https://nextjs.org/docs/app/getting-started/installation), [Supabase](https://supabase.com/docs/guides/auth/server-side/creating-a-client), [Telegram Bot API](https://core.telegram.org/bots/api#sendmessage).
+```powershell
+npm.cmd test
+npm.cmd run typecheck
+npm.cmd run build
+npm.cmd start
+```
+
+Os testes executam as mesmas funções SQL em PostgreSQL embarcado/PGlite, com dois usuários e RLS. Cobrem cadastro GTA, preço histórico, legenda, contrato de cópia, revalidação sintética, publicação, métricas, repetição e exclusão. O Clipboard usa um objeto de teste: não equivale a clicar e colar no Windows. Validação em Supabase remoto e navegador deve constar separadamente em `VALIDACAO.md`.
+
+Hospede em um provedor Next.js/Node, configurando as duas variáveis públicas antes do build. O banco fica no Supabase, independente do computador. Não envie `.env.local` ao GitHub.
+
+O fluxo manual não precisa de cron. `ENABLE_AUTOMATIONS=false` bloqueia o endpoint mesmo com segredo válido. `vercel.json` não declara tarefas; desative cron externo anterior no provedor. Ativação futura exige adaptadores oficiais, credenciais no servidor e testes de revalidação/entrega. Telegram permanece preparado, fora do fluxo manual validado.
+
+Referência: [Supabase — grants e RLS](https://supabase.com/docs/guides/api/securing-your-api).

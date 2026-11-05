@@ -8,7 +8,7 @@ export const dynamic='force-dynamic';
 export async function GET(request:Request){
   const secret=process.env.CRON_SECRET, received=request.headers.get('authorization')||'';
   if(!secret || Buffer.byteLength(received)!==Buffer.byteLength(`Bearer ${secret}`) || !timingSafeEqual(Buffer.from(received),Buffer.from(`Bearer ${secret}`))) return Response.json({error:'Não autorizado'},{status:401});
-  if(process.env.NEXT_PUBLIC_DATA_MODE!=='supabase')return Response.json({error:'Agendamento exige Supabase'},{status:503});
+  if(process.env.ENABLE_AUTOMATIONS!=='true')return Response.json({error:'Automação pausada. Use o fluxo manual de ofertas.'},{status:503});
   try {
     const db=adminDb();
     const {data:settings,error}=await db.from('settings').select('*'); if(error)throw error;
