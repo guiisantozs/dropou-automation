@@ -3,9 +3,9 @@ import {adapters} from '@/server/adapters';
 import {productSchema} from '@/lib/domain';
 import {z} from 'zod';
 export async function POST(request:Request){try{
- await sessionDb(request);
+ const {user}=await sessionDb(request);
  const {store,url}=z.object({store:z.enum(['Mercado Livre','Shopee']),url:z.string().url()}).parse(await request.json());
  // Somente o adaptador autorizado pode consultar; nunca fetch arbitrário ou scraping.
- const product=productSchema.parse(await adapters[store].lookup(url));
+ const product=productSchema.parse(await adapters[store].lookup(url,user.id));
  return Response.json({product});
 }catch(e){return apiError(e);}}

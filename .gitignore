@@ -3,3 +3,7 @@ node_modules/
 .env*
 !.env.example
 *.tsbuildinfo
+.vercel/
+
+.vercel
+.env*

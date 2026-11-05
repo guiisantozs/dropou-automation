@@ -22,7 +22,7 @@ export async function GET(request:Request){
       const log=async(event:string,detail:string)=>{const {error}=await db.from('logs').insert({owner_id:setting.owner_id,event,detail});if(error)throw error;};
       for(const [store,adapter] of Object.entries(adapters)){
         try{
-          const found=cleanCandidates(await adapter.search(['tecnologia','games']));
+          const found=cleanCandidates(await adapter.search(['tecnologia','games'],setting.owner_id));
           for(const p of found){
             const {error}=await db.from('products').upsert({id:p.id,owner_id:setting.owner_id,data:p,canonical_url:canonical(p.originalUrl)},{onConflict:'owner_id,canonical_url',ignoreDuplicates:true});
             if(error)throw error;
@@ -36,7 +36,7 @@ export async function GET(request:Request){
         const p=parsed.data;
         if(p.status!=='agendado'||!p.scheduledAt||Date.parse(p.scheduledAt)>Date.now()||p.demo)continue;
         try{
-          const fresh=productSchema.parse(await adapters[p.store].revalidate(p));
+          const fresh=productSchema.parse(await adapters[p.store].revalidate(p,setting.owner_id));
           if(fresh.id!==p.id||fresh.store!==p.store||canonical(fresh.originalUrl)!==canonical(p.originalUrl))throw new Error('Resposta de outro produto');
           if(!fresh.inStock||fresh.price!==p.price||publicationError(fresh)){
             const {error:withdrawError}=await db.from('products').update({data:{...fresh,status:'encontrado',scheduledAt:null}}).eq('id',p.id).eq('owner_id',setting.owner_id);if(withdrawError)throw withdrawError;

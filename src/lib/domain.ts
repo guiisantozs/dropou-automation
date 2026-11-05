@@ -11,6 +11,7 @@ export const productSchema = z.object({
   paymentMethod: z.enum(['nao_informado','pix','outro']).default('nao_informado'), pixVerified: z.boolean().default(false),
   checkedAt: z.string().datetime().nullable(), status: z.enum(statuses), scheduledAt: z.string().datetime().nullable(),
   createdAt: z.string().datetime(), demo: z.boolean(),
+  source:z.object({provider:z.enum(['mercado_livre','shopee']),itemId:z.string().max(100),verifiedAt:z.string().datetime(),priceEndpoint:z.string().url(),referenceAmount:z.number().positive().nullable(),previousEvidence:z.enum(['none','recorded_history'])}).optional(),
 }).superRefine((p, ctx) => {
   if (!p.originalUrl && !p.affiliateUrl) ctx.addIssue({code:'custom',path:['affiliateUrl'],message:'Informe o link original ou um link de afiliado oficial'});
   if ((p.originalUrl && !URL.canParse(p.originalUrl)) || (p.affiliateUrl && !URL.canParse(p.affiliateUrl))) return;

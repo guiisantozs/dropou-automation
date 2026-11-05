@@ -4,6 +4,8 @@ Cadastro real e geração de ofertas para publicação **manual** no WhatsApp. N
 
 ## Executar
 
+OAuth Mercado Livre e publicação HTTPS: consulte [docs/mercado-livre-oauth.md](docs/mercado-livre-oauth.md). Credenciais permanecem exclusivamente no servidor. OAuth não garante permissão de busca de produtos.
+
 Requer Node.js 20.9+ e npm. No Windows, use npm.cmd se o PowerShell bloquear npm.ps1.
 
 ```powershell
@@ -54,7 +56,7 @@ Duplicatas usam domínio/caminho do link original ou, se ausente, do afiliado. L
 
 **Consultar fonte oficial** só chama o adaptador no servidor. Mercado Livre e Shopee permanecem indisponíveis até autorização/configuração. O erro preserva o formulário e permite cadastro manual. Não há endpoints de marketplace inventados, scraping ou coleta automática pelo link encurtado.
 
-Contrato lookup/search/revalidate em `src/server/adapters.ts`. Preparação da próxima etapa em `docs/proxima-etapa.md`. Busca instantânea não está ativa.
+Busca em `/buscar-ofertas`, com filtros, importação revalidada e preparação em lote. Mercado Livre consulta os endpoints documentados apenas com token OAuth e autorização configurados no servidor; a plataforma ainda pode negar a busca. Shopee permanece pendente. A tentativa real de cinco produtos retornou HTTP 403, sem resultados: a descoberta ponta a ponta ainda depende de credenciais/permissões. Veja [relatório de busca real e configuração exata](docs/busca-real-validacao.md). Nenhum token é necessário para continuar usando o cadastro manual.
 
 ## Testar e implantar
 
