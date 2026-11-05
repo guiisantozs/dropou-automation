@@ -2,6 +2,10 @@
 
 O callback implementado é `/api/oauth/mercado-livre/callback`. Use apenas a origem HTTPS real obtida após a publicação. Não cadastre localhost nem uma URL sugerida que ainda não existe. `APP_BASE_URL` deve conter somente a origem, sem caminho. `MERCADO_LIVRE_REDIRECT_URI`, se informado, precisa corresponder exatamente à origem mais o caminho do callback.
 
+Produção publicada e verificada em 05/11/2026: https://dropou-automation.vercel.app.
+
+URI exata para cadastrar no Mercado Livre: `https://dropou-automation.vercel.app/api/oauth/mercado-livre/callback`.
+
 ## Configuração no servidor
 
 Configure em Vercel → projeto Dropou → Settings → Environment Variables → Production:

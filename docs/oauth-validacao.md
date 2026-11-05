@@ -10,4 +10,8 @@
 
 Advisors Supabase: dois avisos informativos `rls_enabled_no_policy` são intencionais nas tabelas privadas do cofre; não existe policy de usuário porque apenas o servidor deve acessá-las. Há um aviso de configuração Auth já existente: proteção contra senhas vazadas desativada. Não foi alterado plano/cobrança para habilitar esse recurso. Referências: [RLS sem policies](https://supabase.com/docs/guides/database/database-linter?lint=0008_rls_enabled_no_policy), [proteção de senhas](https://supabase.com/docs/guides/auth/password-security#password-strength-and-leaked-password-protection).
 
-Deploy: projeto `dropou-automation` criado na conta Vercel autorizada, sem modificar os demais projetos. Publicação e testes HTTPS serão registrados após a configuração das variáveis de produção. Não existe ainda URL pública confirmada neste registro.
+Deploy de produção confirmado: https://dropou-automation.vercel.app. O projeto foi criado na conta Vercel autorizada, sem modificar os demais projetos. Variáveis públicas Supabase, UUID permitido e chave de criptografia foram configurados após autorização explícita do administrador. Arquivos `.env*` foram excluídos do upload.
+
+Callback real: `https://dropou-automation.vercel.app/api/oauth/mercado-livre/callback`. Teste HTTP externo sem cookies retornou 200 na página inicial, 400 no callback sem parâmetros e 401 na consulta de status sem autenticação, sem redirecionamento para login Vercel e sem tokens no corpo. O alias de produção foi informado pelo CLI e validado por HTTPS antes de ser recomendado.
+
+Ainda faltam `MERCADO_LIVRE_CLIENT_ID`, `MERCADO_LIVRE_CLIENT_SECRET`, `SUPABASE_SECRET_KEY` (ou service role legada) e consentimento real do administrador para validar a autorização ponta a ponta. Cadastro manual usa a chave publicável e RLS; não depende dessas credenciais privadas. Busca e automações permanecem desativadas.

@@ -4,6 +4,8 @@ Cadastro real e geração de ofertas para publicação **manual** no WhatsApp. N
 
 ## Executar
 
+Aplicação publicada: https://dropou-automation.vercel.app. Use sua conta existente do Supabase para entrar. O callback OAuth público é `https://dropou-automation.vercel.app/api/oauth/mercado-livre/callback`; a conexão Mercado Livre ainda exige as credenciais privadas descritas no guia abaixo.
+
 OAuth Mercado Livre e publicação HTTPS: consulte [docs/mercado-livre-oauth.md](docs/mercado-livre-oauth.md). Credenciais permanecem exclusivamente no servidor. OAuth não garante permissão de busca de produtos.
 
 Requer Node.js 20.9+ e npm. No Windows, use npm.cmd se o PowerShell bloquear npm.ps1.
