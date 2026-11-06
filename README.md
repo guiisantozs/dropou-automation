@@ -1,6 +1,10 @@
 ﻿# Dropou Automação
 
-Cadastro real e geração de ofertas para publicação **manual** no WhatsApp. Next.js, TypeScript, Tailwind e Supabase Auth/Postgres/RLS. O visual foi preservado. Agendamento e publicação automática estão pausados.
+Cadastro por link/print, OCR local e geração econômica de ofertas com cache, templates gratuitos e OpenAI opcional. WhatsApp manual e Telegram oficial. Next.js, TypeScript, Tailwind e Supabase Auth/Postgres/RLS. O visual geral foi preservado. Automação continua pausada por padrão.
+
+Configuração, funcionamento e evidências da nova implementação: [Dropou AI econômico](docs/ia-economica.md). As mudanças locais precisam ser publicadas para aparecer na Vercel.
+
+O cadastro também permite [Ctrl + V e leitura visual de prints](docs/leitura-visual.md), com dados e chamada criativa na mesma requisição, fallback OCR e armazenamento de recorte somente por autorização. O primeiro teste visual pago foi autorizado e aguarda um print de produto e a configuração da implantação.
 
 ## Executar
 
@@ -56,7 +60,7 @@ Duplicatas usam domínio/caminho do link original ou, se ausente, do afiliado. L
 
 ## Integrações
 
-**Consultar fonte oficial** só chama o adaptador no servidor. Mercado Livre e Shopee permanecem indisponíveis até autorização/configuração. O erro preserva o formulário e permite cadastro manual. Não há endpoints de marketplace inventados, scraping ou coleta automática pelo link encurtado.
+**Obter dados** consulta somente fontes autorizadas no servidor. Após HTTP 403, a consulta individual do Mercado Livre também exige `MERCADO_LIVRE_LOOKUP_APPROVED=true`; Shopee continua pendente. Na falta dos dados, use um print com OCR local ou cadastro manual. Não há scraping nem coleta pelo link encurtado.
 
 Busca em `/buscar-ofertas`, com filtros, importação revalidada e preparação em lote. Mercado Livre consulta os endpoints documentados apenas com token OAuth e autorização configurados no servidor; a plataforma ainda pode negar a busca. Shopee permanece pendente. A tentativa real de cinco produtos retornou HTTP 403, sem resultados: a descoberta ponta a ponta ainda depende de credenciais/permissões. Veja [relatório de busca real e configuração exata](docs/busca-real-validacao.md). Nenhum token é necessário para continuar usando o cadastro manual.
 
@@ -73,6 +77,6 @@ Os testes executam as mesmas funções SQL em PostgreSQL embarcado/PGlite, com d
 
 Hospede em um provedor Next.js/Node, configurando as duas variáveis públicas antes do build. O banco fica no Supabase, independente do computador. Não envie `.env.local` ao GitHub.
 
-O fluxo manual não precisa de cron. `ENABLE_AUTOMATIONS=false` bloqueia o endpoint mesmo com segredo válido. `vercel.json` não declara tarefas; desative cron externo anterior no provedor. Ativação futura exige adaptadores oficiais, credenciais no servidor e testes de revalidação/entrega. Telegram permanece preparado, fora do fluxo manual validado.
+O fluxo manual não precisa de cron. `ENABLE_AUTOMATIONS=false` bloqueia o endpoint mesmo com segredo válido. `vercel.json` não declara tarefas. Despacho automático exige configuração explícita, adaptadores oficiais e revalidação/entrega testadas. A prévia permite envio imediato de uma oferta salva ao Telegram com imagem opcional; sem atualização autorizada de preços, agendamentos exigem conferência humana. A validação desta mudança não enviou mensagens reais.
 
 Referência: [Supabase — grants e RLS](https://supabase.com/docs/guides/api/securing-your-api).

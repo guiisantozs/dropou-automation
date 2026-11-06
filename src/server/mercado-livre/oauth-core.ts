@@ -1,11 +1,15 @@
 import {createCipheriv,createDecipheriv,createHash,randomBytes} from 'node:crypto';
 import {z} from 'zod';
 export const callbackPath='/api/oauth/mercado-livre/callback';
-export class OAuthFailure extends Error{constructor(public code:string,message:string){super(message);}}
+export class OAuthFailure extends Error{constructor(public code:string,message:string,public actionUrl?:string){super(message);}}
 export function redirectUri(origin:string){
  let u:URL;try{u=new URL(origin);}catch{throw new OAuthFailure('configuration','Configure APP_BASE_URL com o domínio HTTPS real do deploy.');}
  if(u.protocol!=='https:'||u.username||u.password||u.pathname!=='/'||u.search||u.hash||['localhost','127.0.0.1','::1','[::1]'].includes(u.hostname))throw new OAuthFailure('configuration','APP_BASE_URL deve ser uma origem HTTPS pública, sem caminho, query ou fragmento.');
  return u.origin+callbackPath;
+}
+export function assertOAuthOrigin(request:Request,appBaseUrl:string){
+ const expected=new URL(redirectUri(appBaseUrl)).origin;
+ if(request.headers.get('origin')!==expected)throw new OAuthFailure('origin',`Execute esta ação no Dropou publicado: ${expected}. O endereço atual não é a origem configurada para a integração.`,expected+'/');
 }
 export const hash=(input:string)=>createHash('sha256').update(input).digest('base64url');
 export function newHandshake(){const verifier=randomBytes(32).toString('base64url');return {state:randomBytes(32).toString('base64url'),browser:randomBytes(32).toString('base64url'),verifier,challenge:hash(verifier)};}

@@ -20,7 +20,7 @@ export const adapters:Record<Product['store'],OfficialAdapter> = {
   'Mercado Livre':{
     lookup:async(url,owner)=> (await meliForUser(owner)).lookup(url),
     search:async(_niches,owner)=>{const result=await (await meliForUser(owner)).search({store:'Mercado Livre',category:'tech',minPrice:0,maxPrice:1000000,minDiscount:0,limit:5});if(result.report.state!=='available')throw new Error(result.report.message);return result.products;},
-    revalidate:async(p,owner)=>{const fresh=await (await meliForUser(owner)).lookup(p.source?.itemId||p.originalUrl);return {...fresh,id:p.id,niche:p.niche,createdAt:p.createdAt,affiliateUrl:p.affiliateUrl,status:p.status,scheduledAt:p.scheduledAt};},
+    revalidate:async(p,owner)=>{const fresh=await (await meliForUser(owner)).lookup(p.source?.itemId||p.originalUrl);return {...fresh,id:p.id,niche:p.niche,createdAt:p.createdAt,affiliateUrl:p.affiliateUrl,status:p.status,scheduledAt:p.scheduledAt,dataOrigin:p.dataOrigin,imagePath:p.imagePath,features:p.features,featuresVerified:p.featuresVerified};},
   },
   'Shopee':new PendingApproval('Shopee Open API'),
 };

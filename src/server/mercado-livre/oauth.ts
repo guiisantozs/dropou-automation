@@ -1,7 +1,7 @@
 import 'server-only';
 import {randomUUID} from 'node:crypto';
 import {adminDb} from '../db';
-import {activeAccessToken,cipherKey,Connection,hash,newHandshake,OAuthFailure,redirectUri,requestTokens,seal,TokenSet,TokenStore,unseal,authorizationUrl} from './oauth-core';
+import {activeAccessToken,assertOAuthOrigin,cipherKey,Connection,hash,newHandshake,OAuthFailure,redirectUri,requestTokens,seal,TokenSet,TokenStore,unseal,authorizationUrl} from './oauth-core';
 export const oauthCookie='__Host-dropou-ml-oauth';
 export function oauthConfig(){
  const redirect=redirectUri(process.env.APP_BASE_URL||'');
@@ -12,7 +12,7 @@ export function oauthConfig(){
  return {id,secret,redirect,key:cipherKey(process.env.MERCADO_LIVRE_TOKEN_ENCRYPTION_KEY||'')};
 }
 export function requireOAuthAdmin(owner:string){const allowed=(process.env.MERCADO_LIVRE_ADMIN_USER_IDS||'').split(',').map(s=>s.trim()).filter(Boolean);if(!allowed.includes(owner))throw new OAuthFailure('forbidden','Este usuário não está autorizado a administrar a conexão do Mercado Livre.');}
-export function requireOAuthOrigin(request:Request){const expected=new URL(redirectUri(process.env.APP_BASE_URL||'')).origin;if(request.headers.get('origin')!==expected)throw new OAuthFailure('forbidden','Origem da solicitação não autorizada.');}
+export function requireOAuthOrigin(request:Request){assertOAuthOrigin(request,process.env.APP_BASE_URL||'');}
 function vault(){try{return adminDb();}catch{throw new OAuthFailure('configuration','Configure a chave privada do Supabase somente no servidor para acessar o cofre OAuth.');}}
 function check(error:unknown){if(error)throw new OAuthFailure('vault','O cofre OAuth não está disponível. Verifique o schema e as credenciais do servidor.');}
 export async function startOAuth(owner:string){
@@ -48,5 +48,5 @@ export async function oauthStatus(owner:string){
  return {configured:true,connected:data?.status==='active',status:data?.status||'not_connected',expiresAt:data?.expires_at||null,redirectUri:config.redirect};
 }
 export function oauthError(error:unknown){
- const known=error instanceof OAuthFailure,code=known?error.code:'server_error';return Response.json({error:known?error.message:'Não foi possível concluir o OAuth. Nenhum token foi exibido.',code},{status:code==='forbidden'?403:code==='configuration'||code==='vault'?503:400,headers:{'Cache-Control':'no-store','Referrer-Policy':'no-referrer'}});
+ const known=error instanceof OAuthFailure,code=known?error.code:'server_error';return Response.json({error:known?error.message:'Não foi possível concluir o OAuth. Nenhum token foi exibido.',code,...(known&&code==='origin'&&error.actionUrl?{actionUrl:error.actionUrl}:{})},{status:code==='forbidden'||code==='origin'?403:code==='configuration'||code==='vault'?503:400,headers:{'Cache-Control':'no-store','Referrer-Policy':'no-referrer'}});
 }

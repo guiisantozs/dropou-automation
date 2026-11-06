@@ -3,9 +3,17 @@ import assert from 'node:assert/strict';
 import {randomBytes} from 'node:crypto';
 import {readFileSync} from 'node:fs';
 import {PGlite} from '@electric-sql/pglite';
-import {activeAccessToken,authorizationUrl,cipherKey,Connection,hash,newHandshake,redirectUri,requestTokens,seal,TokenSet,TokenStore,unseal} from '../src/server/mercado-livre/oauth-core';
+import {activeAccessToken,assertOAuthOrigin,authorizationUrl,cipherKey,Connection,hash,newHandshake,OAuthFailure,redirectUri,requestTokens,seal,TokenSet,TokenStore,unseal} from '../src/server/mercado-livre/oauth-core';
 
 const tokens:TokenSet={access_token:'synthetic-access-token',refresh_token:'synthetic-refresh-token',token_type:'bearer',expires_in:21600,user_id:123};
+test('origin guard accepts only the configured public origin and guides local access without weakening protection',()=>{
+ const base='https://dropou-automation.vercel.app';
+ assert.doesNotThrow(()=>assertOAuthOrigin(new Request(base+'/api/test',{method:'POST',headers:{Origin:base}}),base));
+ for(const origin of [undefined,'null','http://127.0.0.1:3000','http://localhost:3000','https://evil.test','https://dropou-automation.vercel.app.evil.test','https://another-deployment.vercel.app']){
+  const request=new Request(base+'/api/test',{method:'POST',headers:origin?{Origin:origin}:{}});
+  assert.throws(()=>assertOAuthOrigin(request,base),error=>error instanceof OAuthFailure&&error.code==='origin'&&error.actionUrl===base+'/'&&error.message.includes(base));
+ }
+});
 test('OAuth: HTTPS static redirect, independent state, browser nonce and PKCE S256',()=>{
  assert.equal(redirectUri('https://example.com'),'https://example.com/api/oauth/mercado-livre/callback');
  for(const origin of ['http://example.com','https://localhost','https://example.com/path','https://example.com?next=evil','https://user:pass@example.com'])assert.throws(()=>redirectUri(origin));

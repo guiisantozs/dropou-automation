@@ -11,6 +11,11 @@ export const productSchema = z.object({
   paymentMethod: z.enum(['nao_informado','pix','outro']).default('nao_informado'), pixVerified: z.boolean().default(false),
   checkedAt: z.string().datetime().nullable(), status: z.enum(statuses), scheduledAt: z.string().datetime().nullable(),
   createdAt: z.string().datetime(), demo: z.boolean(),
+  dataOrigin:z.enum(['manual','official','screenshot']).optional(), screenshotConfirmed:z.boolean().optional(),
+  features:z.array(z.string().trim().min(1).max(80)).max(2).optional(),featuresVerified:z.boolean().optional(),
+  imagePath:z.string().regex(/^[a-f0-9-]{36}\/[a-f0-9-]{36}\.jpg$/).optional(),needsHumanReview:z.boolean().optional(),
+  creativeHeadline:z.string().max(105).optional(),creativeBrand:z.enum(['dropou','barato','linda']).optional(),socialVerified:z.boolean().optional(),
+  visualDetails:z.object({brand:z.string().max(80).nullable(),model:z.string().max(100).nullable(),selectedVariant:z.string().max(100).nullable(),rating:z.number().min(0).max(5).nullable(),salesCount:z.string().max(60).nullable(),sellerName:z.string().max(120).nullable(),displayedDiscount:z.number().min(0).max(100).nullable(),uncertainFields:z.array(z.string().max(40)).max(20)}).optional(),
   source:z.object({provider:z.enum(['mercado_livre','shopee']),itemId:z.string().max(100),verifiedAt:z.string().datetime(),priceEndpoint:z.string().url(),referenceAmount:z.number().positive().nullable(),previousEvidence:z.enum(['none','recorded_history'])}).optional(),
 }).superRefine((p, ctx) => {
   if (!p.originalUrl && !p.affiliateUrl) ctx.addIssue({code:'custom',path:['affiliateUrl'],message:'Informe o link original ou um link de afiliado oficial'});
@@ -45,6 +50,7 @@ export function canonical(url: string) { const u = new URL(url); return u.hostna
 export const productKey=(p:Product)=>canonical(p.originalUrl||p.affiliateUrl);
 export function publicationError(p: Product, now = Date.now()): string | null {
   if (p.demo) return 'Dados demonstrativos não podem ser publicados de verdade.';
+  if(p.dataOrigin==='screenshot'&&!p.screenshotConfirmed)return 'Confirme os dados extraídos do print antes de publicar.';
   if (!p.affiliateUrl) return 'Adicione um link oficial de afiliado.';
   if (p.inStock!==true) return 'Confirme que o produto está em estoque.';
   if (!freshPrice(p,now)) return 'Revalide preço e estoque nos últimos 15 minutos.';
