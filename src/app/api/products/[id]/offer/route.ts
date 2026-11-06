@@ -10,5 +10,5 @@ export async function GET(request:Request,context:{params:Promise<{id:string}>})
  withHistory?db.from('publications').select('id,channel,destination,published_at').eq('product_id',id).eq('owner_id',user.id).limit(10):Promise.resolve({data:[],error:null}),
  db.from('deliveries').select('state,message_ids,destination_title,sent_at,error').eq('product_id',id).eq('owner_id',user.id).limit(1)]);
  for(const r of [product,offer,jobs,publications,deliveries])if(r.error)throw dbError(r.error);
- return Response.json({product:product.data!.data,offer:offer.data,job:jobs.data?.[0],publications:publications.data,delivery:deliveries.data?.[0]},{headers:{'Cache-Control':'no-store'}});
+ return Response.json({serverNow:new Date().toISOString(),product:product.data!.data,offer:offer.data,job:jobs.data?.[0],publications:publications.data,delivery:deliveries.data?.[0]},{headers:{'Cache-Control':'no-store'}});
 }catch(e){return apiError(e);}}

@@ -1,0 +1,12 @@
+// Decorative SVG: no image download, animation or rendering dependency.
+export default function DropouMascot(){return <svg className="dropou-mascot" viewBox="0 0 310 215" fill="none" aria-hidden="true" focusable="false">
+ <ellipse cx="173" cy="197" rx="121" ry="10" fill="currentColor" opacity=".1"/>
+ <path d="M234 119h40l14 66h-68l14-66Z" fill="#80B9FF"/><path d="M242 126v-13a12 12 0 0 1 24 0v13" stroke="#D8ECFF" strokeWidth="5" strokeLinecap="round"/><path d="m244 149 8 16h16l7-17h-33m11 25h1m12 0h1" stroke="#EFF7FF" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round"/>
+ <path d="M152 115c-12 4-21 18-22 36l-4 29h84l-5-36c-2-15-9-25-22-29" fill="#B9D9FF"/><path d="M160 119c-10 5-16 14-16 29v30h49l-2-31c-1-14-4-23-13-28" fill="#F8FCFF"/><path d="m169 134-10 15h10l-4 15 16-22h-11l5-8" fill="#1873F0"/>
+ <path d="M148 127c-14-5-27-16-29-28" stroke="#EBF5FF" strokeWidth="17" strokeLinecap="round"/><path d="m111 95 1-13c0-5 6-5 7-1l2 9 5-4c4-3 8 1 6 5l-5 12c-3 7-17 4-18-2l-1-5c-1-4 1-6 3-1Z" fill="#F8FCFF"/><path d="M200 133c16 3 24 16 26 29" stroke="#D8EAFF" strokeWidth="17" strokeLinecap="round"/>
+ <path d="M139 43c0-23 17-35 39-35s41 12 41 35" stroke="#CEE6FF" strokeWidth="9"/><path d="M145 41c2-16 15-25 33-25s31 8 34 25" stroke="#1873F0" strokeWidth="6"/>
+ <rect x="130" y="37" width="96" height="78" rx="33" fill="#F8FCFF"/><path d="M142 52c13-8 52-9 68 1 7 8 10 27 1 38-11 10-53 11-67 0-7-8-10-28-2-39Z" fill="#07255C"/><path d="M154 73c0-12 13-12 13 0m18 0c0-12 13-12 13 0" stroke="#70D9FF" strokeWidth="5" strokeLinecap="round"/><path d="M169 88c5 4 11 4 16 0" stroke="#70D9FF" strokeWidth="3" strokeLinecap="round"/>
+ <rect x="121" y="56" width="13" height="33" rx="6.5" fill="#247BEE"/><rect x="221" y="54" width="13" height="35" rx="6.5" fill="#247BEE"/><path d="M207 99c-2 11-11 17-24 18" stroke="#1873F0" strokeWidth="4" strokeLinecap="round"/><rect x="174" y="112" width="13" height="6" rx="3" fill="#B5DDFF"/>
+ <path d="M64 139h93a6 6 0 0 1 6 5l9 43H76l-17-40a6 6 0 0 1 5-8Z" fill="#143D88"/><path d="m114 151-12 16h10l-3 12 16-20h-12l5-8" fill="#358AFF"/><path d="M70 187h112l-5 7H76l-6-7Z" fill="#8DBBFF"/>
+ <path d="M209 165h27c8 0 14 10 15 21 1 9-7 14-13 8l-7-6h-19l-7 6c-6 6-14 1-13-8 1-11 8-21 17-21Z" fill="#09295C"/><path d="M207 173v10m-5-5h10" stroke="#B8DFFF" strokeWidth="3" strokeLinecap="round"/><circle cx="233" cy="174" r="2.5" fill="#6CB5FF"/><circle cx="240" cy="181" r="2.5" fill="#6CB5FF"/><path d="m100 30 8 10m-22 3 12 5m130-24-6 13" stroke="#DDEEFF" strokeWidth="4" strokeLinecap="round"/>
+ </svg>;}

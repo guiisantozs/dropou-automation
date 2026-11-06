@@ -97,10 +97,10 @@ test('editor preserves expired manual copy on mount, saves without AI, restores 
  const buttons=(text:string)=>Array.from(container.querySelectorAll<HTMLButtonElement>('button')).filter(b=>b.textContent?.includes(text));
  try{
   dom.window.document.getElementById('opener')!.focus();await act(async()=>root.render(createElement(OfferPreview,{product:p,offer:current,request,onRefresh:async()=>{},onClose:()=>{closed++;},onEdit(){}})));
-  assert.ok(container.textContent?.includes('Minha edição'));assert.equal((buttons('Preparar para WhatsApp')[0]).disabled,true);assert.equal(calls,0);
+  assert.doesNotMatch(container.querySelector('.message-preview')!.textContent!,/R\$/);assert.equal((buttons('Preparar para WhatsApp')[0]).disabled,false);assert.equal(calls,0);
   await act(async()=>buttons('Editar legenda')[0].click());assert.equal(container.querySelector('textarea')?.value,edited);await act(async()=>buttons('Salvar edição')[0].click());assert.equal(current.caption,edited);assert.equal(calls,1);
-  await act(async()=>root.render(createElement(OfferPreview,{key:'reopened',product:p,offer:current,request,onRefresh:async()=>{},onClose:()=>{closed++;},onEdit(){}})));assert.ok(container.textContent?.includes('Minha edição'));
-  await act(async()=>buttons('Editar legenda')[0].click());await act(async()=>buttons('Restaurar versão original')[0].click());assert.equal(container.querySelector('textarea')?.value,original);await act(async()=>buttons('Salvar edição')[0].click());assert.equal(current.caption,original);assert.equal(calls,2);
+  await act(async()=>root.render(createElement(OfferPreview,{key:'reopened',product:p,offer:current,request,onRefresh:async()=>{},onClose:()=>{closed++;},onEdit(){}})));assert.doesNotMatch(container.querySelector('.message-preview')!.textContent!,/R\$/);
+  await act(async()=>buttons('Editar legenda')[0].click());assert.equal(container.querySelector('textarea')?.value,edited);await act(async()=>buttons('Restaurar versão original')[0].click());assert.equal(container.querySelector('textarea')?.value,original);await act(async()=>buttons('Salvar edição')[0].click());assert.equal(current.caption,original);assert.equal(calls,2);
   await act(async()=>dom.window.document.dispatchEvent(new dom.window.KeyboardEvent('keydown',{key:'Escape',bubbles:true})));assert.equal(closed,1);
  }finally{await act(async()=>root.unmount());assert.equal(dom.window.document.activeElement?.id,'opener');dom.window.close();for(const [key,descriptor]of previous){if(descriptor)Object.defineProperty(globalThis,key,descriptor);else delete (globalThis as Record<string,unknown>)[key];}}
 });

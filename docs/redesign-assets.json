@@ -1,0 +1,23 @@
+{
+  "method": "Public production assets read without executing JS; local build assets. Gzip sizes estimated identically from decoded bytes, not measured browser transfer.",
+  "before": {
+    "js": {
+      "raw": 977686,
+      "gzip": 288170
+    },
+    "css": {
+      "raw": 48904,
+      "gzip": 11456
+    }
+  },
+  "after": {
+    "js": {
+      "raw": 981055,
+      "gzip": 289071
+    },
+    "css": {
+      "raw": 42681,
+      "gzip": 9234
+    }
+  }
+}

@@ -1,16 +1,18 @@
-import {Product,publicationError} from './domain';
+import {Product} from './domain';
 import {Offer} from './offers';
-import {captionError} from './caption-editor';
+import {publicationPlan,PublicationPreference} from './publication-copy';
 export type PublicationJob={id:string;state:string;channel:'telegram'|'whatsapp';scheduled_at:string;destination_title:string;error?:string;attempts:number;message_ids:string[];sent_at?:string};
 export type PublicationConfig={enabled:boolean;telegram:{available:boolean;id?:string;title?:string;key?:string;reason?:string}};
-export type PublicationContext={job?:PublicationJob;delivery?:{state:string;message_ids:string[];destination_title:string;sent_at?:string;error?:string}};
-export function publicationBlock(product:Product,offer:Offer|undefined,text:string,busy=false,job?:Pick<PublicationJob,'state'>){
+export type PublicationContext={serverNow?:string;job?:PublicationJob;delivery?:{state:string;message_ids:string[];destination_title:string;sent_at?:string;error?:string}};
+export function publicationBlock(product:Product,offer:Offer|undefined,text:string,busy=false,job?:Pick<PublicationJob,'state'>,preference:PublicationPreference='auto',now=Date.now()){
  if(busy)return 'Aguarde a operação terminar.';
  if(product.status==='publicado'||offer?.status==='publicado'||job?.state==='sent')return 'Esta oferta já foi publicada.';
  if(job&&['sending','uncertain','partial'].includes(job.state))return 'Entrega em andamento ou incerta. Confira o canal; não repita o envio.';
  if(!offer)return 'Salve a oferta antes de publicar.';
- if(text!==offer.caption)return 'Salve a edição da legenda antes de publicar.';
- return publicationError({...product,status:'pronto'})||captionError(text,product)||null;
+ const plan=publicationPlan(product,text,preference,now);
+ if(plan.mode==='verified'&&text!==offer.caption)return 'Salve a edição da legenda antes de publicar.';
+ if(offer.status==='excluido')return 'Esta oferta foi excluída. Salve uma oferta ativa para continuar.';
+ return plan.error;
 }
 // Bahia is UTC-03 year-round. Validate the wall-clock value, independent of the browser timezone.
 export function bahiaInstant(value:string){

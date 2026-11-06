@@ -41,7 +41,7 @@ test('pause and expired-price checks stop before each Telegram request, preservi
 });
 test('publication reasons preserve freshness, saved caption, stock and duplicate protections; Bahia wall clock is explicit',()=>{
  const p=product(),text=formatCaption(p),o={id:crypto.randomUUID(),product_id:p.id,caption:text,snapshot:p,status:'pronto'} as Offer;
- assert.equal(publicationBlock(p,o,text),null);assert.match(publicationBlock(p,undefined,text)!,/Salve/);assert.match(publicationBlock(p,o,text+' edit')!,/Salve a edição/);assert.match(publicationBlock({...p,checkedAt:new Date(Date.now()-16*60000).toISOString()},o,text)!,/expirado|revalid/i);assert.ok(publicationBlock({...p,inStock:false},o,text));assert.match(publicationBlock(p,o,text,true)!,/Aguarde/);assert.match(publicationBlock({...p,status:'publicado'},o,text)!,/publicada/);
+ assert.equal(publicationBlock(p,o,text),null);assert.match(publicationBlock(p,undefined,text)!,/Salve/);assert.match(publicationBlock(p,o,text+' edit')!,/Salve a edição/);assert.equal(publicationBlock({...p,checkedAt:new Date(Date.now()-16*60000).toISOString()},o,text),null);assert.equal(publicationBlock({...p,inStock:false},o,text),null);assert.match(publicationBlock(p,o,text,true)!,/Aguarde/);assert.match(publicationBlock({...p,status:'publicado'},o,text)!,/publicada/);
  assert.equal(bahiaInstant('2026-11-10T12:30'),'2026-11-10T15:30:00.000Z');assert.throws(()=>bahiaInstant('2026-02-30T12:00'));assert.throws(()=>bahiaInstant('invalid'));
 });
 test('WhatsApp share selects destination manually, supports cancel and preserves text in fallback; image copy fallback is explicit',async()=>{

@@ -1,0 +1,23 @@
+{
+  "method": "Previous local redesign build versus current local build. Gzip recompressed identically; not browser transfer or latency.",
+  "before": {
+    "js": {
+      "raw": 981055,
+      "gzip": 289071
+    },
+    "css": {
+      "raw": 42681,
+      "gzip": 9234
+    }
+  },
+  "after": {
+    "js": {
+      "raw": 990928,
+      "gzip": 292380
+    },
+    "css": {
+      "raw": 54221,
+      "gzip": 11256
+    }
+  }
+}
