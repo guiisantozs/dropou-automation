@@ -1,6 +1,6 @@
 # Leitura visual e colagem de prints
 
-Implementação de 06/11/2026. Código local, ainda sem publicação no GitHub/Vercel. A extensão do banco já foi aplicada e verificada no Supabase existente. Nenhuma chamada paga ou envio de publicação foi feito.
+Implementação de 06/11/2026, publicada no GitHub no commit `f8d7d8e` e na Vercel em https://dropou-automation.vercel.app. Deploy `dpl_EjrQiSxsrD73NPcHmkZ3yHihu22d` confirmado como Ready. A extensão do banco já foi aplicada e verificada no Supabase existente. Nenhuma chamada paga ou envio de publicação foi feito por esta implementação.
 
 ## Fluxo
 
@@ -53,7 +53,7 @@ Na Vercel, manter chave OpenAI e chave secreta Supabase somente no backend. Alé
 OPENAI_VISION_ENABLED=false
 ```
 
-Depois de autorizar o primeiro teste pago, definir como `true` no ambiente desejado, com `OPENAI_ENABLED=true`, allowlist administrativa e autorização manual em Consumo de IA. A flag permanece desligada por padrão. Não foi exportada nenhuma chave para `.env.local`. Não é necessário colocar a chave local para usar a implantação da Vercel.
+Para o primeiro teste pago autorizado, a produção foi configurada com `OPENAI_VISION_ENABLED=true`, `OPENAI_ENABLED=true`, modelo `gpt-6-luna` e allowlist administrativa. A Vercel já contém as chaves de backend OpenAI e Supabase; seus valores não foram exportados. O orçamento no banco permanece desativado até o print de produto estar pronto. A flag permanece desligada por padrão em novas instalações. Não é necessário colocar a chave em `.env.local` para usar a implantação da Vercel.
 
 Instalação em outro banco: aplicar `ai-visual.sql` depois de `ai-economy.sql`. A extensão é idempotente, mantém o orçamento atual e preserva as integrações anteriores. O projeto existente foi inspecionado antes de aplicar a alteração.
 
@@ -67,8 +67,9 @@ Instalação em outro banco: aplicar `ai-visual.sql` depois de `ai-economy.sql`.
 - API OpenAI simulada: várias imagens e chamada em uma requisição, cache isolado por usuário e marca, duplicação simultânea, orçamento global, 429 de quota, Retry-After, timeout, custo e privilégios do banco.
 - Banco remoto verificado: orçamento continua 4,50/0,50/100, geração paga desativada, zero chamadas visuais e zero entradas no cache visual; `anon` e `authenticated` não podem ler o cache nem invocar a reserva. Nenhuma nova advertência WARN dos advisors; INFO de RLS sem políticas é intencional nas tabelas exclusivas do backend. Advertências antigas estão registradas em `ia-economica.md`.
 - HTTP local: GET/POST da rota visual e DELETE de imagem retornam 401 sem autenticação.
+- Produção após deploy: página inicial HTTP 200; GET `/api/ai/visual` e `/api/ai/usage` retornam HTTP 401 sem sessão. Banco remoto confirmado com zero requisições no novo ledger e zero entradas de cache visual; orçamento desativado. Esses testes não chamam a OpenAI.
 - O ambiente não expõe navegador conectado. Portanto, Ctrl + V físico no Windows, aparência e comportamento em navegadores móveis, OCR com arquivos reais e qualidade do reconhecimento visual real ainda precisam de validação prática. Não foram apresentados resultados simulados como leitura de um anúncio real.
 
-O administrador autorizou a publicação desta versão e um único teste visual pago. O teste aguarda publicação/configuração e um print de produto. Deve realizar uma única análise; uma repetição idêntica deve confirmar o cache sem segunda chamada paga. Esse teste não publica mensagens.
+O administrador autorizou a publicação desta versão e um único teste visual pago. Publicação e configuração concluídas; falta um print de produto para iniciar o teste autenticado. Deve realizar uma única análise; uma repetição idêntica deve confirmar o cache sem segunda chamada paga. Antes da chamada, limitar o orçamento a uma requisição diária e desativá-lo novamente ao concluir o teste. Esse teste não publica mensagens.
 
 Fontes: [modelos com imagem no changelog oficial](https://developers.openai.com/api/docs/changelog), [GPT-6 Luna e tarifas](https://developers.openai.com/api/docs/models/gpt-6-luna), [entrada de imagem na Responses API](https://developers.openai.com/api/docs/guides/images-vision), [Clipboard.read](https://developer.mozilla.org/en-US/docs/Web/API/Clipboard/read), [evento de colagem](https://developer.mozilla.org/en-US/docs/Web/API/ClipboardEvent/clipboardData), [exclusão de arquivos no Supabase](https://supabase.com/docs/reference/javascript/storage-from-remove).

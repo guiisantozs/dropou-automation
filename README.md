@@ -2,9 +2,9 @@
 
 Cadastro por link/print, OCR local e geração econômica de ofertas com cache, templates gratuitos e OpenAI opcional. WhatsApp manual e Telegram oficial. Next.js, TypeScript, Tailwind e Supabase Auth/Postgres/RLS. O visual geral foi preservado. Automação continua pausada por padrão.
 
-Configuração, funcionamento e evidências da nova implementação: [Dropou AI econômico](docs/ia-economica.md). As mudanças locais precisam ser publicadas para aparecer na Vercel.
+Configuração, funcionamento e evidências da nova implementação: [Dropou AI econômico](docs/ia-economica.md). Código publicado no GitHub e na Vercel em 06/11/2026.
 
-O cadastro também permite [Ctrl + V e leitura visual de prints](docs/leitura-visual.md), com dados e chamada criativa na mesma requisição, fallback OCR e armazenamento de recorte somente por autorização. O primeiro teste visual pago foi autorizado e aguarda um print de produto e a configuração da implantação.
+O cadastro também permite [Ctrl + V e leitura visual de prints](docs/leitura-visual.md), com dados e chamada criativa na mesma requisição, fallback OCR e armazenamento de recorte somente por autorização. O primeiro teste visual pago foi autorizado e aguarda um print de produto; o orçamento permanece desativado até o teste.
 
 ## Executar
 

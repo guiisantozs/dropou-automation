@@ -61,9 +61,11 @@ Não há retries automáticos. `insufficient_quota` desabilita geração paga no
 
 ## Único teste pago
 
-Pendente: publicar este código na Vercel, configurar a allowlist e chave de backend Supabase e ativar geração manual. O crédito de US$ 5 e a configuração da chave na Vercel foram informados pelo administrador. Ele confirmou expressamente GTA 6 por R$ 418,41 no Pix e disponível; a conferência foi salva às 08:58:25 de 06/11/2026 em São Paulo, sem confirmar preço anterior ou parcelamento. Essa conferência vence após 15 minutos e deverá ser refeita se expirar antes do teste.
+Código publicado no GitHub (`f8d7d8e`) e na Vercel em 06/11/2026, com allowlist, modelo e flags de IA configurados. As chaves OpenAI e Supabase permanecem no backend da Vercel. O orçamento pago continua desativado e o novo ledger tem zero requisições. O administrador autorizou um único teste visual, detalhado em [leitura-visual.md](leitura-visual.md), que aguarda um print de produto; não realizar uma chamada textual adicional.
 
-Depois dessas condições, executar uma única geração com um produto. Registrar modelo retornado, tokens, custo estimado e legenda; repetir a mesma oferta para conferir recuperação do cache sem segunda chamada. Não enviar/publicar a oferta durante esse teste. Nenhuma conclusão sobre acesso da conta ao modelo pode ser inferida apenas da documentação ou da presença da chave.
+O crédito de US$ 5 e a configuração da chave na Vercel foram informados pelo administrador. Ele confirmou expressamente GTA 6 por R$ 418,41 no Pix e disponível; a conferência foi salva às 08:58:25 de 06/11/2026 em São Paulo, sem confirmar preço anterior ou parcelamento. Essa conferência vence após 15 minutos e deverá ser refeita antes de publicar uma oferta.
+
+No teste visual, registrar modelo retornado, tokens, custo estimado e legenda; repetir o mesmo print para conferir recuperação do cache sem segunda chamada. Não enviar/publicar a oferta durante esse teste. Nenhuma conclusão sobre acesso da conta ao modelo pode ser inferida apenas da documentação ou da presença da chave.
 
 Exemplo gratuito montado com os dados confirmados, sem consultar a OpenAI:
 
