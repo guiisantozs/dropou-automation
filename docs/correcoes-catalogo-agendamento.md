@@ -32,4 +32,6 @@ O botão passou a se chamar **Ativar próximos agendamentos** e informa a quanti
 - Nenhum novo alerta de segurança apareceu. Permanecem os avisos anteriores de tabelas privadas com RLS sem política pública e [proteção de senhas vazadas desativada](https://supabase.com/docs/guides/auth/password-security#password-strength-and-leaked-password-protection).
 - Não houve chamada paga nem mensagem de teste. As ferramentas não encontraram navegador conectado; a validação de interface usou renderização e interações simuladas, sem capturas reais de desktop/mobile.
 
-Publicação da interface e ativação dos próximos agendamentos em andamento.
+O commit `a5d5155` foi enviado ao `main` e publicado como `dpl_KZUFvmDcuU5ARcrF3ZYte4qWRXwB`, com estado `READY`, no domínio https://dropou-automation.vercel.app. A conferência retornou HTTP 200, encontrou os estilos dos novos status e do aviso de automação e confirmou a ausência dos estilos da faixa duplicada.
+
+A ativação autorizada foi concluída às **17h54min56s de São Paulo**, com corte para os próximos horários. Não havia agendamentos vencidos pendentes para reter nem itens na fila. Às 17h55, o cron respondeu HTTP 200, `processed: 0`, sem pausa ou timeout. Os recibos `14`, `15` e `16` permaneceram intactos; os totais continuaram em cinco entregas Telegram e zero confirmações WhatsApp. Nenhuma oferta foi reenviada na validação.
