@@ -1,6 +1,8 @@
 import type {Product} from './domain';
 import {publicationIdentityError} from './publication-copy';
 export type Channel='telegram'|'whatsapp';
+export type ProductChannelSummary={telegram:ChannelSummary;whatsapp:ChannelSummary};
+export type ChannelSummary={published:boolean;publishedAt:string|null;state:string|null;scheduledAt:string|null;review?:boolean};
 export type ChannelContext={jobs?:{channel:Channel;state:string;message_ids:string[]}[];job?:{channel:Channel;state:string;message_ids:string[]};delivery?:{state:string;message_ids:string[]};whatsapp?:{review_required?:boolean;confirmed_by?:string|null};archived?:boolean};
 export function channelState(channel:Channel,context:ChannelContext,hasOffer:boolean,product?:Product){
  if(channel==='whatsapp'&&context.whatsapp){if(context.whatsapp.review_required)return 'review';if(context.whatsapp.confirmed_by)return 'sent';return 'review';}

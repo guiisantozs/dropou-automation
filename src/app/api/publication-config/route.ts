@@ -5,11 +5,10 @@ import {z} from 'zod';
 export async function GET(request:Request){try{
  const {user}=await sessionDb(request),{enabled}=await publicationAdmin(user.id);
  let telegram;try{telegram={available:true,...await telegramTarget()};}catch(e){telegram={available:false,reason:(e as Error).message};}
- return Response.json({enabled,telegram,timezone:'America/Bahia'},{headers:{'Cache-Control':'no-store'}});
+ return Response.json({enabled,telegram,timezone:'America/Sao_Paulo'},{headers:{'Cache-Control':'no-store'}});
 }catch(e){return apiError(e);}}
 export async function PATCH(request:Request){try{
  const {user}=await sessionDb(request),{db}=await publicationAdmin(user.id),{enabled}=z.object({enabled:z.boolean()}).parse(await request.json());
- const r=await db.from('telegram_dispatch_config').update({automation_enabled:enabled,updated_at:new Date().toISOString()}).eq('id',true);if(r.error)throw dbError(r.error);
- await db.from('logs').insert({owner_id:user.id,event:enabled?'Automação retomada':'Automação pausada',detail:'Fila de publicações autorizadas · America/Bahia'});
- return Response.json({enabled});
+ const r=await db.rpc('dropou_set_automation',{p_owner:user.id,p_enabled:enabled});if(r.error)throw dbError(r.error);
+ return Response.json(r.data);
 }catch(e){return apiError(e);}}

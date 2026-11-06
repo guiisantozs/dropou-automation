@@ -10,8 +10,13 @@ import {formatCaption} from '../src/lib/ai';
 import type {Offer} from '../src/lib/offers';
 import type {PublicationContext} from '../src/lib/publication';
 import type {api} from '../src/lib/api';
+import {renderToStaticMarkup} from 'react-dom/server';
+import DashboardOverview from '../src/components/dashboard-overview';
+import ProductCatalog from '../src/components/product-catalog';
+import PublicationSchedule from '../src/components/publication-schedule';
 function fixture(){const {JSDOM}=createRequire(import.meta.url)('jsdom'),dom=new JSDOM('<div id="root"></div>',{url:'https://dropou.test'}),previous=new Map<string,PropertyDescriptor|undefined>();for(const [key,value]of Object.entries({window:dom.window,document:dom.window.document,navigator:dom.window.navigator,IS_REACT_ACT_ENVIRONMENT:true})){previous.set(key,Object.getOwnPropertyDescriptor(globalThis,key));Object.defineProperty(globalThis,key,{value,configurable:true,writable:true});}return {dom,container:document.getElementById('root')!,close(){dom.window.close();for(const [key,value]of previous){if(value)Object.defineProperty(globalThis,key,value);else Reflect.deleteProperty(globalThis,key);}}};}
 const product=()=>({...emptyProduct(),name:'Controle de teste',affiliateUrl:'https://meli.la/teste',price:160.34,checkedAt:new Date().toISOString(),inStock:true,status:'pronto' as const});
+const unpublished={published:false,publishedAt:null,state:null,scheduledAt:null};
 function offer(p=product()):Offer{return {id:crypto.randomUUID(),product_id:p.id,caption:formatCaption(p),snapshot:p,status:'pronto',created_at:p.createdAt,updated_at:p.createdAt};}
 test('Telegram publication leaves WhatsApp prepare/copy/share available; those actions never record a publication',async()=>{
  const {container,dom,close}=fixture(),root=(await import('react-dom/client')).createRoot(container),p=product(),o=offer(p),calls:{path:string;method:string;body:any}[]=[],copied:string[]=[],shared:string[]=[],delivery={state:'sent',message_ids:['51'],destination_title:'Telegram correto'},context:PublicationContext={delivery};
@@ -45,4 +50,22 @@ test('catalog deletion confirms archival and requires explicit cancellation of r
 test('switching funnel tabs discards a late Telegram response instead of showing it as WhatsApp counts',async()=>{
  const {container,close}=fixture(),root=(await import('react-dom/client')).createRoot(container);let resolveTelegram:(data:any)=>void=()=>{};const telegram=new Promise(r=>{resolveTelegram=r;}),metrics={telegram:{published:7,scheduled:1,pending:2,failed:0},whatsapp:{published:0,scheduled:0,pending:3,ready:2}},request=(async(path:string)=>path.includes('channel=telegram')?telegram:{channel:'whatsapp',metrics,items:[],history:[],more:false}) as typeof api;
  try{await act(async()=>root.render(createElement(ChannelFunnels,{request})));await act(async()=>container.querySelector<HTMLButtonElement>('#funnel-tab-whatsapp')!.click());assert.equal(container.querySelector('[role=tab][aria-selected=true]')?.textContent?.trim(),'WhatsApp');assert.equal(container.querySelector('.channel-metrics b')!.textContent,'0');await act(async()=>resolveTelegram({channel:'telegram',metrics,items:[],history:[],more:false}));assert.equal(container.querySelector('.channel-metrics b')!.textContent,'0');assert.match(container.querySelector('[role=tabpanel]')!.textContent!,/Publicadas manualmente/);}finally{await act(async()=>root.unmount());close();}
+});
+
+test('recent products and catalog show proven Telegram publication separately from price review and WhatsApp',()=>{
+ const p={...product(),checkedAt:'2020-01-01T00:00:00Z'},channels={[p.id]:{telegram:{...unpublished,published:true,publishedAt:'2026-11-06T20:32:36Z',state:'sent'},whatsapp:unpublished}},callbacks={onCreate(){},onOpen(){},onPreview(){},onImport(){}};
+ for(const html of [renderToStaticMarkup(createElement(DashboardOverview,{products:[p],publications:[],channelStatus:channels,overview:true,onNavigate(){},...callbacks})),renderToStaticMarkup(createElement(ProductCatalog,{products:[p],channelStatus:channels,...callbacks}))]){
+  assert.match(html,/Publicado no Telegram/);assert.match(html,/WhatsApp: não publicado/);assert.match(html,/Preço:/);assert.match(html,/A conferir/);assert.doesNotMatch(html,/Publicado no WhatsApp/);
+ }
+});
+
+test('dashboard upcoming uses the Telegram job date and clearly warns when automatic sends are paused',()=>{
+ const p=product(),at='2026-11-07T20:00:00Z',html=renderToStaticMarkup(createElement(DashboardOverview,{products:[p],publications:[],automation:false,channelStatus:{[p.id]:{telegram:{...unpublished,state:'queued',scheduledAt:at},whatsapp:unpublished}},overview:true,onCreate(){},onOpen(){},onPreview(){},onImport(){},onNavigate(){}}));
+ assert.match(html,/Agendamentos automáticos pausados/);assert.match(html,/não haverá envio automático/);assert.match(html,/Telegram agendado/);assert.match(html,/17:00/);assert.doesNotMatch(html,/Nenhum agendamento nos produtos exibidos/);
+});
+
+test('resuming automation UI explains future-only activation and reports the expired jobs retained for review',async()=>{
+ const {container,close}=fixture(),root=(await import('react-dom/client')).createRoot(container),calls:any[]=[];let enabled=false;
+ const request=(async(path:string,method='GET',body:any)=>{calls.push({path,method,body});if(method==='PATCH'){enabled=body.enabled;return {enabled,held:3};}return path.includes('publication-config')?{enabled,telegram:{available:true}}:{jobs:[],more:false};}) as typeof api;
+ try{await act(async()=>root.render(createElement(PublicationSchedule,{request})));assert.match(container.textContent!,/horários já vencidos não serão disparados/);await act(async()=>[...container.querySelectorAll<HTMLButtonElement>('button')].find(b=>b.textContent==='Ativar próximos agendamentos')!.click());assert.deepEqual(calls.find(c=>c.method==='PATCH').body,{enabled:true});assert.match(container.textContent!,/3 agendamento\(s\) vencido\(s\) retido\(s\)/);assert.match(container.textContent!,/Automação ativa/);}finally{await act(async()=>root.unmount());close();}
 });

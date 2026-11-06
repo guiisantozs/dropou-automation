@@ -9,6 +9,7 @@ import WorkspaceSidebar from './workspace-sidebar';
 import {WorkspaceBrandId} from '@/lib/workspace-brands';
 import {clearPrivateImages} from '@/lib/private-image';
 import {Offer,Publication} from '@/lib/offers';
+import type {ProductChannelSummary} from '@/lib/channel-state';
 import dynamic from 'next/dynamic';
 import {useRouter} from 'next/navigation';
 const ChannelFunnels=dynamic(()=>import('./channel-funnels'));
@@ -30,6 +31,8 @@ export default function Dashboard({initialView='Visão geral'}:{initialView?:Vie
  function setEditing(p:Product|null){if(p)router.push('/ofertas/'+p.id+'/editar');}
  function setPreview(p:Product|null){if(p)router.push('/ofertas/'+p.id);}
  const [view,setView]=useState<View>(initialView),[products,setProducts]=useState<Product[]>([]),[schedule]=useState<Schedule>(defaultSchedule),[logs,setLogs]=useState<Log[]>([]),[loaded,setLoaded]=useState(false),[user,setUser]=useState<string|null>(null),[email,setEmail]=useState(''),[password,setPassword]=useState('');
+ const [automation,setAutomation]=useState<boolean|null>(null);
+ const [channelStatus,setChannelStatus]=useState<Record<string,ProductChannelSummary>>({});
  const [toast,setToast]=useState(''),[archivedCatalog,setArchivedCatalog]=useState(false);
  const csv=useRef<HTMLInputElement>(null), activeUser=useRef<string|null>(null);
  const [offers,setOffers]=useState<Offer[]>([]),[publications,setPublications]=useState<Publication[]>([]),[workspaceError,setWorkspaceError]=useState('');
@@ -39,17 +42,18 @@ export default function Dashboard({initialView='Visão geral'}:{initialView?:Vie
  const [details,setDetails]=useState<Product|null>(null);
  async function refresh(){
   const expected=activeUser.current;if(!expected)return;const sequence=++refreshSequence.current;
-  const data=await api<{products:Product[];offers:Offer[];publications:Publication[];logs:Log[];summary:typeof summary;total:number;more:boolean;historyMore:boolean}>('/api/workspace?page='+page+'&q='+encodeURIComponent(query)+'&history='+(view==='Logs de atividade')+'&historyPage='+historyPage+'&archived='+(view==='Catálogo de produtos'&&archivedCatalog));
+  const data=await api<{products:Product[];channelStatus:Record<string,ProductChannelSummary>;automation:boolean|null;offers:Offer[];publications:Publication[];logs:Log[];summary:typeof summary;total:number;more:boolean;historyMore:boolean}>('/api/workspace?page='+page+'&q='+encodeURIComponent(query)+'&history='+(view==='Logs de atividade')+'&historyPage='+historyPage+'&archived='+(view==='Catálogo de produtos'&&archivedCatalog));
   if(activeUser.current!==expected||sequence!==refreshSequence.current)return;
-  setProducts(data.products);setOffers(data.offers);setPublications(data.publications);setLogs(data.logs);setWorkspaceError('');setSummary(data.summary);setTotal(data.total);setMore(data.more);setHistoryMore(data.historyMore);
+  setProducts(data.products);setChannelStatus(data.channelStatus);setAutomation(data.automation);setOffers(data.offers);setPublications(data.publications);setLogs(data.logs);setWorkspaceError('');setSummary(data.summary);setTotal(data.total);setMore(data.more);setHistoryMore(data.historyMore);
  }
  useEffect(()=>{
   if(!supabase){setWorkspaceError('Configure NEXT_PUBLIC_SUPABASE_URL e NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY em .env.local, aplique o schema e reinicie a aplicação.');setLoaded(true);return;}
-  const update=(id:string|null)=>{if(activeUser.current!==id){clearPrivateImages();setDetails(null);activeUser.current=id;setProducts([]);setOffers([]);setPublications([]);setLogs([]);setPreview(null);setEditing(null);setLoaded(false);}setUser(id);};
+  const update=(id:string|null)=>{if(activeUser.current!==id){clearPrivateImages();setDetails(null);activeUser.current=id;setProducts([]);setChannelStatus({});setAutomation(null);setOffers([]);setPublications([]);setLogs([]);setPreview(null);setEditing(null);setLoaded(false);}setUser(id);};
   supabase.auth.getSession().then(({data,error})=>{if(error)setWorkspaceError('Não foi possível verificar a sessão.');update(data.session?.user.id||null);});
   const {data}=supabase.auth.onAuthStateChange((_event,session)=>update(session?.user.id||null));return()=>data.subscription.unsubscribe();
  },[]);
  useEffect(()=>{if(!user)return;let cancelled=false;refresh().catch(e=>{if(!cancelled)setWorkspaceError((e as Error).message);}).finally(()=>{if(!cancelled)setLoaded(true);});return()=>{cancelled=true;};},[user,page,query,historyPage,view==='Logs de atividade',view==='Catálogo de produtos'&&archivedCatalog]);
+ useEffect(()=>{if(!user)return;const update=()=>{if(document.visibilityState==='visible')void refresh().catch(e=>setWorkspaceError((e as Error).message));};window.addEventListener('focus',update);const timer=setInterval(update,30000);return()=>{window.removeEventListener('focus',update);clearInterval(timer);};},[user,page,query,historyPage,view,archivedCatalog]);
  useEffect(()=>{if(!toast)return;const timer=setTimeout(()=>setToast(''),6500);return()=>clearTimeout(timer);},[toast]);
  useEffect(()=>{if(new URLSearchParams(window.location.search).get('view')==='ai')setView('Consumo de IA');if(new URLSearchParams(window.location.search).get('mercado_livre')==='connected'){setView('Integrações');setToast('Autorização recebida. Use Testar integrações para validar a conta e a busca.');window.history.replaceState(null,'',window.location.pathname);}},[]);
  async function persist(p:Product){const {product}=await api<{product:Product}>('/api/products','POST',p);return product;}
@@ -69,7 +73,7 @@ export default function Dashboard({initialView='Visão geral'}:{initialView?:Vie
   <main className="content">{workspaceBrand!=='dropou'?<BrandPreparation brand={workspaceBrand} onReturn={()=>setWorkspaceBrand('dropou')}/>:<>{workspaceError&&<div className="section-note" role="alert">{workspaceError}<button className="secondary" onClick={()=>refresh().catch(e=>setWorkspaceError((e as Error).message))}>Tentar novamente</button></div>}{!loaded&&<WorkspaceSkeleton/>}<div className="page-heading"><div><div className="eyebrow">SUA CENTRAL DE OPORTUNIDADES</div><h1>{view==='Visão geral'?'Dashboard':view}</h1><p>{view==='Visão geral'?'Gerencie suas ofertas, publicações e integrações em um só lugar.':'Organize sua operação e acompanhe cada publicação.'}</p></div><button className="primary" onClick={newProduct}><Plus size={18}/>Criar nova oferta</button></div>
   {loaded&&!workspaceError&&view==='Buscar ofertas'&&<SearchOffers products={products} offers={offers} onRefresh={refresh} onEdit={setEditing} onPreview={setPreview}/>}
   {loaded&&!workspaceError&&(view==='Visão geral'||view==='Catálogo de produtos')&&<>
-   <DashboardOverview onLifecycle={async message=>{setDetails(null);await refresh();setToast(message);}} archived={view==='Catálogo de produtos'&&archivedCatalog} onArchived={view==='Catálogo de produtos'?value=>{setPage(0);setArchivedCatalog(value);}:undefined} offers={offers} activity={logs} products={products} publications={publications} summary={summary} catalogQuery={catalogQuery} onCatalogQuery={setCatalogQuery} overview={view==='Visão geral'} onCreate={newProduct} onOpen={setDetails} onPreview={setPreview} onImport={()=>csv.current?.click()} onNavigate={setView}/>
+   <DashboardOverview automation={automation} channelStatus={channelStatus} onLifecycle={async message=>{setDetails(null);await refresh();setToast(message);}} archived={view==='Catálogo de produtos'&&archivedCatalog} onArchived={view==='Catálogo de produtos'?value=>{setPage(0);setArchivedCatalog(value);}:undefined} offers={offers} activity={logs} products={products} publications={publications} summary={summary} catalogQuery={catalogQuery} onCatalogQuery={setCatalogQuery} overview={view==='Visão geral'} onCreate={newProduct} onOpen={setDetails} onPreview={setPreview} onImport={()=>csv.current?.click()} onNavigate={setView}/>
   </>}
   {(view==='Visão geral'||view==='Fila de ofertas')&&<ChannelFunnels/>}
   {view==='Consumo de IA'&&<AIUsage products={products} onRefresh={refresh}/>}
