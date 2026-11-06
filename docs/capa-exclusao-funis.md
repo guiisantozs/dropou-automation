@@ -1,6 +1,6 @@
 # Capa, exclusão e funis independentes
 
-Implementação concluída e validada em 6 de novembro de 2026. Migração aplicada em produção após autorização; publicação da interface em andamento.
+Implementação concluída e publicada em 6 de novembro de 2026, após autorização. Banco atualizado e interface disponível em https://dropou-automation.vercel.app.
 
 ## Causa do bug
 
@@ -85,4 +85,4 @@ Não houve alteração em modelos, prompts, geração OpenAI, orçamento, cache,
 
 A migração foi aplicada pela ferramenta oficial do Supabase como `20261106202707_channel_funnels_product_lifecycle`, a partir do SQL versionado acima. A verificação confirmou RLS nas três novas tabelas, funções de serviço sem execução anônima e `security invoker`. Os avisos de segurança permaneceram iguais aos anteriores à migração; a verificação de saúde não encontrou alertas. A automação permanece pausada (`automation_enabled=false`). Não houve mensagens de teste, chamadas pagas ou exclusão de produtos reais.
 
-O commit de implementação é `5770254`; envio ao `main` e publicação da interface na Vercel estão em andamento.
+O commit de implementação é `5770254`. O `main` foi atualizado e o commit `dcd09bc`, que inclui o registro da migração, foi publicado na Vercel como `dpl_7tJbC5qrqVgLKj14FdWzStscPqHc`, com estado `READY` e o domínio principal associado. A conferência HTTP retornou 200 e confirmou os novos estilos dos funis, da prévia Telegram e das ações do catálogo. A função de contadores retornou **Telegram publicado: 2; WhatsApp publicado: 0**. Esta conferência foi de leitura e não substitui o QA visual no navegador indicado acima.
