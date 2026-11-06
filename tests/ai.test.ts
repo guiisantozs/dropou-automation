@@ -26,6 +26,8 @@ async function database(){
  await db.exec('create table public.telegram_jobs(product_id uuid,state text);grant all on public.telegram_jobs to service_role;');
  await db.exec(readFileSync('supabase/telegram-offers.sql','utf8'));
  await db.exec(readFileSync('supabase/ai-economy.sql','utf8'));
+ await db.exec('create schema storage;create table storage.buckets(id text primary key,public boolean,allowed_mime_types text[]);');
+ await db.exec(readFileSync('supabase/migrations/20261106132921_offer_editor_and_thumbnails.sql','utf8'));
  const store:AIStore={async reserve(entries,model,maxCost){const result=await db.query<{r:Awaited<ReturnType<AIStore['reserve']>>}>('select public.dropou_economy_ai_reserve($1,$2::jsonb,$3,$4) r',[owner,JSON.stringify(entries),model,maxCost]);return result.rows[0].r;},async finish(id,result){await db.query('select public.dropou_economy_ai_finish($1,$2::jsonb)',[id,JSON.stringify(result)]);}};
  async function insert(p:Product){await db.query('insert into products(id,owner_id,canonical_url,data) values($1,$2,$3,$4::jsonb)',[p.id,owner,p.affiliateUrl+'/'+p.id,JSON.stringify(p)]);}
  return {db,store,insert};

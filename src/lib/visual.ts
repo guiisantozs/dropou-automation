@@ -1,7 +1,8 @@
 import {z} from 'zod';
 import {Brand,formatCaption,localHeadline,safeHeadline} from './ai';
 import type {Product} from './domain';
-export const VISUAL_VERSION='dropou-visual-1';
+import {navigationText,parseInstallments,safeInstallments,shortProductName} from './commerce';
+export const VISUAL_VERSION='dropou-visual-2';
 export const visualFields=['productName','brand','model','selectedVariant','currentPrice','previousPrice','displayedDiscount','paymentCondition','installments','rating','salesCount','features','sellerName'] as const;
 export type VisualField=typeof visualFields[number];
 const nullableText=(max:number)=>z.string().trim().min(1).max(max).nullable();
@@ -18,7 +19,7 @@ const amount=z.preprocess(v=>v===null?null:monetaryValue(v),z.number().positive(
 const decimal=(max:number)=>z.preprocess(v=>typeof v==='string'?Number(v.replace('%','').replace(',','.')):v,z.number().min(0).max(max).nullable());
 export const visualSchema=z.object({
  productName:nullableText(180),brand:nullableText(80),model:nullableText(100),selectedVariant:nullableText(100),
- currentPrice:amount,previousPrice:amount,displayedDiscount:decimal(100),paymentCondition:z.enum(['pix','card','general']).nullable(),
+ currentPrice:amount,previousPrice:amount,pixPrice:amount.optional(),displayedDiscount:decimal(100),paymentCondition:z.enum(['pix','card','general']).nullable(),
  installments:nullableText(100),rating:decimal(5),salesCount:nullableText(60),features:z.array(z.string().trim().min(1).max(80)).max(6).nullable(),
  sellerName:nullableText(120),creativeHeadline:nullableText(105),uncertainFields:z.array(z.enum(visualFields)).max(visualFields.length),
  priceContext:z.enum(['selected_product','related_product','coupon','affiliate_commission','ambiguous','not_visible']),
@@ -29,8 +30,11 @@ export type VisualResult={extraction?:VisualExtraction;source:'openai'|'cache'|'
 export function validateVisual(raw:unknown):VisualExtraction{
  const data=visualSchema.parse(raw),uncertain=new Set(data.uncertainFields);
  for(const field of ['currentPrice','previousPrice'] as const)if((raw as Record<string,unknown>)[field]!==null&&data[field]===null)uncertain.add(field);
+ if(data.productName&&navigationText(data.productName))data.productName=null;
  if(!data.productName)uncertain.add('productName');
+ if(data.installments){const safe=safeInstallments(data.installments);if(!safe)uncertain.add('installments');data.installments=safe||null;}
  if(data.priceContext!=='selected_product'||uncertain.has('selectedVariant')||uncertain.has('currentPrice')){data.currentPrice=null;uncertain.add('currentPrice');}
+ if(data.priceContext!=='selected_product'||uncertain.has('selectedVariant')||uncertain.has('paymentCondition'))data.pixPrice=null;
  if(!data.currentPrice)uncertain.add('currentPrice');
  if(data.previousPrice&&(!data.currentPrice||data.previousPrice<=data.currentPrice)){data.previousPrice=null;uncertain.add('previousPrice');}
  if(data.discountContext!=='consumer')data.displayedDiscount=null;
@@ -49,9 +53,9 @@ export function priceMath(price:number,previous:number|null){
 export function visualDraft(base:Product,result:VisualExtraction,brand:Brand):Product{
  const name=result.productName||'';
  const variant=result.selectedVariant&&!name.toLowerCase().includes(result.selectedVariant.toLowerCase())?' — '+result.selectedVariant:'';
- return {...base,name:(name+variant).slice(0,180),price:result.currentPrice||0,previousPrice:result.previousPrice,previousVerified:false,
+ return {...base,name:(name+variant).slice(0,180),shortName:shortProductName(name+variant),price:result.currentPrice||0,pixPrice:result.pixPrice??(result.paymentCondition==='pix'?result.currentPrice:null),previousPrice:result.previousPrice,previousVerified:false,
   paymentMethod:result.paymentCondition==='pix'?'pix':result.paymentCondition==='card'?'outro':'nao_informado',pixVerified:false,
-  installments:result.installments||'',installmentsVerified:false,features:result.features?.slice(0,2)||[],featuresVerified:false,
+  installments:safeInstallments(result.installments||''),installmentPlan:parseInstallments(result.installments||'')||undefined,installmentsVerified:false,features:result.features?.slice(0,2)||[],featuresVerified:false,
   dataOrigin:'screenshot',screenshotConfirmed:false,checkedAt:null,inStock:null,source:undefined,status:'encontrado',scheduledAt:null,
   creativeHeadline:safeHeadline(result.creativeHeadline||localHeadline({...base,name},brand),{...base,name},brand),creativeBrand:brand,
   visualDetails:{brand:result.brand,model:result.model,selectedVariant:result.selectedVariant,rating:result.rating,salesCount:result.salesCount,sellerName:result.sellerName,displayedDiscount:result.displayedDiscount,uncertainFields:result.uncertainFields},socialVerified:false,

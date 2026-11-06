@@ -32,7 +32,7 @@ test('React paste/drop/file events show images immediately, keep them in memory 
  Object.defineProperty(dom.window.HTMLImageElement.prototype,'decode',{value:async function(this:HTMLImageElement){Object.defineProperty(this,'naturalWidth',{value:800});Object.defineProperty(this,'naturalHeight',{value:1200});}});
  Object.defineProperty(dom.window.HTMLCanvasElement.prototype,'getContext',{value:()=>({fillStyle:'#fff',fillRect(){},drawImage(){}})});
  const container=dom.window.document.getElementById('root')!;const root=createRoot(container);
- const buttons=(text:string)=>Array.from(container.querySelectorAll('button') as NodeListOf<HTMLButtonElement>).filter(b=>b.textContent===text);
+ const buttons=(text:string)=>Array.from(container.querySelectorAll('button') as NodeListOf<HTMLButtonElement>).filter(b=>b.textContent?.trim()===text);
  const paste=(files:File[])=>{const event=new dom.window.Event('paste',{bubbles:true,cancelable:true});Object.defineProperty(event,'clipboardData',{value:{items:files.map(f=>({kind:'file',type:f.type,getAsFile:()=>f})),files}});dom.window.document.body.dispatchEvent(event);return event;};
  try{
   await act(async()=>{root.render(createElement(ImageInput,{onImage:()=>{throw new Error('Must not persist captures');},onExtract:()=>{}}));});
@@ -56,6 +56,7 @@ test('React paste/drop/file events show images immediately, keep them in memory 
   await act(async()=>root.render(createElement(ProductForm,{product:p,onClose:()=>{},onSave:async(product,caption)=>{saved.push({product,caption});}})));
   assert.equal(active.size,0);
   const checkbox=(prefix:string)=>Array.from(container.querySelectorAll('label') as NodeListOf<HTMLLabelElement>).find(label=>label.textContent?.includes(prefix))?.querySelector('input[type="checkbox"]') as HTMLInputElement;
+  await act(async()=>buttons('Continuar')[0].click());
   await act(async()=>checkbox('Conferi ou corrigi').click());await act(async()=>checkbox('Conferi agora na loja').click());
   await act(async()=>container.querySelector('form')!.dispatchEvent(new dom.window.Event('submit',{bubbles:true,cancelable:true})));
   assert.equal(saved.length,1);assert.equal(saved[0].product.affiliateUrl,p.affiliateUrl);assert.equal(saved[0].product.inStock,true);assert.equal(saved[0].product.pixVerified,true);assert.equal(saved[0].product.screenshotConfirmed,true);assert.ok(saved[0].product.checkedAt);

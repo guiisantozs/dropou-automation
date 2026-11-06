@@ -1,5 +1,7 @@
 # Leitura visual e colagem de prints
 
+Atualização de interface, diagnóstico sem geração e editor persistente: [redesign do dashboard](redesign-dashboard.md).
+
 Implementação de 06/11/2026, publicada no GitHub no commit `f8d7d8e` e na Vercel em https://dropou-automation.vercel.app. Deploy `dpl_EjrQiSxsrD73NPcHmkZ3yHihu22d` confirmado como Ready. A extensão do banco já foi aplicada e verificada no Supabase existente. Nenhuma chamada paga ou envio de publicação foi feito por esta implementação.
 
 ## Fluxo

@@ -1,7 +1,8 @@
 import {z} from 'zod';
 import {caption, freshPrice, money, Product} from './domain';
+import {safeInstallments,shortProductName} from './commerce';
 
-export const PROMPT_VERSION='dropou-1';
+export const PROMPT_VERSION='dropou-2';
 export const brands={
  dropou:{name:'Dropou Tech & Games',tone:'Jovem, tecnologia e games',closing:'💙 Dropou o preço? A gente te avisa!'},
  barato:{name:'Amiga, Tá Barato!',tone:'Amigável, moda, acessórios e achadinhos',closing:'💖 Amiga, tá barato! Compartilha esse achadinho!'},
@@ -12,7 +13,7 @@ export type Brand=keyof typeof brands;
 export const generationSchema=z.object({productIds:z.array(z.string().uuid()).min(1).max(20),brand:brandSchema.default('dropou'),variants:z.number().int().min(1).max(3).default(1)});
 export type GenerationResult={productId:string;captions:string[];source:'openai'|'cache'|'local';message?:string;model?:string};
 export function verifiedFacts(p:Product){
- return {product:p.source?.itemId||p.id,marketplace:p.store,name:p.name,niche:p.niche,price:Math.round(p.price*100),previous:p.previousVerified&&p.previousPrice&&p.previousPrice>p.price?Math.round(p.previousPrice*100):null,payment:p.paymentMethod,pix:p.pixVerified,installments:p.installmentsVerified?p.installments:'',features:p.featuresVerified?p.features:[],social:p.socialVerified?p.visualDetails:null,link:p.affiliateUrl,origin:p.dataOrigin||'manual'};
+ return {product:p.source?.itemId||p.id,marketplace:p.store,name:p.name,shortName:p.shortName||shortProductName(p.name),niche:p.niche,price:Math.round(p.price*100),previous:p.previousVerified&&p.previousPrice&&p.previousPrice>p.price?Math.round(p.previousPrice*100):null,payment:p.paymentMethod,pix:p.pixVerified,installments:p.installmentsVerified?p.installments:'',features:p.featuresVerified?p.features:[],social:p.socialVerified?p.visualDetails:null,link:p.affiliateUrl,origin:p.dataOrigin||'manual'};
 }
 export function generationError(p:Product){
  if(p.demo)return 'Dados demonstrativos não geram chamadas pagas.';
@@ -25,7 +26,7 @@ export function localHeadline(p:Product,brand:Brand='dropou',variation=0){
  if(brand==='linda')return ['✨ SEU MOMENTO DE SE CUIDAR!','💖 UM CARINHO NA SUA ROTINA!','✨ ENCONTRE SEU PRÓXIMO FAVORITO!'][variation%3];
  if(brand==='barato')return ['🛍️ AMIGA, OLHA ESSE ACHADINHO!','💖 ESSE ACHADO MERECE SUA ATENÇÃO!','✨ VEM CONFERIR ESSE ACHADINHO!'][variation%3];
  const name=p.name.toLowerCase();
- const start=/webcam/.test(name)?'🎥🔥 QUER COMEÇAR A FAZER SUAS LIVES?':/controle/.test(name)?'🎮🔥 DÊ UM UPGRADE NA SUA GAMEPLAY!':/teclado/.test(name)?'⌨️🔥 SEU SETUP PEDE ESSE TECLADO!':/monitor/.test(name)?'🖥️🔥 UM NOVO OLHAR PARA SEU SETUP!':/headset|fone/.test(name)?'🎧🔥 ENTRE NO CLIMA DA PARTIDA!':/jogo|ps5|xbox/.test(name)?'🎮🔥 SUA PRÓXIMA PARTIDA COMEÇA AQUI!':'🔥 CONFIRA ESSE DROP!';
+ const start=/processador|ryzen|intel|cpu|memória|ssd/.test(name)?'🔥🖥️ UM UPGRADE PARA O SEU PC!':/webcam/.test(name)?'🎥🔥 QUER COMEÇAR A FAZER SUAS LIVES?':/controle/.test(name)?'🎮🔥 DÊ UM UPGRADE NA SUA GAMEPLAY!':/teclado/.test(name)?'⌨️🔥 SEU SETUP PEDE ESSE TECLADO!':/monitor/.test(name)?'🖥️🔥 UM NOVO OLHAR PARA SEU SETUP!':/headset|fone/.test(name)?'🎧🔥 ENTRE NO CLIMA DA PARTIDA!':/jogo|ps5|xbox/.test(name)?'🎮🔥 SUA PRÓXIMA PARTIDA COMEÇA AQUI!':'🔥 ENCONTRE SEU PRÓXIMO FAVORITO!';
  return variation===0?start:['💙 OLHA ESSE ACHADO PARA VOCÊ!','🔥 SEU PRÓXIMO UPGRADE ESTÁ AQUI!'][(variation-1)%2];
 }
 // Generated copy cannot supply facts, currency, URLs or unverified commercial claims.
@@ -41,8 +42,8 @@ export function renderCaption(p:Product,brand:Brand='dropou',headline=localHeadl
 export function formatCaption(p:Product,brand:Brand='dropou',headline=localHeadline(p,brand)){
  const old=p.previousVerified&&p.previousPrice&&p.previousPrice>p.price?p.previousPrice:null;
  const savings=old?(Math.round(old*100)-Math.round(p.price*100))/100:0;
- return [headline+' #publi','🛍️ *'+p.name.replace(/[\n\r*_~]/g,' ')+'*',[
+ return [headline+' #publi','⚡ *'+(p.shortName||shortProductName(p.name)).replace(/[\n\r*_~]/g,' ')+'*',[
   old?`💸 De: ~${money(old)}~`:'',`💙 *POR ${money(p.price)}${p.paymentMethod==='pix'?' no Pix':''}!*`,old?`🤑 ECONOMIZE ${money(savings)}!`:'',
- ].filter(Boolean).join('\n'),p.featuresVerified&&p.features?.length?'⚡ '+p.features.slice(0,2).join(' | '):'',p.installmentsVerified&&p.installments?'💳 '+p.installments:'',p.socialVerified&&p.visualDetails?[p.visualDetails.rating!==null?'⭐ Nota '+String(p.visualDetails.rating).replace('.',','):'',p.visualDetails.salesCount?'🛍️ '+p.visualDetails.salesCount:'',p.visualDetails.sellerName?'🏬 Vendedor: '+p.visualDetails.sellerName:''].filter(Boolean).join('\n'):'','🛒 CONFIRA NA LOJA E GARANTA O SEU 👇\n'+p.affiliateUrl,brands[brand].closing].filter(Boolean).join('\n\n');
+ ].filter(Boolean).join('\n'),p.featuresVerified&&p.features?.length?'🎮 '+p.features.slice(0,2).join(' | '):'',p.installmentsVerified&&safeInstallments(p.installments)?'💳 '+safeInstallments(p.installments):'',p.socialVerified&&p.visualDetails?[p.visualDetails.rating!==null?'⭐ Nota '+String(p.visualDetails.rating).replace('.',','):'',p.visualDetails.salesCount?'🛍️ '+p.visualDetails.salesCount:'',p.visualDetails.sellerName?'🏬 Vendedor: '+p.visualDetails.sellerName:''].filter(Boolean).join('\n'):'','🛒 CONFIRA A OFERTA 👇\n'+p.affiliateUrl,brands[brand].closing].filter(Boolean).join('\n\n');
 }
 export function localResult(p:Product,brand:Brand,variants:number,message?:string):GenerationResult{return {productId:p.id,captions:Array.from({length:variants},(_,i)=>renderCaption(p,brand,localHeadline(p,brand,i))),source:'local',message};}

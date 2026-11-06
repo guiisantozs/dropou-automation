@@ -1,4 +1,5 @@
-export type OcrFields={name:string;price:number|null;previousPrice:number|null;installments:string;features:string[];uncertain:string[];paymentCondition?:'pix'|'card'|'general'|null};
+import {navigationText,safeInstallments,shortProductName} from './commerce';
+export type OcrFields={name:string;shortName?:string;price:number|null;previousPrice:number|null;installments:string;features:string[];uncertain:string[];paymentCondition?:'pix'|'card'|'general'|null};
 export function parseScreenshot(text:string,confidence:number):OcrFields{
  const all=text.split(/\n/).map(s=>s.trim()).filter(Boolean);
  const related=all.findIndex(l=>/^(produtos? relacionados?|recomenda(dos?|ções)|você também|voce tambem|compre junto|outros vendedores|quem viu)/i.test(l));
@@ -9,8 +10,11 @@ export function parseScreenshot(text:string,confidence:number):OcrFields{
  const candidates=prices.filter(p=>p!==previous&&!/\d+\s*x|parcela|frete|econom|cupom|ganhos?|comiss[aã]o/i.test(p.line));
  const marked=candidates.filter(p=>/por|pix/i.test(p.line));
  const current=marked.length===1?marked[0]:marked.length===0&&candidates.length===1?candidates[0]:undefined;
- const title=lines.find(l=>l.length>=8&&l.length<=180&&!/R\$|vendid|avalia|frete|cupom|shopee|mercado livre|^\d+\s*x|%|^(comprar|adicionar)/i.test(l))||'';
- const installments=lines.find(l=>/\b\d+\s*x\s*(?:de\s*)?R\$/i.test(l))||'';
+ const titles=lines.filter(l=>l.length>=8&&l.length<=180&&!navigationText(l)&&!/R\$|vendid|avalia|frete|cupom|shopee|mercado livre|^\d+\s*x|%|^(comprar|adicionar)|ganhos?|comiss[aã]o|^\d[,.]\d/i.test(l));
+ const score=(l:string)=>/processador|ryzen|intel|controle|monitor|headset|teclado|smartphone|playstation|xbox|geforce|radeon|notebook|ssd/i.test(l)?3:1;
+ const title=titles.sort((a,b)=>score(b)-score(a))[0]||'';
+ const rawInstallments=lines.filter(l=>/\b\d+\s*x\s*(?:de\s*)?R\$/i.test(l));
+ const installments=rawInstallments.length===1?safeInstallments(rawInstallments[0]):'';
  const features=lines.filter(l=>l!==title&&l.length<=80&&/\b\d+\s*(?:Hz|GB|TB|MP|ms|W)\b/i.test(l)).slice(0,2);
- return {name:title,price:current?.value??null,previousPrice:previous?.value??null,installments,features,paymentCondition:current&&/pix/i.test(current.line)?'pix':current?'general':null,uncertain:[...(!title?['nome']:[]),...(!current?['preço']:[]),...(confidence<85?['leitura com baixa confiança']:[]),'preço anterior e condições exigem confirmação','estoque e validade atual exigem conferência na loja']};
+ return {name:title,shortName:shortProductName(title),price:current?.value??null,previousPrice:previous?.value??null,installments,features,paymentCondition:current&&/pix/i.test(current.line)?'pix':current?'general':null,uncertain:[...(!title?['nome']:[]),...(!current?['preço']:[]),...(rawInstallments.length&&!installments?['parcelamento']:[]),...(confidence<85?['leitura com baixa confiança']:[]),'preço anterior e condições exigem confirmação','estoque e validade atual exigem conferência na loja']};
 }

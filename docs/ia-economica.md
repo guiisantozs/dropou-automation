@@ -1,5 +1,7 @@
 # Dropou AI econômico — implementação e validação
 
+Atualização de interface, diagnóstico sem geração e editor persistente: [redesign do dashboard](redesign-dashboard.md).
+
 Data: 06/11/2026. O código desta implementação está na pasta local. Um redeploy anterior da Vercel não inclui alterações locais que ainda não foram enviadas ao provedor.
 
 Evolução do cadastro: [colagem de prints e leitura visual em uma chamada](leitura-visual.md). A leitura visual é opcional, tem ativação separada e compartilha este orçamento.

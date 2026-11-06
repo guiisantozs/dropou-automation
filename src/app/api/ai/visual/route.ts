@@ -5,11 +5,14 @@ import {visualStore} from '@/server/ai/visual-service';
 import {affiliateStore} from '@/lib/affiliate';
 import {emptyProduct} from '@/lib/product-draft';
 import {visualDraft,visualPreview} from '@/lib/visual';
+import {adminDb} from '@/server/db';
+import {visualAvailability} from '@/server/ai/availability';
 export const runtime='nodejs';
 export const maxDuration=60;
 export async function GET(request:Request){try{
  await aiSession(request);const config=modelConfig();
- return Response.json({model:config.model,enabled:process.env.OPENAI_ENABLED==='true'&&process.env.OPENAI_VISION_ENABLED==='true'&&!!process.env.OPENAI_API_KEY,estimates:[1,2,3].map(count=>({images:count,reservedUsd:visualEstimate(count,config.rates)}))},{headers:{'Cache-Control':'no-store'}});
+ let usage=null;try{const result=await adminDb().rpc('dropou_economy_ai_usage');if(!result.error)usage=result.data;}catch{}
+ return Response.json({model:config.model,...visualAvailability(process.env,usage,visualEstimate(1,config.rates)),estimates:[1,2,3].map(count=>({images:count,reservedUsd:visualEstimate(count,config.rates)}))},{headers:{'Cache-Control':'no-store'}});
 }catch(e){return aiError(e);}}
 export async function POST(request:Request){try{
  const {user}=await aiSession(request),body=visualRequestSchema.parse(await limitedJson(request));
