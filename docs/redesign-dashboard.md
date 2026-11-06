@@ -14,6 +14,16 @@ Para autorizar o uso por clique, abrir **Consumo de IA**, revisar os limites e m
 
 Os estados distinguem **Visão OpenAI**, **cache de IA**, **OCR gratuito**, **template gratuito** e **IA indisponível**. Cada geração visual continua usando uma única requisição para dados e chamada criativa. Editar, navegar, carregar o dashboard, copiar, salvar e publicar não chamam a OpenAI. Consultar os metadados do modelo exige o clique separado descrito acima.
 
+## Diagnóstico posterior: chave recusada
+
+Depois da autorização no painel, o banco passou a registrar orçamento habilitado. Duas tentativas visuais (14:02:52 e 14:04:34 UTC de 06/11/2026) falharam com código genérico `unavailable`, zero tokens e custo zero no ledger. O administrador executou o botão de consulta de metadados, sem geração, e informou a mensagem “A OpenAI recusou a chave configurada”, correspondente ao HTTP 401 no código dessa consulta. Isso identifica um problema de autenticação da chave configurada; a lista de flags não validava a chave no provedor.
+
+A correção posterior distingue HTTP 401 (chave), 403 (permissão), 404 (modelo), 400/422 (formato) e falha do serviço. Apenas código/parâmetro conhecidos, status e ID seguro da requisição são expostos; mensagens brutas, credenciais e conteúdo de imagem não são refletidos. O ledger passa a registrar a classe/status/código/parâmetro controlados em `error_code`, sem alteração do schema. O motivo acompanha o fallback e permanece visível na etapa Oferta, em vez de ficar oculto na etapa Produto. A indicação de pré-condições passou a dizer “habilitada”, sem prometer que a OpenAI aceitou a chamada.
+
+Para corrigir o 401: obter uma chave válida na [plataforma OpenAI](https://platform.openai.com/api-keys), substituir somente o valor de `OPENAI_API_KEY` no ambiente Production da Vercel, salvar e fazer redeploy. Não colar aspas, espaços ou `OPENAI_API_KEY=` no valor e não compartilhar a chave pelo chat. Executar novamente **Verificar acesso ao modelo (sem gerar)**; somente depois da confirmação testar a leitura visual autorizada. O saldo informado não comprova que o token copiado é uma chave válida. Referência: [erros de autenticação da OpenAI](https://developers.openai.com/api/docs/guides/error-codes).
+
+88 testes e build aprovados na correção, incluindo HTTP 401/403/404/400 simulados, ausência de repetição automática, sigilo do erro bruto e preservação do diagnóstico após OCR. Nenhuma nova geração paga foi executada para investigar ou validar a correção. A validação real continua dependendo da substituição da chave pelo administrador.
+
 ## OCR e dados comerciais
 
 Textos de navegação como “Conferir mais produtos da marca AMD”, botões, relacionados e comissões deixam de ser candidatos a título. O OCR prioriza termos de produto e mantém título completo e resumo. Exemplo de resumo determinístico: “Processador AMD Ryzen 3 3200G”. A instrução visual também exclui navegação explicitamente. O prompt/cache foi versionado para não reutilizar resultados do extrator antigo.

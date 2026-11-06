@@ -2,6 +2,7 @@ import {z} from 'zod';
 import {Brand,formatCaption,localHeadline,safeHeadline} from './ai';
 import type {Product} from './domain';
 import {navigationText,parseInstallments,safeInstallments,shortProductName} from './commerce';
+import type {OcrFields} from './ocr';
 export const VISUAL_VERSION='dropou-visual-2';
 export const visualFields=['productName','brand','model','selectedVariant','currentPrice','previousPrice','displayedDiscount','paymentCondition','installments','rating','salesCount','features','sellerName'] as const;
 export type VisualField=typeof visualFields[number];
@@ -26,7 +27,11 @@ export const visualSchema=z.object({
  discountContext:z.enum(['consumer','affiliate_commission','ambiguous','not_visible']),
 });
 export type VisualExtraction=z.infer<typeof visualSchema>;
-export type VisualResult={extraction?:VisualExtraction;source:'openai'|'cache'|'local';key?:string;model?:string;message?:string;estimatedUsd:number;usage?:{input:number;output:number;cost:number}};
+export type VisualResult={extraction?:VisualExtraction;source:'openai'|'cache'|'local';key?:string;model?:string;message?:string;diagnostic?:{status:number;code:string;param?:string;requestId?:string};estimatedUsd:number;usage?:{input:number;output:number;cost:number}};
+export function ocrVisualResult(fields:OcrFields,fallback?:Pick<VisualResult,'message'|'diagnostic'|'model'>):VisualResult{
+ const extraction:VisualExtraction={productName:fields.name||null,brand:null,model:null,selectedVariant:null,currentPrice:fields.price,previousPrice:fields.previousPrice,displayedDiscount:null,paymentCondition:fields.paymentCondition||null,installments:fields.installments||null,rating:null,salesCount:null,features:fields.features.length?fields.features:null,sellerName:null,creativeHeadline:null,uncertainFields:['productName','currentPrice',...(fields.uncertain.includes('parcelamento')?['installments' as const]:[])],priceContext:fields.price?'selected_product':'ambiguous',discountContext:'not_visible'};
+ return {...fallback,source:'local',extraction,estimatedUsd:0};
+}
 export function validateVisual(raw:unknown):VisualExtraction{
  const data=visualSchema.parse(raw),uncertain=new Set(data.uncertainFields);
  for(const field of ['currentPrice','previousPrice'] as const)if((raw as Record<string,unknown>)[field]!==null&&data[field]===null)uncertain.add(field);

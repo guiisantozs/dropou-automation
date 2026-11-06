@@ -46,7 +46,7 @@ export async function analyzeVisual(images:VisualImage[],brand:Brand,store:Visua
  try{reservation=await store.reserve(key,checked.map(i=>i.hash),config.model,brand,config.enabled&&config.key?estimatedUsd:0,config.rates);}catch{return {source:'local',estimatedUsd,message:'Cache e orçamento indisponíveis. Usando OCR local gratuito.'};}
  if(reservation.cached)return {source:'cache',key,estimatedUsd:0,model:config.model,extraction:validateVisual(reservation.cached)};
  if(!reservation.id)return {source:'local',estimatedUsd,message:reservation.reason||'Esta leitura já está em andamento. Use a alternativa gratuita ou aguarde o resultado.'};
- let payload:VisualExtraction|null=null,settlement:VisualSettlement={captions:{},input:0,output:0,cached:0,cost:0,state:'failed',captionCount:0},message:string|undefined;
+ let payload:VisualExtraction|null=null,settlement:VisualSettlement={captions:{},input:0,output:0,cached:0,cost:0,state:'failed',captionCount:0},message:string|undefined,diagnostic:VisualResult['diagnostic'];
  try{
   const response=await requestOpenAI(visualBody(images,brand,config.model),config.key!,http),u=response.usage;
   const cached=u.input_tokens_details?.cached_tokens||0,written=u.input_tokens_details?.cache_write_tokens||0,longWritten=u.input_tokens_details?.cache_write_tokens_details?.ttl_12h_tokens||0;
@@ -55,11 +55,12 @@ export async function analyzeVisual(images:VisualImage[],brand:Brand,store:Visua
   payload=validateVisual(JSON.parse(response.text));settlement.state='complete';settlement.captionCount=1;
  }catch(e){
   message=e instanceof Error?e.message:'Leitura visual indisponível. Usando OCR local.';settlement.error=e instanceof ProviderError?e.kind:'invalid_output';
+  if(e instanceof ProviderError&&e.diagnostic){diagnostic=e.diagnostic;settlement.error=e.kind+':'+diagnostic.status+':'+diagnostic.code+(diagnostic.param?':'+diagnostic.param:'');}
   if(e instanceof ProviderError&&!e.certain){settlement.state='uncertain';settlement.cost=estimatedUsd;}
   if(e instanceof ProviderError&&e.kind==='rate_limit'){const seconds=Number(e.retryAfter),date=Date.parse(e.retryAfter||'');settlement.retryAt=new Date(Number.isFinite(seconds)&&seconds>0?Date.now()+seconds*1000:Number.isFinite(date)&&date>Date.now()?date:Date.now()+60000).toISOString();}
  }
  try{await store.finish(reservation.id,settlement,payload);}catch{return {source:'local',estimatedUsd,message:'Falha ao registrar a leitura. Reserva mantida; OCR gratuito disponível.'};}
- return {source:payload?'openai':'local',key,model:config.model,estimatedUsd,extraction:payload||undefined,message,usage:{input:settlement.input,output:settlement.output,cost:settlement.cost}};
+ return {source:payload?'openai':'local',key,model:config.model,estimatedUsd,extraction:payload||undefined,message,diagnostic,usage:{input:settlement.input,output:settlement.output,cost:settlement.cost}};
 }
 export async function limitedJson(request:Request,limit=3300000){
  if(Number(request.headers.get('content-length'))>limit)throw new Error('Os prints excedem o tamanho permitido.');
