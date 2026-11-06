@@ -1,6 +1,6 @@
 # Capa, exclusão e funis independentes
 
-Implementação local concluída e validada em 6 de novembro de 2026. Migração e publicação desta etapa ainda não aplicadas em produção.
+Implementação concluída e validada em 6 de novembro de 2026. Migração aplicada em produção após autorização; publicação da interface em andamento.
 
 ## Causa do bug
 
@@ -16,12 +16,12 @@ A correção altera as funções, relações, consultas e estados React. A publi
 
 Leitura de produção encontrou **2 entregas Telegram confirmadas e nenhuma linha em `publications`**, que é a tabela de confirmações WhatsApp.
 
-| Produto | ID do produto | Recibo Telegram | Correção preparada |
+| Produto | ID do produto | Recibo Telegram | Correção aplicada |
 | --- | --- | --- | --- |
 | EA Sports FC 27 — PS5 | `62fa96cd-20b4-4e4f-ac17-1e910e39f3b3` | mensagem `11` | Retirar a classificação global de publicado; preservar prova e histórico Telegram |
 | Fonte Gamemax GS600 600 W | `3f08b5e8-894f-4a45-a6b2-0cc6690f8778` | mensagem `13` | Mesma correção, sem criar confirmação WhatsApp |
 
-Esses dados reais ainda não foram alterados por esta etapa. A migração aplica a correção de forma geral apenas quando há evidência de entrega ou confirmação manual. Não apaga publicações legítimas. Registros WhatsApp antigos sem evidência positiva de confirmação manual ficam preservados com `review_required`, fora dos contadores confirmados, e podem ser revisados explicitamente pelo proprietário. A revisão registra quem confirmou e o horário atual, preservando a data histórica original.
+Os dois cadastros agora têm status de curadoria `encontrado`, com os recibos Telegram `11` e `13` preservados. Foram registrados dois eventos de correção e dois eventos de comprovação Telegram. O banco continua com **2 entregas Telegram e 0 confirmações WhatsApp**. A migração aplica a correção de forma geral apenas quando há evidência de entrega ou confirmação manual. Não apaga publicações legítimas. Registros WhatsApp antigos sem evidência positiva de confirmação manual ficam preservados com `review_required`, fora dos contadores confirmados, e podem ser revisados explicitamente pelo proprietário. A revisão registra quem confirmou e o horário atual, preservando a data histórica original.
 
 ## Telegram com capa
 
@@ -81,6 +81,8 @@ Não houve alteração em modelos, prompts, geração OpenAI, orçamento, cache,
 - Nenhuma publicação real ou chamada paga foi executada nos testes. Nenhum produto real foi excluído.
 - Não havia navegador conectado às ferramentas. Portanto, não foram produzidas capturas desktop/mobile nem QA visual real. Clipboard, compartilhamento nativo, seleção de foto e apresentação final devem ser conferidos no navegador após a implantação.
 
-## Implantação pendente
+## Implantação
 
-O código e a migração precisam ser implantados juntos. Após autorização: conferir novamente o estado remoto, aplicar a migração, verificar os dois históricos e as permissões, enviar o commit ao `main`, publicar na Vercel e conferir o domínio de produção. Manter a automação pausada e não publicar mensagens de teste.
+A migração foi aplicada pela ferramenta oficial do Supabase como `20261106202707_channel_funnels_product_lifecycle`, a partir do SQL versionado acima. A verificação confirmou RLS nas três novas tabelas, funções de serviço sem execução anônima e `security invoker`. Os avisos de segurança permaneceram iguais aos anteriores à migração; a verificação de saúde não encontrou alertas. A automação permanece pausada (`automation_enabled=false`). Não houve mensagens de teste, chamadas pagas ou exclusão de produtos reais.
+
+O commit de implementação é `5770254`; envio ao `main` e publicação da interface na Vercel estão em andamento.
