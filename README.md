@@ -79,6 +79,10 @@ Os testes executam as mesmas funções SQL em PostgreSQL embarcado/PGlite, com d
 
 Hospede em um provedor Next.js/Node, configurando as duas variáveis públicas antes do build. O banco fica no Supabase, independente do computador. Não envie `.env.local` ao GitHub.
 
-O fluxo manual não precisa de cron. `ENABLE_AUTOMATIONS=false` bloqueia o endpoint mesmo com segredo válido. `vercel.json` não declara tarefas. Despacho automático exige configuração explícita, adaptadores oficiais e revalidação/entrega testadas. A prévia permite envio imediato de uma oferta salva ao Telegram com imagem opcional; sem atualização autorizada de preços, agendamentos exigem conferência humana. A validação desta mudança não enviou mensagens reais.
+Cadastro completo em `/ofertas/nova`, edição em `/ofertas/[produto]/editar` e publicação em `/ofertas/[produto]`. Telegram confirma o canal antes do envio; WhatsApp usa compartilhamento manual e registra o destino apenas depois da confirmação do administrador. Veja o [relatório de publicação, agendamento e performance](docs/publicacoes-agendamento-performance.md).
+
+A fila existente `telegram_jobs` usa um único pg_cron, `dropou-telegram-dispatch`, a cada minuto, chamando `POST /api/telegram/dispatch`. Não adicione um segundo cron na Vercel. A pausa fica em `telegram_dispatch_config.automation_enabled`, controlada em **Agendamento**, inicialmente desativada. O antigo `ENABLE_AUTOMATIONS` não controla essa fila. O segredo do dispatcher permanece no banco e no backend. Cada execução processa no máximo uma oferta; atrasos são possíveis. Sem conferência humana válida por até 15 minutos, Telegram fica aguardando conferência. WhatsApp fica apenas pronto para compartilhar. Nenhuma publicação real é executada pelos testes.
+
+Migração incremental aplicada ao projeto existente: `supabase/migrations/20261106150839_publication_dispatch_and_review.sql`. Em instalações novas, aplique as migrações anteriores de IA, Telegram e editor antes desta. Telegram aceita `TELEGRAM_CHAT_ID` ou `TELEGRAM_CHANNEL_ID`; se ambos existirem, precisam ser iguais. O backend de fila e conferência usa `SUPABASE_SECRET_KEY` e o administrador já autorizado em `telegram_dispatch_config.owner_ids`. Nunca exponha esses segredos com `NEXT_PUBLIC_`.
 
 Referência: [Supabase — grants e RLS](https://supabase.com/docs/guides/api/securing-your-api).

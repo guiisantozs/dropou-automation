@@ -1,0 +1,12 @@
+{
+  "environment": "React development Profiler in jsdom; ten new-form open/close cycles, six parent renders each. Not browser latency or a memory heap snapshot.",
+  "commits": 60,
+  "totalProfilerMs": 621,
+  "pasteListenerAdds": 60,
+  "pasteListenerRemoves": 60,
+  "remainingPasteListeners": 0,
+  "imageDecodes": 0,
+  "networkRequests": 0,
+  "initialDashboardJsBytes": 1065485,
+  "initialDashboardJsGzipBytes": 313094
+}

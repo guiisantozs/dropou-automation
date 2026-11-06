@@ -1,12 +1,9 @@
-import 'server-only';
-import {telegramText} from '@/lib/telegram-text';
-export async function sendTelegram(text:string,image?:string){
-  const token=process.env.TELEGRAM_BOT_TOKEN,chat=process.env.TELEGRAM_CHAT_ID;
-  if(!token||!chat)throw new Error('Configure o bot e o canal no servidor');
-  const formatted=telegramText(text);
-  // Never log this URL: the Bot API includes its credential in the path.
-  const response=await fetch(`https://api.telegram.org/bot${token}/${image?'sendPhoto':'sendMessage'}`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(image?{chat_id:chat,photo:image,caption:formatted.text,caption_entities:formatted.entities}:{chat_id:chat,...formatted}),signal:AbortSignal.timeout(15000)});
-  const result=await response.json();
-  if(!response.ok||!result.ok)throw new Error('Telegram não confirmou a publicação. Revise o canal antes de tentar novamente.');
-  return String(result.result.message_id);
+﻿import 'server-only';
+import {resolveTelegramTarget,sendTelegramTo,TelegramTarget} from './telegram-core';
+let cached:{target:TelegramTarget;expires:number;config:string}|undefined;
+export async function telegramTarget(){
+ const config=[process.env.TELEGRAM_BOT_TOKEN,process.env.TELEGRAM_CHAT_ID,process.env.TELEGRAM_CHANNEL_ID].join('|');
+ if(cached&&cached.config===config&&cached.expires>Date.now())return cached.target;
+ const target=await resolveTelegramTarget(process.env);cached={target,config,expires:Date.now()+60000};return target;
 }
+export async function sendTelegram(text:string,image?:string){return (await sendTelegramTo(process.env,await telegramTarget(),text,image)).join(',');}
