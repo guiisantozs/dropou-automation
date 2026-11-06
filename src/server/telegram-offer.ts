@@ -4,6 +4,7 @@ import {dbError} from './session';
 import {telegramTarget} from './telegram';
 import {sendTelegramTo,TelegramFailure} from './telegram-core';
 import {publicationCaptionError,PublicationMode} from '@/lib/publication-copy';
+import {telegramPresentationError,type TelegramPresentation} from '@/lib/telegram-presentation';
 import {productSchema,freshPrice} from '@/lib/domain';
 export function publicationDbError(error:{code?:string;message:string}){if(['42883','PGRST202'].includes(error.code||''))return new Error('A publicação opcional ainda não está instalada neste ambiente. Revise e autorize o SQL local antes de publicar esta versão.');return dbError(error);}
 export async function publicationAdmin(owner:string){
@@ -12,11 +13,11 @@ export async function publicationAdmin(owner:string){
  if(!result.data.owner_ids.includes(owner))throw new Error('Sua conta não está autorizada a publicar. Confira o administrador da operação.');
  return {db,enabled:result.data.automation_enabled};
 }
-export async function queuePublication(owner:string,offerId:string,channel:'telegram'|'whatsapp',at:string,caption:string,targetKey?:string,mode:PublicationMode='verified',sourceCaption=caption,allowSafe=false){
- const {db}=await publicationAdmin(owner),target=channel==='telegram'?await telegramTarget():{};
+export async function queuePublication(owner:string,offerId:string,channel:'telegram'|'whatsapp',at:string,caption:string,targetKey?:string,mode:PublicationMode='verified',sourceCaption=caption,allowSafe=false,presentation?:TelegramPresentation,republicationKey?:string){
+ const {db}=await publicationAdmin(owner),target={...(channel==='telegram'?{...await telegramTarget(),...presentation}:{}),...(republicationKey?{republicationKey}:{})};
  if(channel==='telegram'&&(!targetKey||targetKey!==('key' in target?target.key:'')))throw new Error('O canal configurado mudou. Confira a confirmação novamente.');
  const before=await db.from('offers').select('caption,snapshot').eq('id',offerId).eq('owner_id',owner).single();if(before.error)throw dbError(before.error);
- const issue=publicationCaptionError(caption,productSchema.parse(before.data.snapshot),mode);if(issue)throw new Error(issue);
+ const product=productSchema.parse(before.data.snapshot),issue=publicationCaptionError(caption,product,mode);if(issue)throw new Error(issue);if(channel==='telegram'){if(!presentation)throw new Error('Escolha a apresentação Telegram.');const mediaIssue=telegramPresentationError(product,presentation);if(mediaIssue)throw new Error(mediaIssue);if(presentation.mediaMode==='photo'&&product.imagePath){if(!product.imagePath.startsWith(owner+'/'))throw new Error('A foto não pertence à conta.');const exists=await db.storage.from('offer-images').exists(product.imagePath);if(exists.error||!exists.data)throw new Error('A foto não está disponível. Selecione outra foto ou escolha explicitamente outra apresentação.');}}
  const result=await db.rpc('dropou_publication_queue_v2',{p_owner:owner,p_offer:offerId,p_channel:channel,p_at:at,p_target:target,p_caption:caption,p_source:sourceCaption,p_mode:mode,p_allow_safe:allowSafe});if(result.error)throw publicationDbError(result.error);return result.data;
 }
 export async function dispatchJob(id:string,automatic:boolean){
@@ -29,8 +30,8 @@ export async function dispatchJob(id:string,automatic:boolean){
  let receivedIds:string[]=[];
  try{
   const product=productSchema.parse(job.snapshot);if(job.publication_mode==='verified'&&!freshPrice(product)&&job.allow_safe)await downgrade();const issue=publicationCaptionError(job.caption,product,job.publication_mode);if(issue)throw new TelegramFailure(issue,'failed');
-  let image=job.publication_mode==='safe'?'':product.image;
-  if(product.imagePath&&job.publication_mode!=='safe'){
+  let image=job.media_mode==='photo'?product.image:'';
+  if(product.imagePath&&job.media_mode==='photo'){
    if(!product.imagePath.startsWith(job.owner_id+'/'))throw new TelegramFailure('Imagem não pertence ao proprietário.','failed');
    const signed=await db.storage.from('offer-images').createSignedUrl(product.imagePath,300);if(signed.error)throw new TelegramFailure('Imagem indisponível. Corrija antes de autorizar novamente.','failed');image=signed.data.signedUrl;
   }
@@ -44,16 +45,16 @@ export async function dispatchJob(id:string,automatic:boolean){
    }
   };
   let ids:string[];
-  try{ids=await sendTelegramTo(process.env,target!,job.caption,image||undefined,fetch,progress,beforeSend);}
+  try{ids=await sendTelegramTo(process.env,target!,job.caption,image||undefined,fetch,progress,beforeSend,{mediaMode:job.media_mode,previewUrl:product.affiliateUrl});}
   catch(error){
    // This branch is reachable only when beforeSend prevented the FIRST external method.
    // Network errors and partial receipts never set needsSafe and are never retried.
    if(!needsSafe)throw error;await downgrade();needsSafe=false;
-   ids=await sendTelegramTo(process.env,target!,job.caption,undefined,fetch,progress,beforeSend);
+   ids=await sendTelegramTo(process.env,target!,job.caption,image||undefined,fetch,progress,beforeSend,{mediaMode:job.media_mode,previewUrl:product.affiliateUrl});
   }
   await receipt(ids,'sent');return {sent:true,messageIds:ids,channel:target!.title};
  }catch(error){const e=error instanceof TelegramFailure?error:new TelegramFailure('Registro de entrega pendente. Confira o canal antes de repetir.','uncertain',receivedIds);await receipt(e.ids,e.outcome,e.message);throw e;}
 }
-export async function publishTelegram(owner:string,offerId:string,caption:string,targetKey:string,mode:PublicationMode='verified',sourceCaption=caption){
- const job=await queuePublication(owner,offerId,'telegram',new Date().toISOString(),caption,targetKey,mode,sourceCaption,false);return dispatchJob(job.id,false);
+export async function publishTelegram(owner:string,offerId:string,caption:string,targetKey:string,mode:PublicationMode='verified',sourceCaption=caption,presentation?:TelegramPresentation,republicationKey?:string){
+ const job=await queuePublication(owner,offerId,'telegram',new Date().toISOString(),caption,targetKey,mode,sourceCaption,false,presentation,republicationKey);return dispatchJob(job.id,false);
 }

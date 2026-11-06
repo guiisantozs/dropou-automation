@@ -1,0 +1,48 @@
+import {test} from 'node:test';
+import assert from 'node:assert/strict';
+import {createRequire} from 'node:module';
+import {act,createElement} from 'react';
+import PublicationActions from '../src/components/publication-actions';
+import DeleteProduct from '../src/components/delete-product';
+import ChannelFunnels from '../src/components/channel-funnels';
+import {emptyProduct} from '../src/lib/product-draft';
+import {formatCaption} from '../src/lib/ai';
+import type {Offer} from '../src/lib/offers';
+import type {PublicationContext} from '../src/lib/publication';
+import type {api} from '../src/lib/api';
+function fixture(){const {JSDOM}=createRequire(import.meta.url)('jsdom'),dom=new JSDOM('<div id="root"></div>',{url:'https://dropou.test'}),previous=new Map<string,PropertyDescriptor|undefined>();for(const [key,value]of Object.entries({window:dom.window,document:dom.window.document,navigator:dom.window.navigator,IS_REACT_ACT_ENVIRONMENT:true})){previous.set(key,Object.getOwnPropertyDescriptor(globalThis,key));Object.defineProperty(globalThis,key,{value,configurable:true,writable:true});}return {dom,container:document.getElementById('root')!,close(){dom.window.close();for(const [key,value]of previous){if(value)Object.defineProperty(globalThis,key,value);else Reflect.deleteProperty(globalThis,key);}}};}
+const product=()=>({...emptyProduct(),name:'Controle de teste',affiliateUrl:'https://meli.la/teste',price:160.34,checkedAt:new Date().toISOString(),inStock:true,status:'pronto' as const});
+function offer(p=product()):Offer{return {id:crypto.randomUUID(),product_id:p.id,caption:formatCaption(p),snapshot:p,status:'pronto',created_at:p.createdAt,updated_at:p.createdAt};}
+test('Telegram publication leaves WhatsApp prepare/copy/share available; those actions never record a publication',async()=>{
+ const {container,dom,close}=fixture(),root=(await import('react-dom/client')).createRoot(container),p=product(),o=offer(p),calls:{path:string;method:string;body:any}[]=[],copied:string[]=[],shared:string[]=[],delivery={state:'sent',message_ids:['51'],destination_title:'Telegram correto'},context:PublicationContext={delivery};
+ Object.defineProperty(dom.window.navigator,'clipboard',{value:{writeText:async(text:string)=>{copied.push(text);}},configurable:true});Object.defineProperty(dom.window.navigator,'share',{value:async(data:{text:string})=>{shared.push(data.text);},configurable:true});
+ const request=(async(path:string,method='GET',body:any)=>{calls.push({path,method,body});assert.ok(!path.includes('/ai/'));if(path.endsWith('/publish'))return {publication:{id:'manual',channel:'whatsapp',confirmed_by:'owner',destination:body.destination,published_at:new Date().toISOString()}};if(path.endsWith('/offer'))return {...context,whatsapp:{id:'manual',channel:'whatsapp',confirmed_by:'owner',destination:'Canal WhatsApp teste',published_at:new Date().toISOString()}};throw Error(path);}) as typeof api;
+ const button=(label:string)=>[...container.querySelectorAll<HTMLButtonElement>('button')].find(b=>b.textContent?.trim()===label)!;
+ try{
+  await act(async()=>root.render(createElement(PublicationActions,{product:p,offer:o,text:o.caption,context,request,save:async()=>o,onUpdate:async()=>{},onEdit(){}})));
+  assert.equal(button('Publicar agora no Telegram').disabled,true);assert.equal(button('Preparar para WhatsApp').disabled,false);
+  await act(async()=>button('Preparar para WhatsApp').click());await act(async()=>button('Copiar legenda').click());await act(async()=>button('Compartilhar no WhatsApp').click());assert.deepEqual(copied,[o.caption]);assert.deepEqual(shared,[o.caption]);assert.equal(calls.length,0);
+  const input=container.querySelector<HTMLInputElement>('.manual-publication input:not([type=checkbox])')!;await act(async()=>{Object.getOwnPropertyDescriptor(dom.window.HTMLInputElement.prototype,'value')!.set!.call(input,'Canal WhatsApp teste');input.dispatchEvent(new dom.window.Event('input',{bubbles:true}));});
+  await act(async()=>container.querySelector<HTMLInputElement>('.manual-publication input[type=checkbox]')!.click());assert.equal(button('Confirmar publicação manual').disabled,false);await act(async()=>button('Confirmar publicação manual').click());
+  assert.equal(calls.filter(c=>c.method==='POST').length,1);assert.ok(calls[0].path.endsWith('/publish'));assert.equal(calls[0].body.confirmed,true);assert.match(container.querySelector('.channel-statuses')!.textContent!,/Telegram:Publicada/);assert.match(container.querySelector('.channel-statuses')!.textContent!,/WhatsApp:Publicada manualmente/);
+ }finally{await act(async()=>root.unmount());close();}
+});
+test('manual WhatsApp publication leaves Telegram available and requires explicit text-only choice when no photo exists',async()=>{
+ const {container,close}=fixture(),root=(await import('react-dom/client')).createRoot(container),p=product(),o=offer(p),manual={id:'manual',channel:'whatsapp' as const,confirmed_by:'owner',destination:'Grupo confirmado',published_at:new Date().toISOString()},calls:any[]=[];let sent=false;
+ const request=(async(path:string,method='GET',body:any)=>{calls.push({path,method,body});if(path==='/api/publication-config')return {enabled:false,telegram:{available:true,title:'Canal real configurado',id:'-100123',key:'a'.repeat(64)}};if(path.endsWith('/telegram')){sent=true;assert.equal(body.mediaMode,'text');return {sent:true};}if(path.endsWith('/offer'))return {whatsapp:manual,delivery:sent?{state:'sent',message_ids:['91'],destination_title:'Canal real configurado'}:undefined};throw Error(path);}) as typeof api;
+ const button=(label:string)=>[...container.querySelectorAll<HTMLButtonElement>('button')].find(b=>b.textContent?.trim()===label)!;
+ try{
+  await act(async()=>root.render(createElement(PublicationActions,{product:p,offer:o,text:o.caption,context:{whatsapp:manual},request,save:async()=>o,onUpdate:async()=>{},onEdit(){}})));
+  assert.equal(button('Preparar para WhatsApp').disabled,true);assert.equal(button('Publicar agora no Telegram').disabled,false);await act(async()=>button('Publicar agora no Telegram').click());assert.equal(button('Confirmar envio ao Telegram').disabled,true);assert.match(container.querySelector('[role=dialog]')!.textContent!,/Adicione uma foto/);
+  await act(async()=>[...container.querySelectorAll<HTMLLabelElement>('label')].find(l=>l.textContent?.includes('Publicar somente texto'))!.querySelector<HTMLInputElement>('input')!.click());assert.equal(button('Confirmar envio ao Telegram').disabled,false);await act(async()=>button('Confirmar envio ao Telegram').click());assert.equal(calls.filter(c=>c.method==='POST').length,1);assert.match(container.querySelector('.channel-statuses')!.textContent!,/WhatsApp:Publicada manualmente/);
+ }finally{await act(async()=>root.unmount());close();}
+});
+test('catalog deletion confirms archival and requires explicit cancellation of related jobs',async()=>{
+ const {container,close}=fixture(),root=(await import('react-dom/client')).createRoot(container),calls:any[]=[],messages:string[]=[],request=(async(_path:string,method='GET',body:any)=>{calls.push({method,body});return method==='GET'?{hasHistory:true,pendingJobs:2,sending:false,archived:false}:{archived:true,cleanup:{removed:0,retained:0}};}) as typeof api;
+ const button=(text:string)=>[...container.querySelectorAll<HTMLButtonElement>('button')].find(b=>b.textContent?.trim()===text)!;
+ try{await act(async()=>root.render(createElement(DeleteProduct,{product:product(),request,onDone:m=>{messages.push(m);}})));assert.equal(calls.length,0);await act(async()=>button('Excluir produto').click());assert.match(container.textContent!,/históricos e mensagens|histórico|recibos/);assert.equal(button('Confirmar arquivamento').disabled,true);assert.equal(calls.filter(c=>c.method==='POST').length,0);await act(async()=>container.querySelector<HTMLInputElement>('input[type=checkbox]')!.click());await act(async()=>button('Confirmar arquivamento').click());assert.deepEqual(calls[1].body,{action:'delete',confirmed:true,cancelScheduled:true,removeImages:false});assert.match(messages[0],/arquivado/);}finally{await act(async()=>root.unmount());close();}
+});
+test('switching funnel tabs discards a late Telegram response instead of showing it as WhatsApp counts',async()=>{
+ const {container,close}=fixture(),root=(await import('react-dom/client')).createRoot(container);let resolveTelegram:(data:any)=>void=()=>{};const telegram=new Promise(r=>{resolveTelegram=r;}),metrics={telegram:{published:7,scheduled:1,pending:2,failed:0},whatsapp:{published:0,scheduled:0,pending:3,ready:2}},request=(async(path:string)=>path.includes('channel=telegram')?telegram:{channel:'whatsapp',metrics,items:[],history:[],more:false}) as typeof api;
+ try{await act(async()=>root.render(createElement(ChannelFunnels,{request})));await act(async()=>container.querySelector<HTMLButtonElement>('#funnel-tab-whatsapp')!.click());assert.equal(container.querySelector('[role=tab][aria-selected=true]')?.textContent?.trim(),'WhatsApp');assert.equal(container.querySelector('.channel-metrics b')!.textContent,'0');await act(async()=>resolveTelegram({channel:'telegram',metrics,items:[],history:[],more:false}));assert.equal(container.querySelector('.channel-metrics b')!.textContent,'0');assert.match(container.querySelector('[role=tabpanel]')!.textContent!,/Publicadas manualmente/);}finally{await act(async()=>root.unmount());close();}
+});

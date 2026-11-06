@@ -67,10 +67,10 @@ test('GTA 6: banco transacional, preços históricos, oferta, publicação manua
   await t.test('registro manual de publicação é atômico, atualiza métricas e não duplica',async()=>{
    const r=await db.query<{p:Publication}>('select public.dropou_publish_offer($1) as p',[saved.id]);assert.equal(r.rows[0].p.channel,'whatsapp');assert.equal(r.rows[0].p.caption,saved.caption);
    await db.query('select public.dropou_publish_offer($1)',[saved.id]);
-   const state=await load();assert.equal(state.products[0].status,'publicado');assert.equal(metrics(state.products,state.offers,state.publications).published,1);assert.equal(state.publications.length,1);assert.equal(state.offers[0].status,'publicado');
+   const state=await load();assert.equal(state.products[0].status,'publicado');assert.equal(metrics(state.products,state.offers,state.publications).published,0);assert.equal(state.publications.length,1);assert.equal(state.offers[0].status,'publicado');
   });
   await t.test('exclusão remove oferta da fila e preserva histórico de preço/publicação',async()=>{
-   await db.query('select public.dropou_delete_offer($1)',[saved.id]);const state=await load();assert.equal(state.offers.length,0);assert.equal(state.publications.length,1);assert.equal(metrics(state.products,state.offers,state.publications).published,1);assert.equal((await db.query('select * from price_records')).rows.length,2);
+   await db.query('select public.dropou_delete_offer($1)',[saved.id]);const state=await load();assert.equal(state.offers.length,0);assert.equal(state.publications.length,1);assert.equal(metrics(state.products,state.offers,state.publications).published,0);assert.equal((await db.query('select * from price_records')).rows.length,2);
    await assert.rejects(offer(p),/já publicado/);
   });
   await t.test('anon não possui acesso aos dados e funções de mutação',async()=>{

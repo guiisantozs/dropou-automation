@@ -1,6 +1,7 @@
 import {randomUUID} from 'node:crypto';
 import {sessionDb,apiError} from '@/server/session';
 import {adminDb} from '@/server/db';
+import {removeUnusedImages} from '@/server/product-lifecycle';
 import {webpDimensions} from '@/lib/thumbnail';
 export async function POST(request:Request){try{
  const {user}=await sessionDb(request);
@@ -20,11 +21,7 @@ export async function POST(request:Request){try{
 export async function DELETE(request:Request){try{
  const {user}=await sessionDb(request),body=await request.json();const path=typeof body.path==='string'?body.path:'';
  if(!new RegExp('^'+user.id+'/[a-f0-9-]{36}\\.(?:jpg|webp)$').test(path))throw new Error('Imagem não encontrada.');
- const db=adminDb(),owned=await db.from('products').select('id,data').eq('owner_id',user.id).or('data->>imagePath.eq.'+path+',data->>thumbnailPath.eq.'+path);
- if(owned.error)throw new Error('Não foi possível verificar as ofertas que usam esta imagem.');
- if(owned.data.some(row=>row.data.status==='agendado'))throw new Error('Remova o agendamento ou escolha outra imagem antes de excluir este arquivo.');
- if(owned.data.length){const sending=await db.from('deliveries').select('product_id').eq('owner_id',user.id).eq('state','sending').in('product_id',owned.data.map(p=>p.id));if(sending.error||sending.data.length)throw new Error('Aguarde o envio Telegram antes de excluir a imagem.');}
- const {error}=await db.storage.from('offer-images').remove([path]);if(error)throw new Error('Não foi possível excluir a imagem.');
+ const result=await removeUnusedImages(user.id,[path]);if(!result.removed)throw new Error('Esta imagem é usada por produto, oferta ou histórico. As referências foram preservadas.');
  return Response.json({ok:true});
 }catch(e){return apiError(e);}}
 export async function GET(request:Request){try{

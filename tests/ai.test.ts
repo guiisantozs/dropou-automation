@@ -59,7 +59,7 @@ test('Responses request is text only, compact, structured, no tools, no history,
 test('Telegram renders emphasis with UTF-16 offsets and preserves affiliate URLs verbatim',()=>{
  const result=telegramText('💙 *Monitor*\n~R$ 749,00~\nhttps://meli.la/x?a=~x~&b=*y*');
  assert.equal(result.text,'💙 Monitor\nR$ 749,00\nhttps://meli.la/x?a=~x~&b=*y*');
- assert.equal(result.entities.length,2);assert.equal(result.entities[0].offset,3);assert.equal(result.entities[0].length,7);
+ assert.equal(result.entities.length,3);assert.equal(result.entities[2].type,'url');assert.equal(result.entities[0].offset,3);assert.equal(result.entities[0].length,7);
 });
 test('affiliate identification and OCR keep installment amounts out of product price',()=>{
  assert.equal(affiliateStore('https://meli.la/exemplo?a=1'),'Mercado Livre');assert.equal(affiliateStore('https://s.shopee.com.br/id'),'Shopee');

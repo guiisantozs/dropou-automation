@@ -1,5 +1,6 @@
 import {createHash} from 'node:crypto';
 import {telegramText} from '../lib/telegram-text';
+import type {TelegramMediaMode} from '../lib/telegram-presentation';
 export type TelegramTarget={id:string;title:string;key:string};
 export class TelegramFailure extends Error{
  constructor(message:string,public outcome:'failed'|'uncertain'|'partial',public ids:string[]=[]){super(message);}
@@ -28,18 +29,20 @@ export async function resolveTelegramTarget(env:Record<string,string|undefined>,
  if(member.status!=='creator'&&(member.status!=='administrator'||member.can_post_messages!==true))throw new Error('O bot precisa ser administrador com permissão de postar no canal.');
  const id=String(target.id);return {id,title:target.title,key:createHash('sha256').update(id).digest('hex')};
 }
-export async function sendTelegramTo(env:Record<string,string|undefined>,target:TelegramTarget,text:string,image?:string,http:typeof fetch=fetch,progress:(ids:string[])=>Promise<void>=async()=>{},beforeSend:()=>Promise<void>=async()=>{}){
+export async function sendTelegramTo(env:Record<string,string|undefined>,target:TelegramTarget,text:string,image?:string,http:typeof fetch=fetch,progress:(ids:string[])=>Promise<void>=async()=>{},beforeSend:()=>Promise<void>=async()=>{},options:{mediaMode?:TelegramMediaMode;previewUrl?:string}={}){
  const {token}=telegramConfig(env),formatted=telegramText(text),ids:string[]=[];
+ const mediaMode=options.mediaMode||(image?'photo':'text');
+ if(mediaMode==='photo'&&!image)throw new TelegramFailure('Adicione uma foto para publicar com capa acima da legenda.','failed');
  if(formatted.text.length>4096)throw new TelegramFailure('Legenda excede o limite de texto do Telegram.','failed');
  async function send(method:string,body:object){
   await beforeSend();
   const result=await call(token,method,{chat_id:target.id,...body},http);
-  if(!Number.isInteger(result?.message_id)||String(result?.chat?.id)!==target.id)throw new TelegramFailure('Resposta de entrega inválida. Envio retido para revisão.','uncertain',ids);
+  if(!Number.isSafeInteger(result?.message_id)||result.message_id<=0||String(result?.chat?.id)!==target.id)throw new TelegramFailure('Resposta de entrega inválida. Envio retido para revisão.','uncertain',ids);
   ids.push(String(result.message_id));await progress([...ids]);
  }
  try{
-  if(image)await send('sendPhoto',{photo:image,...(formatted.text.length<=1024?{caption:formatted.text,caption_entities:formatted.entities}:{})});
-  if(!image||formatted.text.length>1024)await send('sendMessage',{...formatted,...(ids.length?{reply_parameters:{message_id:Number(ids[0])}}:{})});
+  if(mediaMode==='photo')await send('sendPhoto',{photo:image,show_caption_above_media:false,...(formatted.text.length<=1024?{caption:formatted.text,caption_entities:formatted.entities}:{})});
+  if(mediaMode!=='photo'||formatted.text.length>1024)await send('sendMessage',{...formatted,link_preview_options:mediaMode==='link_preview'?{is_disabled:false,show_above_text:true,prefer_large_media:true,url:options.previewUrl}:{is_disabled:true},...(ids.length?{reply_parameters:{message_id:Number(ids[0])}}:{})});
   return ids;
  }catch(error){
   const e=error instanceof TelegramFailure?error:new TelegramFailure('Não foi possível registrar o recibo. Confira o canal antes de repetir.','uncertain');

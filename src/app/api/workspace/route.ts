@@ -3,8 +3,10 @@ import {productSchema} from '@/lib/domain';
 export async function GET(request:Request){try{
  const {db,user}=await sessionDb(request),params=new URL(request.url).searchParams;
  const page=Math.max(0,Math.min(10000,Math.floor(Number(params.get('page'))||0))),historyPage=Math.max(0,Math.min(10000,Math.floor(Number(params.get('historyPage'))||0))),withHistory=params.get('history')==='true';
+ const archived=params.get('archived')==='true';
  const query=(params.get('q')||'').trim().slice(0,180);
  let selection=db.from('products').select('id,data',{count:'exact'}).eq('owner_id',user.id).eq('data->>store','Mercado Livre').eq('data->>demo','false');
+ selection=archived?selection.not('archived_at','is',null):selection.is('archived_at',null);
  if(query)selection=selection.ilike('data->>name','%'+query.replaceAll('%','').replaceAll('_','')+'%');
  const [rows,summary]=await Promise.all([selection.order('created_at',{ascending:false}).order('id').range(page*24,page*24+23),db.rpc('dropou_workspace_metrics')]);
  if(rows.error)throw dbError(rows.error);if(summary.error)throw dbError(summary.error);

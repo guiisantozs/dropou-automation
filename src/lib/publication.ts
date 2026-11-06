@@ -3,10 +3,11 @@ import {Offer} from './offers';
 import {publicationPlan,PublicationPreference} from './publication-copy';
 export type PublicationJob={id:string;state:string;channel:'telegram'|'whatsapp';scheduled_at:string;destination_title:string;error?:string;attempts:number;message_ids:string[];sent_at?:string};
 export type PublicationConfig={enabled:boolean;telegram:{available:boolean;id?:string;title?:string;key?:string;reason?:string}};
-export type PublicationContext={serverNow?:string;job?:PublicationJob;delivery?:{state:string;message_ids:string[];destination_title:string;sent_at?:string;error?:string}};
+export type ManualPublication={id:string;channel:'whatsapp';destination:string;published_at:string;review_required?:boolean;confirmed_by?:string;confirmed_at?:string;confirmation_source?:string;caption?:string};
+export type PublicationContext={serverNow?:string;job?:PublicationJob;jobs?:PublicationJob[];whatsapp?:ManualPublication;archived?:boolean;republications?:{id:string;channel:'telegram'|'whatsapp'}[];delivery?:{state:string;message_ids:string[];destination_title:string;sent_at?:string;error?:string}};
 export function publicationBlock(product:Product,offer:Offer|undefined,text:string,busy=false,job?:Pick<PublicationJob,'state'>,preference:PublicationPreference='auto',now=Date.now()){
  if(busy)return 'Aguarde a operação terminar.';
- if(product.status==='publicado'||offer?.status==='publicado'||job?.state==='sent')return 'Esta oferta já foi publicada.';
+ if(job?.state==='sent')return 'Esta oferta já foi publicada neste canal.';
  if(job&&['sending','uncertain','partial'].includes(job.state))return 'Entrega em andamento ou incerta. Confira o canal; não repita o envio.';
  if(!offer)return 'Salve a oferta antes de publicar.';
  const plan=publicationPlan(product,text,preference,now);

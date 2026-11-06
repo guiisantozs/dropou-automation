@@ -31,9 +31,10 @@ test('saved offer enables manual preparation, explains blocks and confirms Teleg
  const render=(o:Offer|undefined=offer,t=text)=>root.render(createElement(PublicationActions,{product:p,offer:o,text:t,request,preload:true,context:{},save:async()=>offer,onUpdate:async()=>{},onEdit(){}}));
  try{
   await act(async()=>render());assert.equal(calls.length,0);assert.equal(button('Preparar para WhatsApp').disabled,false);
-  await act(async()=>button('Preparar para WhatsApp').click());assert.match(container.textContent!,/não significa enviado/);
+  await act(async()=>button('Preparar para WhatsApp').click());assert.match(container.textContent!,/não significa publicado/);
   await act(async()=>button('Copiar legenda').click());assert.deepEqual(copied,[text]);
   await act(async()=>button('Publicar agora no Telegram').click());assert.match(container.querySelector('[role=dialog]')!.textContent!,/Canal certo de teste/);assert.equal(calls.filter(c=>c.includes('/telegram')).length,0);
+  await act(async()=>Array.from(container.querySelectorAll<HTMLLabelElement>('label')).find(l=>l.textContent?.includes('Publicar somente texto'))!.querySelector<HTMLInputElement>('input')!.click());
   await act(async()=>{button('Confirmar envio ao Telegram').click();button('Confirmar envio ao Telegram').click();});assert.equal(calls.filter(c=>c.endsWith('/telegram')).length,1);assert.equal(button('Confirmar envio ao Telegram').disabled,true);
   await act(async()=>release());assert.match(container.textContent!,/Telegram confirmou/);
   await act(async()=>render(offer,text+' edição'));assert.equal(button('Preparar para WhatsApp').disabled,true);assert.match(container.querySelector('.action-reason')!.textContent!,/Salve a edição/);

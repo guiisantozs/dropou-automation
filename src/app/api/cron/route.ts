@@ -12,7 +12,7 @@ export async function POST(request:Request){
   if(config.error||Buffer.byteLength(received)!==Buffer.byteLength(expected)||!timingSafeEqual(Buffer.from(received),Buffer.from(expected)))return Response.json({error:'Não autorizado'},{status:401});
   if(!config.data.automation_enabled)return Response.json({paused:true});
   // Sending jobs never return to the queue after a crash or a timeout.
-  const stale=await db.from('telegram_jobs').select('id,message_ids').eq('state','sending').lt('started_at',new Date(Date.now()-120000).toISOString()).limit(20);
+  const stale=await db.from('telegram_jobs').select('id,message_ids').eq('channel','telegram').eq('state','sending').lt('started_at',new Date(Date.now()-120000).toISOString()).limit(20);
   if(stale.error)throw stale.error;
   for(const job of stale.data||[]){const r=await db.rpc('dropou_publication_receipt',{p_job:job.id,p_ids:job.message_ids,p_state:'uncertain',p_error:'Execução interrompida. Confira o canal antes de repetir.'});if(r.error)throw r.error;}
   const jobs=await db.from('telegram_jobs').select('id').eq('state','queued').lte('scheduled_at',new Date().toISOString()).order('scheduled_at').limit(1);if(jobs.error)throw jobs.error;
