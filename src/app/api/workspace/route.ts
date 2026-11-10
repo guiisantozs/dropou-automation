@@ -1,15 +1,15 @@
 ﻿import {sessionDb,apiError,dbError} from '@/server/session';
 import {productSchema} from '@/lib/domain';
-import {adminDb} from '@/server/db';
+
 export async function GET(request:Request){try{
- const {db,user}=await sessionDb(request),params=new URL(request.url).searchParams;
+ const {db,user,operation}=await sessionDb(request),params=new URL(request.url).searchParams;
  const page=Math.max(0,Math.min(10000,Math.floor(Number(params.get('page'))||0))),historyPage=Math.max(0,Math.min(10000,Math.floor(Number(params.get('historyPage'))||0))),withHistory=params.get('history')==='true';
  const archived=params.get('archived')==='true';
  const query=(params.get('q')||'').trim().slice(0,180);
- let selection=db.from('products').select('id,data',{count:'exact'}).eq('owner_id',user.id).eq('data->>store','Mercado Livre').eq('data->>demo','false');
+ let selection=db.from('products').select('id,data',{count:'exact'}).eq('owner_id',user.id).eq('data->>demo','false');
  selection=archived?selection.not('archived_at','is',null):selection.is('archived_at',null);
  if(query)selection=selection.ilike('data->>name','%'+query.replaceAll('%','').replaceAll('_','')+'%');
- const [rows,summary,automation]=await Promise.all([selection.order('created_at',{ascending:false}).order('id').range(page*24,page*24+23),db.rpc('dropou_workspace_metrics'),adminDb().from('telegram_dispatch_config').select('automation_enabled').eq('id',true).contains('owner_ids',[user.id]).maybeSingle()]);
+ const [rows,summary,automation]=await Promise.all([selection.order('created_at',{ascending:false}).order('id').range(page*24,page*24+23),db.rpc('dropou_workspace_metrics'),operation==='all'?Promise.resolve({data:null,error:null}):db.from('operation_settings').select('automation_enabled').eq('owner_id',user.id).eq('brand_id',operation).maybeSingle()]);
  if(rows.error)throw dbError(rows.error);if(summary.error)throw dbError(summary.error);if(automation.error)throw dbError(automation.error);
  const ids=rows.data.map(r=>r.id),products=rows.data.map(r=>productSchema.parse(r.data));
  const [offers,publications,logs,channels]=await Promise.all([

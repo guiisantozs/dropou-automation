@@ -1,15 +1,18 @@
 import 'server-only';
 import {SupabaseClient} from '@supabase/supabase-js';
+import {type OperationScope,operationName} from '@/lib/workspace-brands';
 import {IntegrationStatus} from '@/lib/integration-status';
 import {oauthAccessToken,oauthConfig,oauthStatus,requireOAuthAdmin} from './mercado-livre/oauth';
 import {OAuthFailure,redirectUri} from './mercado-livre/oauth-core';
 import {probeMercadoLivre} from './mercado-livre/probe';
 const event='Teste de integrações';
-export async function integrationStatus(db:SupabaseClient,owner:string,run=false):Promise<IntegrationStatus>{
+export async function integrationStatus(db:SupabaseClient,owner:string,run=false,operation:OperationScope='dropou'):Promise<IntegrationStatus>{
  requireOAuthAdmin(owner);
  const checkedAt=new Date().toISOString();
  const configuration=Object.fromEntries(['NEXT_PUBLIC_SUPABASE_URL','NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY','SUPABASE_SECRET_KEY','MERCADO_LIVRE_CLIENT_ID','MERCADO_LIVRE_CLIENT_SECRET','MERCADO_LIVRE_TOKEN_ENCRYPTION_KEY','MERCADO_LIVRE_ADMIN_USER_IDS','APP_BASE_URL','MERCADO_LIVRE_REDIRECT_URI'].map(k=>[k,!!process.env[k]]));
  const result:IntegrationStatus={supabase:{state:'pending',message:'Não testado.',checkedAt:null},mercadoLivre:{oauth:{state:'pending',message:'Autorize sua conta pelo botão Conectar Mercado Livre.',checkedAt:null},search:{state:'pending',message:'Não testada. OAuth não garante permissão de busca.',checkedAt:null}},shopee:{state:'pending',message:'Aguardando credenciais, aprovação e documentação oficial da conta.',checkedAt:null},telegram:{state:'pending',message:process.env.TELEGRAM_BOT_TOKEN&&(process.env.TELEGRAM_CHAT_ID||process.env.TELEGRAM_CHANNEL_ID)?'Configuração presente; conexão não testada.':'Aguardando configuração.',checkedAt:null},configuration,redirectUri:null};
+ const settings=operation==='all'?null:await db.from('operation_settings').select('telegram_chat_id,telegram_title,telegram_verified_at').eq('owner_id',owner).eq('brand_id',operation).maybeSingle();
+ result.telegram={state:settings?.data?.telegram_verified_at?'connected':'pending',message:operation==='all'?'Selecione uma marca para conferir o canal.':settings?.data?.telegram_verified_at?'Bot administrador verificado em '+(settings.data.telegram_title||operationName(operation))+'. O acesso será conferido novamente antes de enviar.':'Verifique o canal desta marca nas configurações acima.',checkedAt:settings?.data?.telegram_verified_at||null};
  async function finish(){if(run){const {error}=await db.from('logs').insert({owner_id:owner,event,detail:JSON.stringify({version:1,...result.mercadoLivre,supabase:result.supabase,configuration:result.configuration})});if(error)result.supabase={state:'error',message:'Leitura executada, mas o banco recusou salvar o resultado do teste.',code:error.code,checkedAt};}return result;}
  try{result.redirectUri=redirectUri(process.env.APP_BASE_URL||'');}catch{}
  const {error:readError}=await db.from('products').select('id',{count:'exact',head:true}).eq('owner_id',owner);

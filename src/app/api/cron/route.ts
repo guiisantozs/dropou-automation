@@ -15,7 +15,7 @@ export async function POST(request:Request){
   const stale=await db.from('telegram_jobs').select('id,message_ids').eq('channel','telegram').eq('state','sending').lt('started_at',new Date(Date.now()-120000).toISOString()).limit(20);
   if(stale.error)throw stale.error;
   for(const job of stale.data||[]){const r=await db.rpc('dropou_publication_receipt',{p_job:job.id,p_ids:job.message_ids,p_state:'uncertain',p_error:'Execução interrompida. Confira o canal antes de repetir.'});if(r.error)throw r.error;}
-  const jobs=await db.from('telegram_jobs').select('id').eq('state','queued').lte('scheduled_at',new Date().toISOString()).order('scheduled_at').limit(1);if(jobs.error)throw jobs.error;
+  const due=await db.rpc('dropou_due_operation_jobs');if(due.error)throw due.error;const jobs={data:(due.data||[]).map((id:string)=>({id}))};
   let processed=0;for(const job of jobs.data||[]){try{await dispatchJob(job.id,true);processed++;}catch{ /* Outcome is retained. A queued preflight failure is blocked for review. */
    const r=await db.from('telegram_jobs').update({state:'blocked',error:'Não foi possível conferir canal, legenda ou imagem. Revise a configuração e autorize novamente.'}).eq('id',job.id).eq('state','queued');if(r.error)throw r.error;
   }}

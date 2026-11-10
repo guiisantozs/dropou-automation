@@ -1,0 +1,11 @@
+'use client';
+import {useEffect,useState} from 'react';
+import {api} from '@/lib/api';
+import {operationName,type OperationScope} from '@/lib/workspace-brands';
+type Link={id:string;brand_id:string;url:string;marketplace:string};
+export default function OperationLinks({operation}:{operation:OperationScope}){
+ const [text,setText]=useState(''),[links,setLinks]=useState<Link[]>([]),[message,setMessage]=useState(''),[busy,setBusy]=useState(false);
+ async function load(){const r=await api<{links:Link[]}>('/api/operation-links');setLinks(r.links);}
+ useEffect(()=>{let alive=true;api<{links:Link[]}>('/api/operation-links').then(r=>{if(alive)setLinks(r.links);}).catch(e=>{if(alive)setMessage(e.message);});return()=>{alive=false;};},[operation]);
+ return <section className="settings-card"><h2>Importar vários links de afiliado</h2><p>Cole um link Mercado Livre ou Shopee por linha. Os links ficam na caixa da marca para você adicionar print, revisar e salvar cada oferta. Nenhum preço é inventado.</p><textarea rows={4} aria-label="Links de afiliado, um por linha" disabled={operation==='all'||busy} value={text} onChange={e=>setText(e.target.value)}/><button className="primary" disabled={busy||!text.trim()||operation==='all'} onClick={async()=>{setBusy(true);try{await api('/api/operation-links','POST',{links:text.split(/\r?\n/).map(v=>v.trim()).filter(Boolean)});setText('');await load();setMessage('Links recebidos. Abra cada cadastro para revisar os dados.');}catch(e){setMessage((e as Error).message);}finally{setBusy(false);}}}>Adicionar à caixa da marca</button>{operation==='all'&&<p>Selecione uma marca para importar.</p>}<div className="operation-link-list">{links.map(l=><div key={l.id}><span>{operationName(l.brand_id)} · {l.marketplace}<small>{l.url}</small></span><a className="secondary" href={'/ofertas/nova?brand='+l.brand_id+'&link='+encodeURIComponent(l.url)}>Preparar oferta</a><button className="tertiary" disabled={busy} onClick={async()=>{setBusy(true);try{await api('/api/operation-links','DELETE',{id:l.id});await load();}catch(e){setMessage((e as Error).message);}finally{setBusy(false);}}}>Remover link</button></div>)}</div><p role="status">{message}</p></section>;
+}

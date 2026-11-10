@@ -6,7 +6,7 @@ export async function GET(request:Request){try{
  const {db,user}=await sessionDb(request),params=new URL(request.url).searchParams,channel=params.get('channel')==='whatsapp'?'whatsapp':'telegram',page=Math.max(0,Math.min(10000,Number(params.get('page'))||0)),history=params.get('history')==='true';
  const [metrics,products,events]=await Promise.all([
  db.rpc('dropou_channel_metrics'),
- db.from('products').select('id,data').eq('owner_id',user.id).is('archived_at',null).eq('data->>demo','false').eq('data->>store','Mercado Livre').order('created_at',{ascending:false}).range(page*20,page*20+20),
+ db.from('products').select('id,data').eq('owner_id',user.id).is('archived_at',null).eq('data->>demo','false').order('created_at',{ascending:false}).range(page*20,page*20+20),
  history?(channel==='telegram'?db.from('channel_events').select('id,product_id,product_name,event,attempt,destination,message_ids,error,created_at').eq('owner_id',user.id).eq('channel','telegram').order('created_at',{ascending:false}).range(page*20,page*20+20):db.from('publications').select('id,product_id,snapshot,destination,published_at,confirmed_by,confirmation_source,review_required').eq('owner_id',user.id).eq('channel','whatsapp').order('published_at',{ascending:false}).range(page*20,page*20+20)):Promise.resolve({data:[],error:null})]);
  for(const r of [metrics,products,events])if(r.error)throw dbError(r.error);
  const rows=(products.data||[]).slice(0,20),ids=rows.map(p=>p.id);

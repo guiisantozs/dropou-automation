@@ -10,7 +10,7 @@ const text=(length:number)=>({anyOf:[{type:'string',maxLength:length},{type:'nul
 const number=(max:number)=>({anyOf:[{type:'number',minimum:0,maximum:max},{type:'null'}]});
 const properties={productName:text(180),brand:text(80),model:text(100),selectedVariant:text(100),currentPrice:number(1e6),previousPrice:number(1e6),pixPrice:number(1e6),displayedDiscount:number(100),paymentCondition:{anyOf:[{type:'string',enum:['pix','card','general']},{type:'null'}]},installments:text(100),rating:number(5),salesCount:text(60),features:{anyOf:[{type:'array',items:{type:'string',maxLength:80},maxItems:6},{type:'null'}]},sellerName:text(120),creativeHeadline:text(105),uncertainFields:{type:'array',items:{type:'string',enum:['productName','brand','model','selectedVariant','currentPrice','previousPrice','displayedDiscount','paymentCondition','installments','rating','salesCount','features','sellerName']}},priceContext:{type:'string',enum:['selected_product','related_product','coupon','affiliate_commission','ambiguous','not_visible']},discountContext:{type:'string',enum:['consumer','affiliate_commission','ambiguous','not_visible']}};
 export type VisualImage={dataUrl:string;width:number;height:number};
-export const visualRequestSchema=z.object({url:z.string().url().max(4096),brand:z.enum(['dropou','barato','linda']).default('dropou'),images:z.array(z.object({dataUrl:z.string().max(1050000),width:z.number().int().min(1).max(1600),height:z.number().int().min(1).max(1600)})).min(1).max(3)});
+export const visualRequestSchema=z.object({url:z.string().url().max(4096),brand:z.enum(['dropou','barato','linda','bruto','moda']).default('dropou'),images:z.array(z.object({dataUrl:z.string().max(1050000),width:z.number().int().min(1).max(1600),height:z.number().int().min(1).max(1600)})).min(1).max(3)});
 export function jpegDimensions(bytes:Uint8Array){
  if(bytes.length<10||bytes[0]!==255||bytes[1]!==216)throw new Error('Imagem otimizada inválida.');
  let offset=2;while(offset+8<bytes.length){
@@ -26,7 +26,7 @@ export function validateImages(images:VisualImage[]){return images.map(image=>{
  const size=jpegDimensions(bytes);if(size.width!==image.width||size.height!==image.height||size.width<1||size.height<1||size.width>1600||size.height>1600)throw new Error('Dimensões da imagem inválidas.');
  return {...image,hash:createHash('sha256').update(bytes).digest('hex')};
 });}
-export function visualBody(images:VisualImage[],brand:Brand,model:string){return {
+export function visualBody(images:VisualImage[],brand:Brand,model:string,operation?:string){return {
  model,store:false,instructions:visualInstructions,...(model==='gpt-6-luna'?{reasoning:{effort:'none'}}:{}),max_output_tokens:900,
  input:[{role:'user',content:[{type:'input_text',text:'Perfil de marca: '+JSON.stringify(brands[brand])+'. Identifique o produto principal, sem links. Não afirme estoque ou validade atual do preço.'},...images.map(i=>({type:'input_image',image_url:i.dataUrl,detail:'high'}))]}],
  text:{format:{type:'json_schema',name:'visual_offer',strict:true,schema:{type:'object',properties,required:Object.keys(properties),additionalProperties:false}}},
@@ -34,14 +34,14 @@ export function visualBody(images:VisualImage[],brand:Brand,model:string){return
 // Deliberately conservative allowance, not a claim about Luna's image tokenizer.
 // Official sizing docs don't enumerate Luna's exact multiplier. Charge actual usage after response.
 export function visualEstimate(count:number,rates:Rates){return Math.ceil(cost({...rates,input:Math.max(rates.input,rates.write)},8192+count*32768,900)*1e8)/1e8;}
-export function visualKey(images:{hash:string}[],brand:Brand,model:string){return createHash('sha256').update(JSON.stringify({images:images.map(i=>i.hash),brand,profile:brands[brand],model,version:VISUAL_VERSION})).digest('hex');}
+export function visualKey(images:{hash:string}[],brand:Brand,model:string,operation?:string){return createHash('sha256').update(JSON.stringify({...(operation&&operation!=='dropou'?{operation}:{}),images:images.map(i=>i.hash),brand,profile:brands[brand],model,version:VISUAL_VERSION})).digest('hex');}
 export type VisualSettlement=Parameters<AIStore['finish']>[1];
 export interface VisualStore{
  reserve(key:string,hashes:string[],model:string,brand:Brand,maxCost:number,rates:Rates):Promise<{id?:string;cached?:VisualExtraction;reason?:string}>;
  finish(id:string,result:VisualSettlement,payload:VisualExtraction|null):Promise<void>;
 }
-export async function analyzeVisual(images:VisualImage[],brand:Brand,store:VisualStore,config:{model:string;rates:Rates;key?:string;enabled:boolean},http:typeof fetch=fetch):Promise<VisualResult>{
- const checked=validateImages(images),key=visualKey(checked,brand,config.model),estimatedUsd=visualEstimate(images.length,config.rates);
+export async function analyzeVisual(images:VisualImage[],brand:Brand,store:VisualStore,config:{model:string;rates:Rates;key?:string;enabled:boolean;operation?:string},http:typeof fetch=fetch):Promise<VisualResult>{
+ const checked=validateImages(images),key=visualKey(checked,brand,config.model,config.operation),estimatedUsd=visualEstimate(images.length,config.rates);
  let reservation:Awaited<ReturnType<VisualStore['reserve']>>;
  try{reservation=await store.reserve(key,checked.map(i=>i.hash),config.model,brand,config.enabled&&config.key?estimatedUsd:0,config.rates);}catch{return {source:'local',estimatedUsd,message:'Cache e orçamento indisponíveis. Usando OCR local gratuito.'};}
  if(reservation.cached)return {source:'cache',key,estimatedUsd:0,model:config.model,extraction:validateVisual(reservation.cached)};

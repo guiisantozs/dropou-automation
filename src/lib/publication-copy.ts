@@ -1,3 +1,4 @@
+import {operationCopy} from './workspace-brands';
 import {affiliateStore} from './affiliate';
 import {captionError} from './caption-editor';
 import {freshPrice,Product} from './domain';
@@ -5,7 +6,7 @@ export type PublicationMode='verified'|'safe';
 export type PublicationPreference='auto'|'safe';
 export function publicationIdentityError(p:Product){
  if(p.demo)return 'Dados demonstrativos não podem ser publicados de verdade.';
- try{if(p.store!=='Mercado Livre'||affiliateStore(p.affiliateUrl)!=='Mercado Livre'||/[\s<>]/.test(p.affiliateUrl)||!/^https:\/\/([a-zA-Z0-9-]+\.)*(meli\.la|mercadolivre\.com\.br|mercadolivre\.com|mercadolibre\.com)(?::443)?([/?#]|$)/i.test(p.affiliateUrl))return 'Adicione um link oficial de afiliado do Mercado Livre.';}catch{return 'Adicione um link oficial de afiliado do Mercado Livre.';}
+ try{if(affiliateStore(p.affiliateUrl)!==p.store||/[\s<>]/.test(p.affiliateUrl)||!/^https:\/\/([a-zA-Z0-9-]+\.)*(meli\.la|mercadolivre\.com\.br|mercadolivre\.com|mercadolibre\.com|shopee\.com\.br|shope\.ee)(?::443)?([/?#]|$)/i.test(p.affiliateUrl))return 'Adicione um link oficial de afiliado do Mercado Livre ou Shopee.';}catch{return 'Adicione um link oficial de afiliado do Mercado Livre ou Shopee.';}
  if(!p.name.trim())return 'Salve o nome do produto antes de publicar.';
  return null;
 }
@@ -16,8 +17,9 @@ export function confirmedConditions(p:Product,now=Date.now()){
 // Keep this deterministic renderer aligned with dropou_safe_publication_caption in the reviewed SQL.
 export function safePublicationCaption(p:Product){
  const suspect=/https?:\/\/|www\.|R\$|[$€%]|pix|frete|cupom|desconto|economiz|estoque|dispon[ií]vel|gr[aá]tis|promo[cç]|parcel|sem juros|menor pre[cç]o|garant|reais|por\s+[0-9]|[uú]ltim|vendid|imperd[ií]vel|barat[ií]ssim/i.test(p.name);
- const name=suspect?'Seleção de games e tecnologia':p.name.replace(/[\r\n*_~<>\[\]]/g,' ');
- return ['🎮🔥 CONFIRA ESSE ACHADO GAMER! #publi','⚡ *'+name+'*','🛒 Veja o preço e a disponibilidade atualizados na loja 👇\n'+p.affiliateUrl,'As condições podem ter mudado.','💙 Dropou o preço? A gente te avisa!'].join('\n\n');
+ const copy=operationCopy[p.operation||'dropou'];
+ const name=suspect?copy.generic:p.name.replace(/[\r\n*_~<>\[\]]/g,' ');
+ return [copy.headline,'⚡ *'+name+'*','🛒 Veja o preço e a disponibilidade atualizados na loja 👇\n'+p.affiliateUrl,'As condições podem ter mudado.',copy.closing].join('\n\n');
 }
 export function publicationCaptionError(text:string,p:Product,mode:PublicationMode,now=Date.now()){
  const identity=publicationIdentityError(p);if(identity)return identity;

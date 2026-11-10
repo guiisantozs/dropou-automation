@@ -1,9 +1,11 @@
 import { z } from 'zod';
 import {safeInstallments} from './commerce';
+import {operationSchema,operationCopy} from './workspace-brands';
 
 export const statuses = ['encontrado', 'aguardando link', 'pronto', 'agendado', 'publicado'] as const;
 const webUrl = z.string().url().refine(v => { try {const u = new URL(v); return u.protocol === 'https:' && !u.username && !u.password;} catch {return false;} }, 'Use uma URL HTTPS sem credenciais');
 export const productSchema = z.object({
+  operation:operationSchema.optional(),
   id: z.string().uuid(), name: z.string().trim().min(3).max(180), shortName:z.string().trim().min(3).max(80).optional(), niche: z.string().trim().min(2).max(60),
   store: z.enum(['Mercado Livre', 'Shopee']), price: z.number().positive().max(1000000),
   previousPrice: z.number().positive().max(1000000).nullable(), previousVerified: z.boolean(),pixPrice:z.number().positive().max(1e6).nullable().optional(),
@@ -16,7 +18,7 @@ export const productSchema = z.object({
   features:z.array(z.string().trim().min(1).max(80)).max(2).optional(),featuresVerified:z.boolean().optional(),
   imagePath:z.string().regex(/^[a-f0-9-]{36}\/[a-f0-9-]{36}\.(?:jpg|webp)$/).optional(),thumbnailPath:z.string().regex(/^[a-f0-9-]{36}\/[a-f0-9-]{36}\.webp$/).optional(),needsHumanReview:z.boolean().optional(),
   installmentPlan:z.object({count:z.number().int().min(2).max(24),amount:z.number().positive().max(1e6),interestFree:z.boolean()}).optional(),
-  creativeHeadline:z.string().max(105).optional(),creativeBrand:z.enum(['dropou','barato','linda']).optional(),socialVerified:z.boolean().optional(),
+  creativeHeadline:z.string().max(105).optional(),creativeBrand:z.enum(['dropou','barato','linda','bruto','moda']).optional(),socialVerified:z.boolean().optional(),
   visualDetails:z.object({brand:z.string().max(80).nullable(),model:z.string().max(100).nullable(),selectedVariant:z.string().max(100).nullable(),rating:z.number().min(0).max(5).nullable(),salesCount:z.string().max(60).nullable(),sellerName:z.string().max(120).nullable(),displayedDiscount:z.number().min(0).max(100).nullable(),uncertainFields:z.array(z.string().max(40)).max(20)}).optional(),
   source:z.object({provider:z.enum(['mercado_livre','shopee']),itemId:z.string().max(100),verifiedAt:z.string().datetime(),priceEndpoint:z.string().url(),referenceAmount:z.number().positive().nullable(),previousEvidence:z.enum(['none','recorded_history'])}).optional(),
 }).superRefine((p, ctx) => {
@@ -46,7 +48,7 @@ export function caption(p: Product, now=Date.now()) {
   ].filter(Boolean).join('\n');
   const verified = p.previousVerified && p.previousPrice && p.previousPrice > p.price;
   const prices=[verified?`💸 De: ${money(p.previousPrice!)}`:'',`🔥 ${money(p.price)}${p.paymentMethod==='pix'&&p.pixVerified?' no Pix':''}!`,verified?`💰 Economize ${money((Math.round(p.previousPrice!*100)-Math.round(p.price*100))/100)}!`:''].filter(Boolean).join('\n');
-  return [`🚨 ${p.shortName||p.name.toLocaleUpperCase('pt-BR')} EM OFERTA! #publi`,prices,p.installmentsVerified&&safeInstallments(p.installments)?`💳 ${safeInstallments(p.installments)}`:'',p.affiliateUrl?`🛒 GARANTA O SEU 👇\n${p.affiliateUrl}`:'','💙 Dropou o preço? A gente te avisa!'].filter(Boolean).join('\n\n');
+  return [`🚨 ${p.shortName||p.name.toLocaleUpperCase('pt-BR')} EM OFERTA! #publi`,prices,p.installmentsVerified&&safeInstallments(p.installments)?`💳 ${safeInstallments(p.installments)}`:'',p.affiliateUrl?`🛒 GARANTA O SEU 👇\n${p.affiliateUrl}`:'',operationCopy[p.operation||'dropou'].closing].filter(Boolean).join('\n\n');
 }
 export function canonical(url: string) { const u = new URL(url); return u.hostname.toLowerCase().replace(/^www\./,'') + u.pathname.replace(/\/$/,''); }
 export const productKey=(p:Product)=>canonical(p.originalUrl||p.affiliateUrl);

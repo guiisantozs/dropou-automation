@@ -15,10 +15,11 @@ export async function GET(request:Request){try{
  return Response.json({model:config.model,...visualAvailability(process.env,usage,visualEstimate(1,config.rates)),estimates:[1,2,3].map(count=>({images:count,reservedUsd:visualEstimate(count,config.rates)}))},{headers:{'Cache-Control':'no-store'}});
 }catch(e){return aiError(e);}}
 export async function POST(request:Request){try{
- const {user}=await aiSession(request),body=visualRequestSchema.parse(await limitedJson(request));
+ const {user,operation}=await aiSession(request),body=visualRequestSchema.parse(await limitedJson(request));
+ if(operation==='all')throw new Error('Selecione uma marca para analisar o print.');
  const store=affiliateStore(body.url),config=modelConfig();
- const result=await analyzeVisual(body.images,body.brand,visualStore(user.id),{...config,key:process.env.OPENAI_API_KEY,enabled:process.env.OPENAI_ENABLED==='true'&&process.env.OPENAI_VISION_ENABLED==='true'});
+ const result=await analyzeVisual(body.images,body.brand,visualStore(user.id),{...config,operation,key:process.env.OPENAI_API_KEY,enabled:process.env.OPENAI_ENABLED==='true'&&process.env.OPENAI_VISION_ENABLED==='true'});
  // The link is supplied by the authenticated request, never by the model.
- const draft=result.extraction?visualDraft({...emptyProduct(),store,affiliateUrl:body.url},result.extraction,body.brand):undefined;
+ const draft=result.extraction?visualDraft({...emptyProduct(),operation,store,affiliateUrl:body.url},result.extraction,body.brand):undefined;
  return Response.json({...result,draft,preview:draft?visualPreview(draft,body.brand):undefined},{headers:{'Cache-Control':'no-store'}});
 }catch(e){return aiError(e);}}

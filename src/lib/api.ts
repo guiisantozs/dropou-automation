@@ -2,11 +2,13 @@
 import {supabase} from './supabase';
 import {authUnavailable} from './auth-errors';
 import {ApiError} from './api-error';
+import {selectedOperation,operationScopeSchema} from './workspace-brands';
 export async function api<T>(path:string,method='GET',body?:unknown):Promise<T>{
  if(!supabase)throw new Error('Configure o Supabase antes de continuar.');
  const {data:{session}}=await supabase.auth.getSession();
  if(!session)throw new Error('Entre na sua conta.');
- const send=(token:string)=>fetch(path,{method,headers:{Authorization:`Bearer ${token}`,'Content-Type':'application/json'},body:body===undefined?undefined:JSON.stringify(body),cache:'no-store'});
+ const scope=operationScopeSchema.catch(selectedOperation()).parse(new URL(path,window.location.origin).searchParams.get('brand')||selectedOperation());
+ const send=(token:string)=>fetch(path,{method,headers:{Authorization:`Bearer ${token}`,'Content-Type':'application/json','x-dropou-brand':scope},body:body===undefined?undefined:JSON.stringify(body),cache:'no-store'});
  let response=await send(session.access_token);
  if(response.status===401){
   const refreshed=await supabase.auth.refreshSession();

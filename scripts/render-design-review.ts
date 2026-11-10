@@ -4,7 +4,7 @@ import {readFileSync,writeFileSync,mkdirSync} from 'node:fs';
 import {createRequire} from 'node:module';
 import {LayoutDashboard,Package,Plus,Send,Clock3,Settings,Clipboard,Search,ArrowUpRight} from 'lucide-react';
 import WorkspaceSidebar from '../src/components/workspace-sidebar';
-import {BrandPreparation} from '../src/components/brand-selector';
+import BrandSelector from '../src/components/brand-selector';
 import DashboardOverview from '../src/components/dashboard-overview';
 import ProductCatalog from '../src/components/product-catalog';
 import ProductForm from '../src/components/product-form';
@@ -16,7 +16,7 @@ const sections=[
  ['inicio','Dashboard',h(DashboardOverview,{products:[],publications:[],offers:[],overview:true,onCreate:noop,onOpen:noop,onPreview:noop,onImport:noop,onNavigate:noop})],
  ['catalogo','Catálogo de produtos',h(ProductCatalog,{products:[],onCreate:noop,onOpen:noop,onPreview:noop,onImport:noop})],
  ['cadastro','Cadastro de oferta',h(ProductForm,{product:emptyProduct(),page:true,onClose:noop,onSave:async()=>{}})],
- ['operacoes','Operações em preparação',h('div',null,h(BrandPreparation,{brand:'bruto',onReturn:noop}),h(BrandPreparation,{brand:'moda',onReturn:noop}))],
+ ['operacoes','Operações da central',h('div',null,h(BrandSelector,{value:'dropou',onChange:noop,variant:'list'}),h('p',null,'Catálogo, canais, publicações e rotina separados por marca.'))],
 ] as const;
 const items=[{id:'inicio',label:'Dashboard',icon:LayoutDashboard},{id:'catalogo',label:'Catálogo de produtos',icon:Package},{id:'cadastro',label:'Cadastro de oferta',icon:Plus},{id:'inicio',label:'Publicações',icon:Send},{id:'inicio',label:'Agendamentos',icon:Clock3},{id:'inicio',label:'Histórico',icon:Clipboard},{id:'operacoes',label:'Configurações',icon:Settings}].map((item,i)=>({...item,id:item.id+'-'+i}));
 const sidebar=h(WorkspaceSidebar,{items,active:'inicio-0',brand:'dropou',onBrand:noop,onNavigate:noop,onCreate:noop,onHelp:noop,onSignOut:noop});

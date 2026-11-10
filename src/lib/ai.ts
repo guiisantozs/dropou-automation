@@ -7,13 +7,15 @@ export const brands={
  dropou:{name:'Dropou Tech & Games',tone:'Jovem, tecnologia e games',closing:'💙 Dropou o preço? A gente te avisa!'},
  barato:{name:'Amiga, Tá Barato!',tone:'Amigável, moda, acessórios e achadinhos',closing:'💖 Amiga, tá barato! Compartilha esse achadinho!'},
  linda:{name:'Amiga, Tá Linda!',tone:'Acolhedor, beleza e autocuidado',closing:'✨ Amiga, tá linda! Seu momento de se cuidar!'},
+ bruto:{name:'Bruto & Barato',tone:'Prático, direto, ferramentas, oficina e utilidade comprovada',closing:'🛠️ Bruto & Barato — ferramenta certa para o seu dia!'},
+ moda:{name:'Moda Masculina',tone:'Moderno, estilo masculino e custo-benefício, sem promessas inventadas',closing:'🖤 Estilo e custo-benefício para o seu dia.'},
 } as const;
-export const brandSchema=z.enum(['dropou','barato','linda']);
+export const brandSchema=z.enum(['dropou','barato','linda','bruto','moda']);
 export type Brand=keyof typeof brands;
 export const generationSchema=z.object({productIds:z.array(z.string().uuid()).min(1).max(20),brand:brandSchema.default('dropou'),variants:z.number().int().min(1).max(3).default(1)});
 export type GenerationResult={productId:string;captions:string[];source:'openai'|'cache'|'local';message?:string;model?:string};
 export function verifiedFacts(p:Product){
- return {product:p.source?.itemId||p.id,marketplace:p.store,name:p.name,shortName:p.shortName||shortProductName(p.name),niche:p.niche,price:Math.round(p.price*100),previous:p.previousVerified&&p.previousPrice&&p.previousPrice>p.price?Math.round(p.previousPrice*100):null,payment:p.paymentMethod,pix:p.pixVerified,installments:p.installmentsVerified?p.installments:'',features:p.featuresVerified?p.features:[],social:p.socialVerified?p.visualDetails:null,link:p.affiliateUrl,origin:p.dataOrigin||'manual'};
+ return {...(p.operation&&p.operation!=='dropou'?{operation:p.operation}:{}),product:p.source?.itemId||p.id,marketplace:p.store,name:p.name,shortName:p.shortName||shortProductName(p.name),niche:p.niche,price:Math.round(p.price*100),previous:p.previousVerified&&p.previousPrice&&p.previousPrice>p.price?Math.round(p.previousPrice*100):null,payment:p.paymentMethod,pix:p.pixVerified,installments:p.installmentsVerified?p.installments:'',features:p.featuresVerified?p.features:[],social:p.socialVerified?p.visualDetails:null,link:p.affiliateUrl,origin:p.dataOrigin||'manual'};
 }
 export function generationError(p:Product){
  if(p.demo)return 'Dados demonstrativos não geram chamadas pagas.';
@@ -23,6 +25,8 @@ export function generationError(p:Product){
  return null;
 }
 export function localHeadline(p:Product,brand:Brand='dropou',variation=0){
+ if(brand==='bruto')return ['🛠️ UMA FERRAMENTA PARA SUA ROTINA!','🔧 UTILIDADE PARA SUA OFICINA!','🧰 CONFIRA ESSE ACHADO!'][variation%3];
+ if(brand==='moda')return ['👔 ESTILO PARA O SEU DIA!','👟 CONFIRA SEU PRÓXIMO LOOK!','🖤 UM ACHADO PARA SEU ESTILO!'][variation%3];
  if(brand==='linda')return ['✨ SEU MOMENTO DE SE CUIDAR!','💖 UM CARINHO NA SUA ROTINA!','✨ ENCONTRE SEU PRÓXIMO FAVORITO!'][variation%3];
  if(brand==='barato')return ['🛍️ AMIGA, OLHA ESSE ACHADINHO!','💖 ESSE ACHADO MERECE SUA ATENÇÃO!','✨ VEM CONFERIR ESSE ACHADINHO!'][variation%3];
  const name=p.name.toLowerCase();
@@ -44,6 +48,6 @@ export function formatCaption(p:Product,brand:Brand='dropou',headline=localHeadl
  const savings=old?(Math.round(old*100)-Math.round(p.price*100))/100:0;
  return [headline+' #publi','⚡ *'+(p.shortName||shortProductName(p.name)).replace(/[\n\r*_~]/g,' ')+'*',[
   old?`💸 De: ~${money(old)}~`:'',`💙 *POR ${money(p.price)}${p.paymentMethod==='pix'?' no Pix':''}!*`,old?`🤑 ECONOMIZE ${money(savings)}!`:'',
- ].filter(Boolean).join('\n'),p.featuresVerified&&p.features?.length?'🎮 '+p.features.slice(0,2).join(' | '):'',p.installmentsVerified&&safeInstallments(p.installments)?'💳 '+safeInstallments(p.installments):'',p.socialVerified&&p.visualDetails?[p.visualDetails.rating!==null?'⭐ Nota '+String(p.visualDetails.rating).replace('.',','):'',p.visualDetails.salesCount?'🛍️ '+p.visualDetails.salesCount:'',p.visualDetails.sellerName?'🏬 Vendedor: '+p.visualDetails.sellerName:''].filter(Boolean).join('\n'):'','🛒 CONFIRA A OFERTA 👇\n'+p.affiliateUrl,brands[brand].closing].filter(Boolean).join('\n\n');
+ ].filter(Boolean).join('\n'),p.featuresVerified&&p.features?.length?(brand==='bruto'?'🛠️ ':brand==='moda'?'👔 ':'🎮 ')+p.features.slice(0,2).join(' | '):'',p.installmentsVerified&&safeInstallments(p.installments)?'💳 '+safeInstallments(p.installments):'',p.socialVerified&&p.visualDetails?[p.visualDetails.rating!==null?'⭐ Nota '+String(p.visualDetails.rating).replace('.',','):'',p.visualDetails.salesCount?'🛍️ '+p.visualDetails.salesCount:'',p.visualDetails.sellerName?'🏬 Vendedor: '+p.visualDetails.sellerName:''].filter(Boolean).join('\n'):'','🛒 CONFIRA A OFERTA 👇\n'+p.affiliateUrl,brands[brand].closing].filter(Boolean).join('\n\n');
 }
 export function localResult(p:Product,brand:Brand,variants:number,message?:string):GenerationResult{return {productId:p.id,captions:Array.from({length:variants},(_,i)=>renderCaption(p,brand,localHeadline(p,brand,i))),source:'local',message};}
