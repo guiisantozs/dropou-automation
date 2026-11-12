@@ -1,0 +1,23 @@
+import {createElement as h} from 'react';
+import {renderToStaticMarkup} from 'react-dom/server';
+import {readFileSync,mkdirSync,writeFileSync} from 'node:fs';
+import {createServer} from 'node:http';
+import {createRequire} from 'node:module';
+const {JSDOM}=createRequire(import.meta.url)('jsdom');
+import {Zap,LayoutDashboard,Search,Package,Clock3,Link2} from 'lucide-react';
+import OfferAutomation,{type AutomationData} from '../src/components/offer-automation';
+import WorkspaceSidebar from '../src/components/workspace-sidebar';
+import {defaultShopeeConfig} from '../src/lib/shopee-automation';
+const css=readFileSync('src/app/workspace.css','utf8')+readFileSync('src/app/premium.css','utf8'),noop=()=>{},picture='data:image/svg+xml,'+encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="200" height="200"><rect width="200" height="200" fill="#e4ebfa"/><text x="100" y="100" text-anchor="middle" dominant-baseline="central" font-size="60">🎮</text></svg>');
+const data:AutomationData={config:defaultShopeeConfig(),offers:[{id:'10000000-0000-4000-8000-000000000001',data:{itemId:'9001',shopId:'8001',name:'Controle PC Xbox Bluetooth · fixture de teste',price:180,priceMax:180,image:picture,offerLink:'https://s.shopee.com.br/fixture',productLink:'https://shopee.com.br/product/8001/9001',rating:4.8,sales:1000,commission:0.08,reportedDiscount:70,checkedAt:new Date().toISOString()},score:80,eligible:true,reasons:[],decision:'found'}],requests:[],runs:[],jobs:[],day:'2026-11-11',globalUsed:0,globalLimit:10,dispatcherEnabled:false,operationEnabled:false,destination:null,verified:false,credentialsReady:false,liveReleased:false,testReady:false};
+const names=['Visão geral','Buscar ofertas','Automação de Ofertas','Catálogo de produtos','Agendamento','Integrações'],icons=[LayoutDashboard,Search,Zap,Package,Clock3,Link2];
+const sidebar=h(WorkspaceSidebar,{brand:'dropou',active:'Automação de Ofertas',items:names.map((id,i)=>({id,label:id,icon:icons[i]})),onBrand:noop,onNavigate:noop,onCreate:noop,onHelp:noop});
+function page(empty=false){const markup=renderToStaticMarkup(h('div',{className:'app-shell'},sidebar,h('div',{className:'main-shell'},h('header',{className:'topbar'},'DROPOU · PRÉVIA LOCAL COM FIXTURES'),h('main',{className:'content'},h('div',{className:'page-heading'},h('div',null,h('h1',null,'Automação de Ofertas'),h('p',null,'Prévia visual isolada. Dados de teste; controles desativados.'))),h(OfferAutomation,{operation:'dropou',initialData:empty?{...data,offers:[]}:data})))));
+ const doc=new JSDOM('<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Dropou · Revisão Shopee local</title><style>'+css+'</style></head><body>'+markup+'</body></html>');
+ for(const control of doc.window.document.querySelectorAll('button,input,textarea,select'))control.setAttribute('disabled','');
+ for(const link of doc.window.document.querySelectorAll('a')){link.removeAttribute('href');link.removeAttribute('target');}const result=doc.serialize();doc.window.close();return result;
+}
+const full=page(),empty=page(true),mobile='<!doctype html><html lang="pt-BR"><meta charset="utf-8"><title>Dropou · Mobile 375 px</title><style>body{margin:0;background:#cdd4e3}iframe{border:0;width:375px;height:940px;display:block;margin:0 auto}</style><iframe title="Painel em 375 px" src="/review.html"></iframe></html>';
+mkdirSync('outputs/shopee-review',{recursive:true});writeFileSync('outputs/shopee-review/review.html',full);writeFileSync('outputs/shopee-review/mobile.html',mobile);
+if(process.argv.includes('--serve'))createServer((request,response)=>{response.setHeader('Content-Type','text/html; charset=utf-8');response.end(request.url==='/mobile.html'?mobile:request.url==='/empty.html'?empty:full);}).listen(4186,'127.0.0.1',()=>console.log('Review fixtures: http://127.0.0.1:4186/review.html'));
+else console.log('outputs/shopee-review/review.html');

@@ -25,7 +25,8 @@ export async function queuePublication(owner:string,offerId:string,channel:'tele
  const result=await db.rpc('dropou_publication_queue_v2',{p_owner:owner,p_offer:offerId,p_channel:channel,p_at:at,p_target:target,p_caption:caption,p_source:sourceCaption,p_mode:mode,p_allow_safe:allowSafe});if(result.error)throw publicationDbError(result.error);return result.data;
 }
 export async function dispatchJob(id:string,automatic:boolean){
- const db=adminDb(),before=await db.from('telegram_jobs').select('channel,owner_id,brand_id').eq('id',id).single();if(before.error)throw dbError(before.error);
+ const db=adminDb(),before=await db.from('telegram_jobs').select('*').eq('id',id).single();if(before.error)throw dbError(before.error);
+ if(before.data.shopee_offer_id){const {shopeeAutomation}=await import('./shopee/automation');return shopeeAutomation().dispatch(id);}
  const target=before.data.channel==='telegram'?await telegramTarget(before.data.owner_id,before.data.brand_id,true):undefined;
  const env=target?await operationTelegramEnv(before.data.owner_id,before.data.brand_id):undefined;
  const claim=await db.rpc('dropou_publication_claim_v2',{p_job:id,p_target:target?.key||'whatsapp',p_automatic:automatic});if(claim.error)throw publicationDbError(claim.error);if(!claim.data)return {sent:false};

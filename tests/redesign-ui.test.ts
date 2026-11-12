@@ -32,15 +32,15 @@ test('confirmation immediately replaces safe preview with full copy, survives st
  const props={product:p,offer:old,request,context:{serverNow:confirmedAt},onRefresh:async()=>{},onClose(){},onEdit(){}};
  const button=(text:string)=>Array.from(container.querySelectorAll<HTMLButtonElement>('button')).find(b=>b.textContent?.trim()===text)!;
  try{
-  await act(async()=>root.render(createElement(OfferPreview,props)));assert.equal(container.querySelector('.message-preview')!.textContent,safePublicationCaption(p).replaceAll('*',''));assert.equal(button('Preparar para WhatsApp').disabled,false);
+  await act(async()=>root.render(createElement(OfferPreview,props)));assert.match(container.querySelector('.message-preview')!.textContent!,/R\$/);assert.equal(button('Preparar para WhatsApp').disabled,true);assert.equal(button('Publicar agora no Telegram').disabled,true);
   await act(async()=>button('Conferi agora').click());assert.match(container.querySelector('.offer-condition')!.textContent!,/Preço conferido agora/);assert.match(container.querySelector('.message-preview')!.textContent!,/R\$/);assert.equal(button('Publicar agora no Telegram').disabled,false);assert.equal(requests.length,1);
   await act(async()=>root.render(createElement(OfferPreview,{...props,product:{...p},offer:{...old}})));assert.match(container.querySelector('.offer-condition')!.textContent!,/Preço conferido agora/);assert.match(container.querySelector('.message-preview')!.textContent!,/R\$/);
-  await act(async()=>button('Continuar sem conferir').click());assert.doesNotMatch(container.querySelector('.message-preview')!.textContent!,/R\$/);assert.equal(button('Publicar agora no Telegram').disabled,false);
+  assert.equal(button('Continuar sem conferir'),undefined);assert.match(container.querySelector('.message-preview')!.textContent!,/R\$/);assert.equal(button('Publicar agora no Telegram').disabled,false);
   await act(async()=>root.render(createElement(OfferPreview,{...props,key:'reloaded',product:fresh.snapshot,offer:fresh,context:{serverNow:confirmedAt}})));assert.match(container.querySelector('.message-preview')!.textContent!,/R\$/);assert.equal(button('Preparar para WhatsApp').disabled,false);assert.equal(requests.length,1);
  }finally{await act(async()=>root.unmount());close();}
 });
-test('blue tokens, responsive layouts and reduced motion are shared; operational brands share the workspace and preserve existing creative profiles',()=>{
+test('dark tokens, responsive layouts and reduced motion are shared; operational brands share the workspace and preserve existing creative profiles',()=>{
  const css=readFileSync('src/app/workspace.css','utf8'),dashboard=readFileSync('src/components/dashboard.tsx','utf8');
- assert.match(css,/--primary:#245de5/);assert.match(css,/--primary-ink:#fff/);assert.match(css,/--success:#15803d/);assert.match(css,/--warning:#92400e/);assert.match(css,/:focus-visible/);assert.match(css,/@media\(max-width:720px\)/);assert.match(css,/prefers-reduced-motion:reduce/);assert.ok(!css.includes('backdrop-filter'));assert.ok(!css.includes('infinite;border-radius'));
+ assert.match(css,/--primary:#FF6A1A/);assert.match(css,/--primary-ink:#0B0B0D/);assert.match(css,/--success:#4ade80/);assert.match(css,/--warning:#fbbf24/);assert.match(css,/:focus-visible/);assert.match(css,/@media\(max-width:720px\)/);assert.match(css,/prefers-reduced-motion:reduce/);assert.ok(!css.includes('backdrop-filter'));assert.ok(!css.includes('infinite;border-radius'));
  assert.ok(!dashboard.includes('BrandPreparation'));assert.match(dashboard,/selectOperation\(brand\)/);const ai=readFileSync('src/lib/ai.ts','utf8');for(const profile of ['dropou','barato','linda','bruto','moda'])assert.ok(ai.includes(profile+':{name:'));
 });

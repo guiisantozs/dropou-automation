@@ -19,5 +19,10 @@ export async function GET(request:Request){try{
  ids.length?db.rpc('dropou_product_channel_summaries',{p_ids:ids}):Promise.resolve({data:[],error:null})]);
  for(const r of [offers,publications,logs,channels])if(r.error)throw dbError(r.error);
  const channelStatus=Object.fromEntries((channels.data||[]).map((r:{product_id:string;telegram:unknown;whatsapp:unknown})=>[r.product_id,{telegram:r.telegram,whatsapp:r.whatsapp}]));
- return Response.json({products,channelStatus,automation:automation.data?.automation_enabled??null,offers:offers.data||[],publications:(publications.data||[]).slice(0,20),logs:(logs.data||[]).slice(0,20),summary:summary.data,total:rows.count,more:(rows.count||0)>(page+1)*24,historyMore:(publications.data?.length||0)>20||(logs.data?.length||0)>20},{headers:{'Cache-Control':'no-store'}});
+ let curation:null|{pending:number;approved:number;rejected:number}=null;
+ if(operation==='dropou'||operation==='all'){
+  const counts=await Promise.all(['found','approved','rejected'].map(decision=>db.from('shopee_offers').select('id',{count:'exact',head:true}).eq('owner_id',user.id).eq('brand_id','dropou').eq('assessment->>relevant','true').eq('decision',decision)));
+  if(counts.every(c=>!c.error))curation={pending:counts[0].count||0,approved:counts[1].count||0,rejected:counts[2].count||0};
+ }
+ return Response.json({curation,products,channelStatus,automation:automation.data?.automation_enabled??null,offers:offers.data||[],publications:(publications.data||[]).slice(0,20),logs:(logs.data||[]).slice(0,20),summary:summary.data,total:rows.count,more:(rows.count||0)>(page+1)*24,historyMore:(publications.data?.length||0)>20||(logs.data?.length||0)>20},{headers:{'Cache-Control':'no-store'}});
 }catch(e){return apiError(e);}}

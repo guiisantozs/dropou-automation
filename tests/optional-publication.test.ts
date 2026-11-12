@@ -19,6 +19,14 @@ test('unconfirmed publication is local, deterministic and omits all historical c
  assert.equal(publicationCaptionError(plan.text+'\nR$ 418,41',p,'safe')?.includes('Sem conferência'),true);assert.equal(publicationCaptionError(o.caption,p,'verified')?.includes('conferência'),true);
  for(const affiliateUrl of ['', 'http://meli.la/test','https://fake.example/meli.la','https://user:password@meli.la/test','https://meli.la/test name'])assert.ok(publicationBlock({...p,affiliateUrl},o,o.caption));
 });
+
+test('price-required previews always retain the recorded value and block until current confirmation, including on expiry',()=>{
+ const p=product(),o=offer(p),now=Date.now(),plan=publicationPlan(p,o.caption,'priced',now);
+ assert.equal(plan.mode,'verified');assert.match(plan.text,/418,41/);assert.ok(plan.error);assert.match(publicationBlock(p,o,o.caption,false,undefined,'priced',now)!,/Confira o preço/);
+ const confirmed={...p,inStock:true,checkedAt:new Date(now).toISOString(),status:'pronto' as const};assert.equal(publicationPlan(confirmed,o.caption,'priced',now).error,null);
+ const expired=publicationPlan(confirmed,o.caption,'priced',now+16*60000);assert.equal(expired.mode,'verified');assert.equal(expired.text,o.caption);assert.ok(expired.error);
+ const legacy=publicationPlan(p,safePublicationCaption(p),'priced',now);assert.match(legacy.text,/418,41/);assert.ok(legacy.error);
+});
 test('confirmed conditions choose full copy, expiry chooses safe copy and explicit safe choice never upgrades itself',()=>{
  const p={...product(),inStock:true,checkedAt:new Date().toISOString()},text=formatCaption(p),o={...offer(p),caption:text};
  assert.equal(confirmedConditions(p),true);assert.equal(publicationPlan(p,text).mode,'verified');assert.equal(publicationBlock(p,o,text),null);assert.equal(publicationPlan(p,text,'safe').mode,'safe');

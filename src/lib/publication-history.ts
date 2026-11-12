@@ -1,6 +1,7 @@
+import type {Product} from './domain';
 import {bahiaInstant} from './publication';
 export const publicationTimezone='America/Bahia';
-export type PublicationHistoryEntry={brand_id?:string;marketplace?:string;next_scheduled_at?:string|null;id:string;product_id:string|null;product_name:string;channel:'telegram'|'whatsapp';status:string;occurred_at:string|null;recorded_at:string|null;scheduled_at:string|null;destination:string|null;destination_id:string|null;message_ids:string[];confirmed_by:string|null;confirmed_by_name?:string|null;is_republication:boolean;publication_round:string|null;error:string|null;review_required:boolean;message_links?:{id:string;url:string}[]};
+export type PublicationHistoryEntry={product_media?:Pick<Product,'name'|'niche'|'image'|'imagePath'|'thumbnailPath'>;brand_id?:string;marketplace?:string;next_scheduled_at?:string|null;id:string;product_id:string|null;product_name:string;channel:'telegram'|'whatsapp';status:string;occurred_at:string|null;recorded_at:string|null;scheduled_at:string|null;destination:string|null;destination_id:string|null;message_ids:string[];confirmed_by:string|null;confirmed_by_name?:string|null;is_republication:boolean;publication_round:string|null;error:string|null;review_required:boolean;message_links?:{id:string;url:string}[]};
 export type PublicationHistoryResponse={entries:PublicationHistoryEntry[];more:boolean;page:number};
 export function publicationDate(value?:string|null){
  if(!value||!Number.isFinite(Date.parse(value)))return 'Data indisponível';

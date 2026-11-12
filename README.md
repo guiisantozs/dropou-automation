@@ -1,5 +1,9 @@
 ﻿# Dropou Automação
 
+Integração Shopee e curadoria Tech & Games: [configuração, modo de teste e orçamento](docs/shopee-automation.md). A nova área **Automação de Ofertas** amplia a fila e o dispatcher existentes. A entrega começa desativada e em simulação; migração e credenciais exigem configuração no ambiente.
+
+Refinamento gamer de 12/11: [busca de desempenho, score 40/25/20/15, filtros ajustáveis, variedade e histórico](docs/shopee-gamer-quality.md). Implementado somente para Dropou; outros grupos continuam desativados. Não libera postagens por conta própria.
+
 Cadastro por link/print, OCR local e geração econômica de ofertas com cache, templates gratuitos e OpenAI opcional. WhatsApp manual e Telegram oficial. Next.js, TypeScript, Tailwind e Supabase Auth/Postgres/RLS. Dashboard renovado, catálogo em lista/cards e cadastro em três etapas. Automação continua pausada por padrão.
 
 Configuração, funcionamento e evidências da nova implementação: [Dropou AI econômico](docs/ia-economica.md). Código publicado no GitHub e na Vercel em 06/11/2026.
@@ -62,9 +66,9 @@ Duplicatas usam domínio/caminho do link original ou, se ausente, do afiliado. L
 
 ## Integrações
 
-**Obter dados** consulta somente fontes autorizadas no servidor. Após HTTP 403, a consulta individual do Mercado Livre também exige `MERCADO_LIVRE_LOOKUP_APPROVED=true`; Shopee continua pendente. Na falta dos dados, use um print com OCR local ou cadastro manual. Não há scraping nem coleta pelo link encurtado.
+**Obter dados** consulta somente fontes autorizadas no servidor. Após HTTP 403, a consulta individual do Mercado Livre também exige `MERCADO_LIVRE_LOOKUP_APPROVED=true`; A busca Shopee com cache e limite diário fica em Automação de Ofertas; a consulta individual do fluxo legado continua manual. Na falta dos dados, use um print com OCR local ou cadastro manual. Não há scraping nem coleta pelo link encurtado.
 
-Busca em `/buscar-ofertas`, com filtros, importação revalidada e preparação em lote. Mercado Livre consulta os endpoints documentados apenas com token OAuth e autorização configurados no servidor; a plataforma ainda pode negar a busca. Shopee permanece pendente. A tentativa real de cinco produtos retornou HTTP 403, sem resultados: a descoberta ponta a ponta ainda depende de credenciais/permissões. Veja [relatório de busca real e configuração exata](docs/busca-real-validacao.md). Nenhum token é necessário para continuar usando o cadastro manual.
+Busca em `/buscar-ofertas`, com filtros, importação revalidada e preparação em lote. Mercado Livre consulta os endpoints documentados apenas com token OAuth e autorização configurados no servidor; a plataforma ainda pode negar a busca. A busca Shopee de Tech & Games fica em Automação de Ofertas, com orçamento compartilhado. A tentativa real de cinco produtos retornou HTTP 403, sem resultados: a descoberta ponta a ponta ainda depende de credenciais/permissões. Veja [relatório de busca real e configuração exata](docs/busca-real-validacao.md). Nenhum token é necessário para continuar usando o cadastro manual.
 
 ## Testar e implantar
 

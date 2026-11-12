@@ -1,9 +1,9 @@
 import {operationCopy} from './workspace-brands';
 import {affiliateStore} from './affiliate';
 import {captionError} from './caption-editor';
-import {freshPrice,Product} from './domain';
+import {freshPrice,money,Product} from './domain';
 export type PublicationMode='verified'|'safe';
-export type PublicationPreference='auto'|'safe';
+export type PublicationPreference='auto'|'safe'|'priced';
 export function publicationIdentityError(p:Product){
  if(p.demo)return 'Dados demonstrativos não podem ser publicados de verdade.';
  try{if(affiliateStore(p.affiliateUrl)!==p.store||/[\s<>]/.test(p.affiliateUrl)||!/^https:\/\/([a-zA-Z0-9-]+\.)*(meli\.la|mercadolivre\.com\.br|mercadolivre\.com|mercadolibre\.com|shopee\.com\.br|shope\.ee)(?::443)?([/?#]|$)/i.test(p.affiliateUrl))return 'Adicione um link oficial de afiliado do Mercado Livre ou Shopee.';}catch{return 'Adicione um link oficial de afiliado do Mercado Livre ou Shopee.';}
@@ -21,6 +21,10 @@ export function safePublicationCaption(p:Product){
  const name=suspect?copy.generic:p.name.replace(/[\r\n*_~<>\[\]]/g,' ');
  return [copy.headline,'⚡ *'+name+'*','🛒 Veja o preço e a disponibilidade atualizados na loja 👇\n'+p.affiliateUrl,'As condições podem ter mudado.',copy.closing].join('\n\n');
 }
+export function pricedDraftCaption(p:Product){
+ const parts=safePublicationCaption(p).split('\n\n');
+ return [parts[0],parts[1],'💙 *POR '+money(p.price)+'!*','🛒 CONFIRA A OFERTA 👇\n'+p.affiliateUrl,parts[4]].join('\n\n');
+}
 export function publicationCaptionError(text:string,p:Product,mode:PublicationMode,now=Date.now()){
  const identity=publicationIdentityError(p);if(identity)return identity;
  if(mode==='safe')return text===safePublicationCaption(p)?null:'Sem conferência, use a versão local sem preços, descontos ou alegações de estoque.';
@@ -32,6 +36,11 @@ export function publicationCaptionError(text:string,p:Product,mode:PublicationMo
 }
 export function savedCaptionError(text:string,p:Product){return text===safePublicationCaption(p)?publicationIdentityError(p):captionError(text,p);}
 export function publicationPlan(p:Product,caption:string,preference:PublicationPreference='auto',now=Date.now()){
+ if(preference==='priced'){
+  const text=caption===safePublicationCaption(p)?pricedDraftCaption(p):caption;
+  const error=!confirmedConditions(p,now)?'Confira o preço e a disponibilidade na loja e clique em Conferi agora. A legenda mantém o valor; o envio aguarda essa confirmação.':publicationCaptionError(text,p,'verified',now);
+  return {mode:'verified' as const,text,error};
+ }
  const mode:PublicationMode=preference!=='safe'&&confirmedConditions(p,now)?'verified':'safe';
  const text=mode==='safe'?safePublicationCaption(p):caption;
  return {mode,text,error:publicationCaptionError(text,p,mode,now)};

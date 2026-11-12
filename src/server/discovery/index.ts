@@ -12,7 +12,7 @@ export async function meliForUser(owner?:string){
  if(process.env.MERCADO_LIVRE_CLIENT_ID&&process.env.MERCADO_LIVRE_CLIENT_SECRET&&process.env.MERCADO_LIVRE_TOKEN_ENCRYPTION_KEY&&(process.env.SUPABASE_SECRET_KEY||process.env.SUPABASE_SERVICE_ROLE_KEY))token=await oauthAccessToken(owner);
  return mercadoLivreClient({token:token||process.env.MERCADO_LIVRE_ACCESS_TOKEN,approved:process.env.MERCADO_LIVRE_SEARCH_APPROVED==='true'});
 }
-export function shopeePending():SourceReport{return {store:'Shopee',state:'pending',message:'Integração pendente: aprovação da Affiliate Open API brasileira, App ID, Secret e documentação oficial da conta para consulta e geração de links.',found:0,discarded:0,errors:[],checkedAt:new Date().toISOString()};}
+export function shopeePending():SourceReport{return {store:'Shopee',state:'pending',message:'Use Automação de Ofertas para a busca Shopee de Tech & Games, com cache e orçamento compartilhado. A ativação exige App ID, Secret e aprovação da Affiliate Open API brasileira no servidor.',found:0,discarded:0,errors:[],checkedAt:new Date().toISOString()};}
 export async function discover(filters:DiscoveryFilters,owner?:string):Promise<DiscoveryResult>{
  const products:DiscoveryResult['products']=[],sources:SourceReport[]=[];
  if(filters.store!=='Shopee'){try{const result=await (await meliForUser(owner)).search(filters);products.push(...result.products);sources.push(result.report);}catch(e){sources.push({store:'Mercado Livre',state:'pending',message:e instanceof OAuthFailure?e.message:'Não foi possível obter uma conexão segura com o Mercado Livre.',found:0,discarded:0,errors:[],checkedAt:new Date().toISOString()});}}

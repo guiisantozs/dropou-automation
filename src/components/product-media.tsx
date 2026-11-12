@@ -5,7 +5,7 @@ import {categoryIcon} from '@/lib/commerce';
 import type {Product} from '@/lib/domain';
 import {privateImageUrl} from '@/lib/private-image';
 const icons={cpu:Cpu,controller:Gamepad2,monitor:Monitor,game:Disc3,headset:Headphones,tool:Wrench,keyboard:Keyboard,phone:Smartphone,package:Package};
-export default function ProductMedia({product,large=false}:{product:Product;large?:boolean}){
+export default function ProductMedia({product,large=false}:{product:Pick<Product,'name'|'niche'|'image'|'imagePath'|'thumbnailPath'>;large?:boolean}){
  const path=product.thumbnailPath||product.imagePath,[url,setUrl]=useState(path?'':product.image),[failed,setFailed]=useState(false);
  useEffect(()=>{let disposed=false;setFailed(false);setUrl(path?'':product.image);if(path)privateImageUrl(path).then(url=>{if(!disposed)setUrl(url);}).catch(()=>{if(!disposed)setFailed(true);});return()=>{disposed=true;};},[path,product.image]);
  const Icon=icons[categoryIcon(product)];
