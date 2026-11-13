@@ -92,3 +92,5 @@ Migração incremental aplicada ao projeto existente: `supabase/migrations/20261
 Referência: [Supabase — grants e RLS](https://supabase.com/docs/guides/api/securing-your-api).
 
 Fluxo atual do painel: [Próximos posts e redesign](docs/premium-dashboard.md), [curadoria gamer](docs/shopee-gamer-quality.md) e [legendas Tech & Games com agendamento rápido](docs/legendas-tech-games.md).
+
+**Meus links Shopee**: cole links comuns para salvar os produtos e buscar foto, nome, preço e link de afiliado pela API, sem print. [Guia dos produtos salvos](docs/shopee-links-salvos.md).

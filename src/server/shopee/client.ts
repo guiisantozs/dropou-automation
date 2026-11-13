@@ -32,8 +32,11 @@ export function productOfferQuery(input:{keyword?:string;itemId?:string;shopId?:
  return `{productOfferV2(${args}){nodes{itemId shopId productName imageUrl offerLink productLink priceMin priceMax ratingStar sales commissionRate priceDiscountRate}}}`;
 }
 export async function requestShopee(input:Parameters<typeof productOfferQuery>[0],credentials:{appId?:string;secret?:string;approved:boolean},reserve:()=>Promise<string|null>,finish:(id:string,state:string,retrySeconds:number)=>Promise<void>,http:typeof fetch=fetch):Promise<ShopeeOffer[]>{
+ return requestShopeeOperation(productOfferQuery(input),credentials,reserve,finish,raw=>parseShopeeOffers(raw).slice(0,input.limit),http);
+}
+export async function requestShopeeOperation<T>(query:string,credentials:{appId?:string;secret?:string;approved:boolean},reserve:()=>Promise<string|null>,finish:(id:string,state:string,retrySeconds:number)=>Promise<void>,parse:(raw:any)=>T,http:typeof fetch=fetch):Promise<T>{
  if(!credentials.appId||!credentials.secret||!credentials.approved)throw new ShopeeApiError('credentials');
- const body=JSON.stringify({query:productOfferQuery(input)}),requestId=await reserve();if(!requestId)throw new ShopeeApiError('budget');
+ const body=JSON.stringify({query}),requestId=await reserve();if(!requestId)throw new ShopeeApiError('budget');
  let outcome='provider',retry=60;
  try{
   const response=await http(shopeeEndpoint,{method:'POST',headers:{'Content-Type':'application/json',Authorization:shopeeAuthorization(credentials.appId,credentials.secret,body)},body,redirect:'error',cache:'no-store',signal:AbortSignal.timeout(8000)});
@@ -46,7 +49,14 @@ export async function requestShopee(input:Parameters<typeof productOfferQuery>[0
    outcome=/429|rate.?limit|too many requests|quota/i.test(clues)?'rate_limit':/\b10020\b|\b401\b|\b403\b|auth|signature|no api access|permission|credential/i.test(clues)?'auth':/\b10000\b|system error|internal (?:server )?error|service unavailable/i.test(clues)?'provider':'contract';
    throw new ShopeeApiError(outcome,60);
   }
-  const offers=parseShopeeOffers(raw).slice(0,input.limit);outcome='ok';retry=0;return offers;
+  const result=parse(raw);outcome='ok';retry=0;return result;
  }catch(e){if(e instanceof ShopeeApiError){outcome=e.code;retry=e.retrySeconds||60;throw e;}throw new ShopeeApiError('provider',60);}
  finally{await finish(requestId,outcome,retry);}
+}
+export function productBatchQuery(items:{shopId:string;itemId:string}[]){
+ if(!items.length||items.length>5)throw new ShopeeApiError('contract');
+ return '{'+items.map((item,i)=>'p'+i+':'+productOfferQuery({...item,limit:1}).slice(1,-1)).join(' ')+'}';
+}
+export function parseShopeeBatch(raw:any,items:{shopId:string;itemId:string}[]){
+ return items.map((item,i)=>parseShopeeOffers({data:{productOfferV2:raw.data?.['p'+i]}}).find(o=>o.shopId===item.shopId&&o.itemId===item.itemId)||null);
 }

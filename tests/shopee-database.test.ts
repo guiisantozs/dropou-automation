@@ -37,6 +37,8 @@ test('Shopee migration and shared queue: atomic budgets, leases, RLS, real evide
   await db.exec(readFileSync('supabase/migrations/20261112122158_shopee_next_posts.sql','utf8'));
   await db.exec(readFileSync('supabase/migrations/20261112125940_shopee_priced_drafts.sql','utf8'));
   await db.exec(readFileSync('supabase/migrations/20261112170713_dropou_caption_rotation.sql','utf8'));
+  await db.exec(readFileSync('supabase/migrations/20261113134240_shopee_saved_products.sql','utf8'));
+  await db.exec(readFileSync('supabase/migrations/20261113140706_shopee_saved_price_review.sql','utf8'));
   // Match the existing hosted service-role grants, verified before the live test.
   await db.exec('grant select,insert on public.runs to service_role');
   assert.deepEqual(await one('select (select count(*) from products) products,(select count(*) from publications) whatsapp,(select automation_enabled from telegram_dispatch_config where id=true) enabled'),before);
@@ -131,5 +133,25 @@ test('Shopee migration and shared queue: atomic budgets, leases, RLS, real evide
    assert.equal((await one('select dropou_publication_claim_v2($1,$2,false) j',[j.id,target.key])).j,null);const held=await one('select state,caption,publication_mode,error from telegram_jobs where id=$1',[j.id]);assert.equal(held.state,'blocked');assert.equal(held.publication_mode,'verified');assert.equal(held.caption,o.caption);assert.match(held.error,/Revalide o pre/);
   });
   await t.test('Shopee operations never touch paid AI or mark WhatsApp as published',async()=>{assert.equal((await one('select count(*) n from ai_requests')).n,0);assert.equal((await one('select count(*) n from publications')).n,0);assert.equal((await one("select count(*) n from operation_settings where brand_id<>'dropou' and (automation_enabled or shopee_config<>'{}')")).n,0);});
+  await t.test('saved links are private, leased and deduplicated; preparing preserves edits and never schedules or sends',async()=>{
+   await role();const c=await cache(),o=c.data,before=await one('select (select count(*) from telegram_jobs) jobs,(select count(*) from deliveries) receipts');
+   const a=await one('insert into shopee_saved_products(owner_id,input_url,canonical_url) values($1,$2,$2) returning *',[owner,o.productLink]),b=await one("insert into shopee_saved_products(owner_id,input_url,canonical_url) values($1,'https://br.shp.ee/shared','https://br.shp.ee/shared') returning *",[owner]);
+   await role('authenticated',other);assert.equal((await one('select count(*) n from shopee_saved_products')).n,0);await role('authenticated',owner,'bruto');assert.equal((await one('select count(*) n from shopee_saved_products')).n,0);
+   await role('authenticated',owner);assert.equal((await one('select count(*) n from shopee_saved_products')).n,2);await assert.rejects(one('select * from dropou_shopee_saved_claim($1,$2,false)',[owner,[a.id]]),/permission/);await assert.rejects(db.query('update shopee_saved_products set data=$1',[o]),/permission/);
+   await role();assert.equal((await db.query('select * from dropou_shopee_saved_claim($1,$2,false)',[other,[a.id,b.id]])).rows.length,0);
+   const claims=(await db.query<any>('select * from dropou_shopee_saved_claim($1,$2,false)',[owner,[a.id,b.id]])).rows;assert.equal(claims.length,2);assert.equal((await db.query('select * from dropou_shopee_saved_claim($1,$2,false)',[owner,[a.id,b.id]])).rows.length,0);
+   assert.equal((await one('select dropou_shopee_saved_finish($1,$2,$3,$4,null) id',[owner,b.id,claims.find(r=>r.id===b.id)!.lease_token,JSON.stringify(o)])).id,a.id);assert.equal((await one('select count(*) n from shopee_saved_products')).n,1);
+   assert.equal((await one('select dropou_shopee_saved_finish($1,$2,$3,$4,null) id',[owner,a.id,claims.find(r=>r.id===a.id)!.lease_token,JSON.stringify(o)])).id,null);
+   const p=shopeeProduct(o),prepare=()=>one('select dropou_shopee_saved_prepare($1,$2,$3,$4) result',[owner,a.id,JSON.stringify(p),pricedDraftCaption(p)]),first=(await prepare()).result;assert.equal(first.productId,p.id);assert.equal(first.needsReview,false);assert.equal((await prepare()).result.productId,p.id);assert.equal((await one('select count(*) n from offers where product_id=$1',[p.id])).n,1);assert.equal((await one('select data from products where id=$1',[p.id])).data.inStock,null);
+   await db.query("update offers set caption='User edited',manually_edited=true where product_id=$1",[p.id]);await prepare();assert.equal((await one('select caption from offers where product_id=$1',[p.id])).caption,'User edited');assert.deepEqual(await one('select (select count(*) from telegram_jobs) jobs,(select count(*) from deliveries) receipts'),before);
+   await db.query("update products set data=jsonb_set(data,'{price}',$2::jsonb) where id=$1",[p.id,JSON.stringify(o.price+1)]);assert.equal((await prepare()).result.needsReview,true);assert.equal((await one('select caption from offers where product_id=$1',[p.id])).caption,'User edited');
+   await db.query('delete from shopee_saved_products where id=$1',[a.id]);assert.equal((await one('select count(*) n from products where id=$1',[p.id])).n,1);
+  });
+  await t.test('saved variants require review and expired leases cannot overwrite new data',async()=>{
+   await role();const c=await cache(),o={...c.data,priceMax:c.data.price+50},row=await one('insert into shopee_saved_products(owner_id,input_url,canonical_url) values($1,$2,$2) returning *',[owner,o.productLink]);
+   const lease=await one('select * from dropou_shopee_saved_claim($1,$2,false)',[owner,[row.id]]);await db.query("update shopee_saved_products set lease_until=now()-interval '1 second' where id=$1",[row.id]);assert.equal((await one('select dropou_shopee_saved_finish($1,$2,$3,$4,null) id',[owner,row.id,lease.lease_token,JSON.stringify(o)])).id,null);
+   const next=await one('select * from dropou_shopee_saved_claim($1,$2,false)',[owner,[row.id]]);assert.notEqual(next.lease_token,lease.lease_token);await one('select dropou_shopee_saved_finish($1,$2,$3,$4,null)',[owner,row.id,next.lease_token,JSON.stringify(o)]);
+   const p=shopeeProduct(o),result=(await one('select dropou_shopee_saved_prepare($1,$2,$3,$4) result',[owner,row.id,JSON.stringify(p),pricedDraftCaption(p)])).result;assert.equal(result.needsReview,true);assert.equal((await one('select count(*) n from offers where product_id=$1',[result.productId])).n,0);assert.equal((await one('select data from products where id=$1',[result.productId])).data.image,o.image);
+  });
  }finally{await db.close();}
 });
