@@ -1,4 +1,5 @@
-﻿import {sessionDb,apiError,dbError} from '@/server/session';
+﻿import {loadCuratedDiscovery} from '@/server/shopee/curation';
+import {sessionDb,apiError,dbError} from '@/server/session';
 import {productSchema} from '@/lib/domain';
 
 export async function GET(request:Request){try{
@@ -22,8 +23,8 @@ export async function GET(request:Request){try{
  let curation:null|{pending:number;approved:number;rejected:number}=null;
  if(operation==='dropou'||operation==='all'){
   const counts=await Promise.all(['found','approved','rejected'].map(decision=>db.from('shopee_offers').select('id',{count:'exact',head:true}).eq('owner_id',user.id).eq('brand_id','dropou').eq('assessment->>relevant','true').eq('decision',decision)));
-  const pending=await db.rpc('dropou_curation_page',{p_page:0});if(pending.error)throw dbError(pending.error);
-  if(counts.every(c=>!c.error))curation={pending:pending.data.total||0,approved:counts[1].count||0,rejected:counts[2].count||0};
+  const pending=await loadCuratedDiscovery(db,user.id);
+  if(counts.every(c=>!c.error))curation={pending:pending.length,approved:counts[1].count||0,rejected:counts[2].count||0};
  }
  return Response.json({curation,products,channelStatus,automation:automation.data?.automation_enabled??null,offers:offers.data||[],publications:(publications.data||[]).slice(0,20),logs:(logs.data||[]).slice(0,20),summary:summary.data,total:rows.count,more:(rows.count||0)>(page+1)*24,historyMore:(publications.data?.length||0)>20||(logs.data?.length||0)>20},{headers:{'Cache-Control':'no-store'}});
 }catch(e){return apiError(e);}}

@@ -24,7 +24,7 @@ test('curation and saved configuration use explicit requests, show errors and ne
  try{
   await act(async()=>root.render(createElement(OfferAutomation,{operation:'dropou',initialData:data,request,onApproved:id=>approved.push(id)})));assert.equal(calls.length,0);
   assert.equal(document.querySelectorAll('.automation-offer').length,3);assert.equal(document.querySelector<HTMLSelectElement>('select[aria-label="Mostrar produtos Games e Tech"]')!.value,'eligible');assert.ok(!document.body.textContent!.includes('Creatina'));assert.ok(!document.body.textContent!.includes('Shampoo'));assert.ok(!document.body.textContent!.includes('Batedor'));assert.ok(document.querySelector('.automation-hero'));assert.ok(document.querySelector('details>summary')?.textContent?.includes('Filtros e rotina'));
-  assert.match(document.body.textContent!,/Confiança dos dados/);assert.match(document.body.textContent!,/Vendas: .*\/40/);assert.match(document.body.textContent!,/histórico insuficiente/);
+  assert.match(document.body.textContent!,/Confiança dos dados/);assert.match(document.body.textContent!,/Vendas: .*\/ 33\.3/);assert.match(document.body.textContent!,/histórico insuficiente/);
   const firstId=document.querySelector('.automation-offer')!.getAttribute('data-offer-id')!;
   await act(async()=>button('Aprovar').click());assert.equal(calls[0].body.action,'decide');assert.equal(calls[0].body.decision,'approved');assert.equal(button('Aprovado').disabled,true);assert.deepEqual(approved,[firstId]);
   assert.equal(document.querySelectorAll('.automation-approve:not(:disabled)').length,2);

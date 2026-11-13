@@ -1,5 +1,18 @@
 # Garimpo gamer — 12/11/2026
 
+## 13/11/2026 — Curadoria com evidências (versão 3)
+
+Esta seção substitui a pontuação 40/25/20/15 e os snapshots históricos abaixo. Escopo: descoberta Shopee do Dropou; Mercado Livre, outros grupos e transporte de publicação preservados.
+
+- Classificação identifica o tipo concreto do produto; termos de imobilização, médicos, hospitalares, ortopédicos e automotivos são excluídos mesmo com USB/gamer/marca no título. Busca padrão rota hardware, periféricos, consoles/jogos e gadgets; configurações personalizadas continuam respeitadas. Defaults antigos reconhecidos em memória, sem sobrescrever configurações ou flags. Mesmo orçamento e parâmetros GraphQL.
+- Score estimado: vendas 30%, avaliações 25%, pertinência 25%, preço/desconto 10%, crescimento observado 10%. Ausências são null e seus pesos são redistribuídos. Confiança mede cobertura separadamente: score alto com poucos dados não garante recomendação. Comissão permanece informativa, sem pontos.
+- Quantidade de avaliações só entra quando informada. O contrato GraphQL atual não a solicita/não a disponibiliza; não foi acrescentado campo especulativo nem fallback de scraping. Não há indicador confiável de lançamento ou procura global. Crescimento exige observações reais separadas por um dia; não confundir primeiras consultas com lançamento. Preço competitivo entre lojas não é presumido; queda observada é comparada ao mesmo anúncio/variante.
+- Descoberta manual aceita evidências estabelecidas (1.000 vendas e nota 4,6, ou 20 vendas e nota 4,6) e uma parcela de exploração: marca identificada, modelo/especificação explícita, pelo menos vendas ou nota disponíveis, nota ausente ou >=4,6, confiança >=40 e score >=min(40,mínimo configurado). Não rotula estes itens como lançamentos. A postagem automática continua exigindo todos os mínimos configurados e preço/variante seguros.
+- No máximo três anúncios por categoria e dois por marca/categoria na seleção; modelo/capacidade ajudam a reconhecer aliases. Rejeitados, removidos, arquivados e publicados são excluídos por identidade/fingerprint. Capacidades distintas não viram o mesmo SSD. A lista pode ser menor em vez de completar com itens ruins.
+- A API operacional lê cache/histórico com autenticação/RLS, reavalia em memória e aplica filtros/diversidade antes de paginar. Total e contador usam o mesmo resultado; scores antigos não liberam itens. Cadastros manuais continuam revisáveis. Erros ou limite interno de leitura não viram listas vazias/contagens truncadas. Nenhuma escrita ou consulta externa ao abrir a aba. Na aprovação explícita, só a avaliação do cache é atualizada com controle da observação; decisão/oferta seguem a RPC transacional existente.
+- Sem nova migration ou modificação de schema. Catálogo, recibos, horários e fluxos de postagem conservados. scripts/review-discovery-cache.ts é leitura administrativa do cache, sem API Shopee, alterações de configuração ou mensagens.
+
+
 Refinamento da integração existente, restrito ao Dropou Tech & Games por orientação posterior do usuário. Bruto e Moda não foram habilitados nem receberam critérios/destinos novos. Telegram, WhatsApp manual, fila, recibos, histórico e cron existentes foram preservados. Nenhuma postagem foi realizada nesta etapa; a mensagem de teste 18 pertence à autorização anterior.
 
 ## Busca validada e orçamento

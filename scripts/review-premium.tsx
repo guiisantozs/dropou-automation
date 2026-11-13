@@ -15,7 +15,7 @@ import PublicationActions from '../src/components/publication-actions';
 import ProductOperations from '../src/components/product-operations';
 import ShopeeSavedProducts from '../src/components/shopee-saved-products';
 import {PublicationHistoryRow} from '../src/components/publication-history';
-import {defaultShopeeConfig} from '../src/lib/shopee-automation';
+import {assessShopeeOffer,defaultShopeeConfig} from '../src/lib/shopee-automation';
 import {shopeeProduct} from '../src/lib/shopee-product';
 import {safePublicationCaption,pricedDraftCaption} from '../src/lib/publication-copy';
 import type {api} from '../src/lib/api';
@@ -70,4 +70,4 @@ const operationChannels=Object.fromEntries(products.map((p,i)=>[p.id,{telegram:{
 const operationsData={rows:operationRows,total:3,page:0,more:false,recent:operationRows,recentTotal:3,channels:operationChannels,summary:{pending:45,approved:3,published:3,recent:3,archived:6}};
 writeFileSync(out+'/operations.html',wrap('Dashboard operacional',renderToStaticMarkup(h(ProductOperations,{initialData:{...operationsData,rows:[{id:crypto.randomUUID(),data:{...products[0],name:'Novo controle aguardando publicação',image:photo}}],total:1},onOpen:noop,onNavigate:noop}))));
 writeFileSync(out+'/operationalcatalog.html',wrap('Catálogo de publicados',renderToStaticMarkup(h(ProductOperations,{mode:'catalog',initialData:operationsData,onOpen:noop,onNavigate:noop}))));
-writeFileSync(out+'/curation.html',wrap('Curadoria Games & Tech',renderToStaticMarkup(h(ProductOperations,{mode:'curation',initialData:{...operationsData,rows:operationRows.map(r=>({...r,kind:'cache' as const,eligible:false,reasons:['Revisão manual: vendas abaixo do critério automático'],data:{...r.data,offerLink:r.data.affiliateUrl}})),total:45,more:true},onOpen:noop,onNavigate:noop}))));
+writeFileSync(out+'/curation.html',wrap('Curadoria Games & Tech',renderToStaticMarkup(h(ProductOperations,{mode:'curation',initialData:{...operationsData,rows:operationRows.map(r=>({...r,kind:'cache' as const,assessment:assessShopeeOffer({...source,name:r.data.name},defaultShopeeConfig()),eligible:false,reasons:['Revisão manual: vendas abaixo do critério automático'],data:{...r.data,offerLink:r.data.affiliateUrl}})),total:45,more:true},onOpen:noop,onNavigate:noop}))));

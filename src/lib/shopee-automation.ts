@@ -4,7 +4,9 @@ import {dropouCaption} from './dropou-captions';
 export {salesTrend,diversifyOffers,offerFingerprint} from './shopee-quality';
 export type {OfferAssessment,OfferObservation} from './shopee-quality';
 
-export const gamerKeywords=['gamer','controle ps5','controle xbox pc','headset gamer','mouse gamer','teclado mecanico gamer','ssd nvme','acessorios nintendo switch','monitor gamer','jogo ps5','controle pc bluetooth','smartwatch','fone bluetooth','webcam','microfone usb','ssd ps5'];
+export const legacyGamerKeywords=['gamer','controle ps5','controle xbox pc','headset gamer','mouse gamer','teclado mecanico gamer','ssd nvme','acessorios nintendo switch','monitor gamer','jogo ps5','controle pc bluetooth','smartwatch','fone bluetooth','webcam','microfone usb','ssd ps5'];
+export const discoveryKeywordGroups=[['processador amd ryzen','processador intel core','placa de video geforce','placa de video radeon','memoria ram ddr4','ssd nvme','placa mae am4','fonte pc gamer','gabinete gamer','cooler processador'],['mouse logitech','teclado mecanico','headset gamer','monitor gamer','mouse razer','mouse redragon','microfone usb','webcam logitech'],['controle ps5','controle xbox pc','jogo nintendo switch','jogo ps5','console xbox','controle gamesir'],['smartwatch amazfit','fone bluetooth','carregador usb c','power bank baseus','smartphone samsung']];
+export const gamerKeywords=discoveryKeywordGroups.flat();
 const words=z.array(z.string().trim().min(2).max(80)).min(1).max(50);
 export const shopeeConfigSchema=z.object({
  enabled:z.boolean().default(false),dryRun:z.boolean().default(true),requireReview:z.boolean().default(true),
@@ -23,12 +25,17 @@ export const shopeeConfigSchema=z.object({
 }).superRefine((v,c)=>{if(v.maxPrice<v.minPrice)c.addIssue({code:'custom',path:['maxPrice'],message:'Preço máximo menor que o mínimo'});if(v.dailyLimit<=v.times.length)c.addIssue({code:'custom',path:['dailyLimit'],message:'Reserve ao menos uma consulta para a busca além das revalidações'});if(v.searchMode==='categories'&&!v.categoryIds.length)c.addIssue({code:'custom',path:['categoryIds'],message:'Cadastre uma categoria para usar somente esta fonte'});});
 export type ShopeeConfig=z.infer<typeof shopeeConfigSchema>;
 export const defaultShopeeConfig=()=>shopeeConfigSchema.parse({});
-export type ShopeeOffer={itemId:string;shopId:string;name:string;image:string;offerLink:string;productLink:string;price:number;priceMax:number;rating:number|null;sales:number|null;commission:number|null;reportedDiscount:number|null;checkedAt:string;previousPrice?:number|null;previousAt?:string|null};
+export type ShopeeOffer={itemId:string;shopId:string;name:string;image:string;offerLink:string;productLink:string;price:number;priceMax:number;rating:number|null;ratingCount?:number|null;sales:number|null;commission:number|null;reportedDiscount:number|null;checkedAt:string;previousPrice?:number|null;previousAt?:string|null};
 export function normalized(text:string){return text.normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();}
 export const assessShopeeOffer=assessOffer;
 export function bahiaDay(now=new Date()){return new Intl.DateTimeFormat('en-CA',{timeZone:'America/Bahia',year:'numeric',month:'2-digit',day:'2-digit'}).format(now);}
 export function bahiaTime(now=new Date()){return new Intl.DateTimeFormat('en-GB',{timeZone:'America/Bahia',hour:'2-digit',minute:'2-digit',hourCycle:'h23'}).format(now);}
-export function dailyKeywords(c:ShopeeConfig,day:string){const offset=Math.floor(Date.parse(day+'T00:00:00Z')/86400000)%c.keywords.length;return Array.from({length:Math.min(c.keywords.length,c.dailyLimit-c.times.length,6)},(_,i)=>c.keywords[(offset+i)%c.keywords.length]);}
+export function dailyKeywords(c:ShopeeConfig,day:string){
+ const index=Math.floor(Date.parse(day+'T00:00:00Z')/86400000),budget=Math.max(1,Math.min(6,c.dailyLimit-c.times.length));
+ const standard=JSON.stringify(c.keywords)===JSON.stringify(gamerKeywords)||JSON.stringify(c.keywords)===JSON.stringify(legacyGamerKeywords);
+ if(standard)return Array.from({length:budget},(_,i)=>{const group=discoveryKeywordGroups[(index+i)%discoveryKeywordGroups.length];return group[(index+Math.floor(i/4))%group.length];});
+ return Array.from({length:Math.min(c.keywords.length,budget)},(_,i)=>c.keywords[(index+i)%c.keywords.length]);
+}
 export function futureSlots(c:ShopeeConfig,now=new Date()){const day=bahiaDay(now);return [...c.times].sort().map(t=>new Date(day+'T'+t+':00-03:00')).filter(d=>d.getTime()>now.getTime());}
 export function priceCurrent(o:ShopeeOffer,now=Date.now()){const t=Date.parse(o.checkedAt);return Number.isFinite(t)&&t<=now+1000&&now-t<=15*60000;}
 const brl=(n:number)=>new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL'}).format(n);
