@@ -12,6 +12,7 @@ import NextPosts from '../src/components/next-posts';
 import PublicationSchedule from '../src/components/publication-schedule';
 import OfferPreview from '../src/components/offer-preview';
 import PublicationActions from '../src/components/publication-actions';
+import ProductOperations from '../src/components/product-operations';
 import ShopeeSavedProducts from '../src/components/shopee-saved-products';
 import {PublicationHistoryRow} from '../src/components/publication-history';
 import {defaultShopeeConfig} from '../src/lib/shopee-automation';
@@ -21,7 +22,7 @@ import type {api} from '../src/lib/api';
 import type {Offer} from '../src/lib/offers';
 import type {WorkspaceBrandId} from '../src/lib/workspace-brands';
 const {JSDOM}=createRequire(import.meta.url)('jsdom'),noop=()=>{},now=new Date(),css=readFileSync('src/app/workspace.css','utf8')+readFileSync('src/app/premium.css','utf8');
-const names=['Dashboard','Automação de Ofertas','Meus links Shopee','Próximos posts','Catálogo','Agendamentos','Histórico','Configurações'],icons=[LayoutDashboard,Zap,BookmarkPlus,Clock3,Package,Clock3,History,Link2];
+const names=['Curadoria','Dashboard','Automação de Ofertas','Meus links Shopee','Próximos posts','Catálogo','Agendamentos','Histórico','Configurações'],icons=[Package,LayoutDashboard,Zap,BookmarkPlus,Clock3,Package,Clock3,History,Link2];
 const photo='data:image/svg+xml;base64,'+Buffer.from('<svg xmlns="http://www.w3.org/2000/svg" width="440" height="300" viewBox="0 0 440 300"><rect width="440" height="300" fill="#eceef0"/><rect x="80" y="80" width="280" height="140" rx="55" fill="#313945"/><path d="M135 125v50m-25-25h50" stroke="#bbc5d1" stroke-width="12"/><circle cx="293" cy="135" r="10" fill="#ff6a1a"/><circle cx="320" cy="160" r="10" fill="#8291a5"/><text x="220" y="265" text-anchor="middle" font-family="sans-serif" font-size="16" fill="#515d6c">Imagem de fixture</text></svg>').toString('base64');
 const source={itemId:'9001',shopId:'8001',name:'Controle Bluetooth para PC e console · exemplo visual',price:180,priceMax:180,image:'',offerLink:'https://s.shopee.com.br/fixture',productLink:'https://shopee.com.br/product/8001/9001',rating:4.8,sales:2820,commission:.1,reportedDiscount:20,checkedAt:now.toISOString()};
 const products=['Controle Bluetooth para PC e console','SSD NVMe 1 TB · armazenamento','Headset gamer com microfone'].map((name,i)=>({...shopeeProduct({...source,name,itemId:String(9001+i)}),shortName:name,price:[180,329.9,149.9][i]}));
@@ -63,3 +64,10 @@ writeFileSync(out+'/saved.html',wrap('Meus links Shopee',renderToStaticMarkup(h(
 
 const reviewedProduct={...products[0],image:photo,inStock:true,status:'pronto' as const},reviewedOffer={...offers[0],snapshot:reviewedProduct,caption:pricedDraftCaption(reviewedProduct)};
 writeFileSync(out+'/reviewed.html',wrap('Oferta salva',renderToStaticMarkup(h(OfferPreview,{product:reviewedProduct,offer:reviewedOffer,page:true,onClose:noop,onRefresh:async()=>{},onEdit:noop}))));
+
+const operationRows=products.map((p,i)=>({id:p.id,data:{...p,image:photo},published_at:now.toISOString()}));
+const operationChannels=Object.fromEntries(products.map((p,i)=>[p.id,{telegram:{published:i!==1,publishedAt:i!==1?now.toISOString():null,state:i!==1?'sent':null,scheduledAt:null,manualMarkId:i===0?crypto.randomUUID():null},whatsapp:{published:i===1,publishedAt:i===1?now.toISOString():null,state:null,scheduledAt:null}}]));
+const operationsData={rows:operationRows,total:3,page:0,more:false,recent:operationRows,recentTotal:3,channels:operationChannels,summary:{pending:45,approved:3,published:3,recent:3,archived:6}};
+writeFileSync(out+'/operations.html',wrap('Dashboard operacional',renderToStaticMarkup(h(ProductOperations,{initialData:{...operationsData,rows:[{id:crypto.randomUUID(),data:{...products[0],name:'Novo controle aguardando publicação',image:photo}}],total:1},onOpen:noop,onNavigate:noop}))));
+writeFileSync(out+'/operationalcatalog.html',wrap('Catálogo de publicados',renderToStaticMarkup(h(ProductOperations,{mode:'catalog',initialData:operationsData,onOpen:noop,onNavigate:noop}))));
+writeFileSync(out+'/curation.html',wrap('Curadoria Games & Tech',renderToStaticMarkup(h(ProductOperations,{mode:'curation',initialData:{...operationsData,rows:operationRows.map(r=>({...r,kind:'cache' as const,eligible:false,reasons:['Revisão manual: vendas abaixo do critério automático'],data:{...r.data,offerLink:r.data.affiliateUrl}})),total:45,more:true},onOpen:noop,onNavigate:noop}))));

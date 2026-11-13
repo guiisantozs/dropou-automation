@@ -16,7 +16,9 @@ export async function publicationAdmin(owner:string){
 }
 export async function queuePublication(owner:string,offerId:string,channel:'telegram'|'whatsapp',at:string,caption:string,targetKey?:string,mode:PublicationMode='verified',sourceCaption=caption,allowSafe=false,presentation?:TelegramPresentation,republicationKey?:string){
  const {db}=await publicationAdmin(owner);
- const scoped=await db.from('offers').select('brand_id').eq('id',offerId).eq('owner_id',owner).single();if(scoped.error)throw dbError(scoped.error);
+ const scoped=await db.from('offers').select('brand_id,product_id').eq('id',offerId).eq('owner_id',owner).single();if(scoped.error)throw dbError(scoped.error);
+ const productState=await db.from('products').select('curation_state,archived_at').eq('id',scoped.data.product_id).eq('owner_id',owner).single();if(productState.error)throw dbError(productState.error);if(productState.data.curation_state==='rejected'||productState.data.archived_at)throw new Error('Produto rejeitado ou arquivado.');
+ const manual=await db.from('product_channel_marks').select('id').eq('owner_id',owner).eq('product_id',scoped.data.product_id).eq('channel',channel).is('revoked_at',null).limit(1);if(manual.error)throw dbError(manual.error);if(manual.data?.length&&!republicationKey)throw new Error('Publicação manual já registrada. Para repostar, copie a legenda e registre a nova publicação manual pelo catálogo.');
  const settings=channel==='whatsapp'?await operationSettings(db,owner,scoped.data.brand_id):null;
  const target={...(channel==='telegram'?{...await telegramTarget(owner,scoped.data.brand_id,true),...presentation}:{title:settings!.whatsapp_name}),...(republicationKey?{republicationKey}:{})};
  if(channel==='telegram'&&(!targetKey||targetKey!==('key' in target?target.key:'')))throw new Error('O canal configurado mudou. Confira a confirmação novamente.');

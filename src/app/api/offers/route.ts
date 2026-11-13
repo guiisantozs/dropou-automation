@@ -9,9 +9,9 @@ import {reserveDropouHeadline} from '@/server/dropou-captions';
 export async function POST(request:Request){try{
  const {db,user}=await sessionDb(request);
  const {productId,caption:selected,expected,originalCaption,manualEdit,review}=z.object({productId:z.string().uuid(),caption:z.string().min(1).max(4000).optional(),originalCaption:z.string().min(1).max(4000).optional(),manualEdit:z.boolean().default(false),expected:productSchema.optional(),review:z.boolean().default(false)}).parse(await request.json());
- const {data:row,error:readError}=await db.from('products').select('data').eq('id',productId).eq('owner_id',user.id).single();
+ const {data:row,error:readError}=await db.from('products').select('data,curation_state').eq('id',productId).eq('owner_id',user.id).single();
  if(readError)throw dbError(readError);
- const p=productSchema.parse(row.data);
+ const p=productSchema.parse(row.data);if(row.curation_state==='rejected')throw new Error('Produto rejeitado. A revisão automática não restaura uma rejeição.');
  if(review&&(!selected||!expected))throw new Error('Revise e salve a legenda exibida antes de publicar.');
  if(selected&&(!expected||!isDeepStrictEqual(p,expected)))throw new Error('Produto alterado. Confira a legenda novamente.');
  if(selected){const issue=savedCaptionError(selected,p);if(issue)throw new Error(issue);}
@@ -25,7 +25,9 @@ export async function POST(request:Request){try{
  if(review&&(p.operation||'dropou')==='dropou'&&!confirmedConditions(data.snapshot)){
   const {db:admin}=await publicationAdmin(user.id);
   const checked=await admin.rpc('dropou_publication_reconfirm',{p_owner:user.id,p_offer:data.id,p_expected:data.snapshot});if(checked.error)throw dbError(checked.error);
+  const approved=await admin.from('products').update({curation_state:'approved'}).eq('id',p.id).eq('owner_id',user.id).eq('brand_id','dropou');if(approved.error)throw dbError(approved.error);
   return Response.json({offer:checked.data,serverNow:checked.data.snapshot.checkedAt});
  }
+ if(review&&(p.operation||'dropou')==='dropou'){const {db:admin}=await publicationAdmin(user.id);const approved=await admin.from('products').update({curation_state:'approved'}).eq('id',p.id).eq('owner_id',user.id).eq('brand_id','dropou');if(approved.error)throw dbError(approved.error);}
  return Response.json({offer:data,serverNow:new Date().toISOString()});
 }catch(e){return apiError(e);}}

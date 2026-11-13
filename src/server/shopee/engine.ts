@@ -50,7 +50,8 @@ export function shopeeEngine(deps:ShopeeDependencies){
   const s=await settings(owner),config:ShopeeConfig=s.config;
   const rows=await checked(db.from('shopee_offers').select('*').eq('owner_id',owner).eq('brand_id','dropou').eq('eligible',true).in('decision',config.requireReview?['approved']:['approved','found']).gt('checked_at',new Date(Date.now()-config.cacheHours*3600000).toISOString()).order('score',{ascending:false}).limit(200)) as CacheRow[];
   const history=await observations(owner),sent=await checked(db.from('channel_events').select('snapshot').eq('owner_id',owner).eq('brand_id','dropou').eq('channel','telegram').eq('destination_id',s.telegram_chat_id||'').in('event',['sent','legacy_telegram_verified']).gte('created_at',new Date(Date.now()-30*86400000).toISOString()).order('created_at',{ascending:false}).limit(500)) as {snapshot:{name:string}}[];
-  const published=new Set(sent.map(e=>offerFingerprint(e.snapshot.name)));
+  const manual=await checked(db.from('product_channel_marks').select('snapshot').eq('owner_id',owner).eq('brand_id','dropou').eq('channel','telegram').is('revoked_at',null).gte('published_at',new Date(Date.now()-30*86400000).toISOString()).limit(500)) as {snapshot:{name:string}}[];
+ const published=new Set([...sent,...manual].map(e=>offerFingerprint(e.snapshot.name)));
   const candidates=rows.map(r=>({...r,assessment:assessShopeeOffer(r.data,config,history)})).filter(r=>r.assessment.eligible&&(!published.has(r.assessment.fingerprint)||r.repeat_until&&Date.parse(r.repeat_until)>Date.now()));
   const chosen=diversifyOffers(candidates,candidates.length);
   const preview:unknown[]=[],live=liveShopeeAllowed(config,env)&&s.automation_enabled;

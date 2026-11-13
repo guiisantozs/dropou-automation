@@ -21,3 +21,5 @@ export function historyStatus(entry:Pick<PublicationHistoryEntry,'channel'|'stat
  if(entry.status==='manual_confirmed')return entry.is_republication?'Republicação confirmada manualmente':'Confirmado manualmente';
  return ({review:'Histórico em revisão',queued:'Agendado',sending:'Envio em andamento',partial:'Publicação parcial · revisar',uncertain:'Entrega incerta · revisar',failed:'Falha no envio',blocked:'Aguardando revisão',cancelled:'Agendamento cancelado',republication_authorized:'Republicação autorizada',ready:'Pronto para compartilhar'} as Record<string,string>)[entry.status]||'Registro de auditoria';
 }
+
+export function recentPublicationDays(now=Date.now()){const today=new Date(now-3*3600000).toISOString().slice(0,10),yesterday=new Date(Date.parse(today+'T12:00:00Z')-86400000).toISOString().slice(0,10);return {from:yesterday,to:today};}

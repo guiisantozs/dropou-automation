@@ -6,7 +6,7 @@ import {defaultShopeeConfig,bahiaDay,type ShopeeOffer} from '../src/lib/shopee-a
 // In-memory REST boundary for orchestration. SQL permissions and atomicity are
 // independently exercised by shopee-database.test.ts against PostgreSQL.
 class MemoryDb{
- tables:Record<string,any[]>={operation_settings:[],shopee_offers:[],shopee_requests:[],shopee_runs:[],shopee_observations:[],channel_events:[],telegram_jobs:[],telegram_dispatch_config:[{id:true,automation_enabled:true}]};
+ tables:Record<string,any[]>={operation_settings:[],shopee_offers:[],shopee_requests:[],shopee_runs:[],shopee_observations:[],channel_events:[],product_channel_marks:[],telegram_jobs:[],telegram_dispatch_config:[{id:true,automation_enabled:true}]};
  receipts:unknown[]=[];
  from(table:string){return new Query(this,table);}
  async rpc(name:string,args:any){
@@ -24,6 +24,7 @@ class MemoryDb{
 class Query implements PromiseLike<any>{
  filters:((row:any)=>boolean)[]=[];operation='select';payload:any;singleValue=false;maximum=Infinity;sort?:{field:string;ascending:boolean};
  constructor(public db:MemoryDb,public table:string){}
+ is(key:string,value:unknown){this.filters.push(r=>r[key]===value);return this;}
  select(..._args:unknown[]){return this;}eq(key:string,value:unknown){this.filters.push(r=>r[key]===value);return this;}
  gt(key:string,value:any){this.filters.push(r=>r[key]>value);return this;}gte(key:string,value:any){this.filters.push(r=>r[key]>=value);return this;}
  in(key:string,values:unknown[]){this.filters.push(r=>values.includes(r[key]));return this;}not(key:string,_operator:string,value:unknown){this.filters.push(r=>r[key]!==value&&r[key]!==undefined);return this;}

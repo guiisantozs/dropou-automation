@@ -11,7 +11,7 @@ let browser;
 try{
  browser=await chromium.launch({headless:true,executablePath:process.env.CHROME_PATH||'C:/Program Files/Google/Chrome/Application/chrome.exe'});
  await mkdir('outputs/premium-review/screenshots',{recursive:true});
- const pages=(process.env.PREMIUM_PAGES||'dropou,bruto,moda,automation,catalog,posts,schedule,history,offer,empty,verification,quickschedule,saved,reviewed').split(',');let checks=0;
+ const pages=(process.env.PREMIUM_PAGES||'dropou,bruto,moda,automation,catalog,posts,schedule,history,offer,empty,verification,quickschedule,saved,reviewed,operations,operationalcatalog,curation').split(',');let checks=0;
  for(const width of [320,375,768,1440]){const page=await browser.newPage({viewport:{width,height:1000},reducedMotion:'reduce'});const errors=[];page.on('pageerror',e=>errors.push(e.message));
   for(const name of pages){await page.goto('http://127.0.0.1:4189/'+name+'.html');await page.evaluate(()=>document.fonts.ready);const state=await page.evaluate(()=>({overflow:document.documentElement.scrollWidth>innerWidth+1,bg:getComputedStyle(document.body).backgroundColor,primary:getComputedStyle(document.documentElement).getPropertyValue('--primary').trim(),broken:[...document.images].filter(i=>i.complete&&!i.naturalWidth).length}));assert.equal(state.overflow,false,name+' '+width+' horizontal overflow');assert.equal(state.bg,'rgb(11, 11, 13)');assert.equal(state.primary,'#FF6A1A');assert.equal(state.broken,0);assert.deepEqual(errors,[]);checks++;
    if(width===375||width===1440)await page.screenshot({path:'outputs/premium-review/screenshots/'+name+'-'+width+'.png',fullPage:true});

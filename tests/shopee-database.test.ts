@@ -153,5 +153,34 @@ test('Shopee migration and shared queue: atomic budgets, leases, RLS, real evide
    const next=await one('select * from dropou_shopee_saved_claim($1,$2,false)',[owner,[row.id]]);assert.notEqual(next.lease_token,lease.lease_token);await one('select dropou_shopee_saved_finish($1,$2,$3,$4,null)',[owner,row.id,next.lease_token,JSON.stringify(o)]);
    const p=shopeeProduct(o),result=(await one('select dropou_shopee_saved_prepare($1,$2,$3,$4) result',[owner,row.id,JSON.stringify(p),pricedDraftCaption(p)])).result;assert.equal(result.needsReview,true);assert.equal((await one('select count(*) n from offers where product_id=$1',[result.productId])).n,0);assert.equal((await one('select data from products where id=$1',[result.productId])).data.image,o.image);
   });
+  await t.test('operational lifecycle: exact pending pagination, one-time legacy archive, independent reversible manual marks, receipts and RLS',async()=>{
+   await role();await db.exec('reset role');
+   const legacy={...emptyProduct(),name:'SSD Mercado Livre antigo',store:'Mercado Livre',price:100,affiliateUrl:'https://meli.la/fixture',inStock:null};
+   await db.query('insert into products(id,owner_id,canonical_url,data) values($1,$2,$3,$4)',[legacy.id,owner,'legacy-fixture',JSON.stringify({...legacy,operation:'dropou'})]);
+   await db.exec(readFileSync('supabase/migrations/20261113145637_product_operations_lifecycle.sql','utf8'));
+   await db.exec(readFileSync('supabase/migrations/20261113152139_preserve_pending_manual_drafts.sql','utf8'));await db.exec(readFileSync('supabase/migrations/20261113152632_operational_lookup_indexes.sql','utf8'));
+   assert.ok((await one('select archived_at,legacy_archive_reason from products where id=$1',[legacy.id])).archived_at);
+   const future={...legacy,id:crypto.randomUUID()};await db.query('insert into products(id,owner_id,canonical_url,data) values($1,$2,$3,$4)',[future.id,owner,'new-ml-fixture',JSON.stringify(future)]);
+   assert.equal((await one('select archived_at from products where id=$1',[future.id])).archived_at,null);
+   await role('authenticated',owner);const before=(await one('select dropou_curation_page(0) value')).value.total;
+   await role();const created=[];for(let i=0;i<45;i++){const c=await cache({decision:'found',item:'77000'+i,eligible:false});await db.query("update shopee_offers set owner_id=$2,assessment='{"+String.fromCharCode(34)+'relevant'+String.fromCharCode(34)+":true}' where id=$1",[c.id,owner]);created.push(c);}
+   await role('authenticated',owner);const first=(await one('select dropou_curation_page(0) value')).value,second=(await one('select dropou_curation_page(1) value')).value;assert.equal(first.total,before+45);assert.equal(first.rows.length,24);assert.ok(second.rows.length>0);
+   const all=[];for(let page=0;page<Math.ceil(first.total/24);page++)all.push(...(await one('select dropou_curation_page($1) value',[page])).value.rows);assert.equal(new Set(all.map(r=>r.id)).size,first.total);
+   await role();const rejected=created[0];await one('select dropou_curate($1,$2,$3,$4,null,null)',[owner,'cache',rejected.id,'rejected']);
+   const c=created[1],p=shopeeProduct(c.data);const result=(await one('select dropou_curate($1,$2,$3,$4,$5,$6) value',[owner,'cache',c.id,'approved',JSON.stringify(p),pricedDraftCaption(p)])).value;
+   assert.equal((await one('select eligible from shopee_offers where id=$1',[c.id])).eligible,false);
+   const mark=crypto.randomUUID();await one('select dropou_channel_mark($1,$2,$3,$4)',[owner,result.productId,'telegram',mark]);await one('select dropou_channel_mark($1,$2,$3,$4)',[owner,result.productId,'telegram',mark]);
+   await role('authenticated',owner);let summary=(await one('select * from dropou_product_channel_summaries($1)',[[result.productId]]));assert.equal(summary.telegram.published,true);assert.equal(summary.whatsapp.published,false);assert.equal(summary.telegram.manualMarkId,mark);
+   assert.equal((await one("select dropou_operational_products('catalog') value")).value.rows.filter((r:any)=>r.id===result.productId).length,1);
+   assert.ok((await one("select dropou_operational_products('recent') value")).value.rows.some((r:any)=>r.id===result.productId));
+   await role();const wa=crypto.randomUUID();await one('select dropou_channel_mark($1,$2,$3,$4)',[owner,result.productId,'whatsapp',wa]);await one('select dropou_channel_mark($1,$2,$3,$4,$5)',[owner,result.productId,'telegram',crypto.randomUUID(),mark]);
+   await role('authenticated',owner);summary=(await one('select * from dropou_product_channel_summaries($1)',[[result.productId]]));assert.equal(summary.telegram.published,false);assert.equal(summary.whatsapp.published,true);
+   assert.ok(!(await one('select dropou_curation_page(0) value')).value.rows.some((r:any)=>[c.id,rejected.id].includes(r.id)));
+   await role();await db.query("update product_channel_marks set published_at=now()-interval '3 days' where id=$1",[wa]);await role('authenticated',owner);assert.ok(!(await one("select dropou_operational_products('recent') value")).value.rows.some((r:any)=>r.id===result.productId));assert.ok((await one("select dropou_operational_products('catalog') value")).value.rows.some((r:any)=>r.id===result.productId));assert.equal((await one('select dropou_operation_summary() value')).value.pending,(await one('select dropou_curation_page(0) value')).value.total);
+   await role();await db.query("insert into channel_events(owner_id,product_id,product_name,channel,event,message_ids,effective_at,snapshot,brand_id) values($1,$2,$3,'telegram','sent','[\"18\"]',now(),$4,'dropou')",[owner,result.productId,p.name,JSON.stringify(p)]);await role('authenticated',owner);const proof=await one('select * from dropou_product_channel_summaries($1)',[[result.productId]]);assert.equal(proof.telegram.published,true);assert.equal(proof.whatsapp.published,true);
+   await role();const repeat=crypto.randomUUID();await one('select dropou_channel_mark($1,$2,$3,$4,null,true)',[owner,result.productId,'whatsapp',repeat]);assert.equal((await one('select count(*) n from products where id=$1',[result.productId])).n,1);assert.equal((await one('select count(*) n from product_channel_marks where product_id=$1 and channel=\'whatsapp\'',[result.productId])).n,2);
+   await role('authenticated',owner);const history=(await db.query<any>("select * from dropou_publication_history_v2($1,null,null,null,0,true)",[result.productId])).rows;assert.ok(history.length>=2);
+   await assert.rejects(db.query("update product_channel_marks set revoked_at=now()"));await role('authenticated',other);assert.equal((await one('select count(*) n from product_channel_marks where product_id=$1',[result.productId])).n,0);await role('anon');await assert.rejects(db.query('select dropou_channel_mark($1,$2,$3,$4)',[owner,result.productId,'telegram',crypto.randomUUID()]));
+  });
  }finally{await db.close();}
 });
