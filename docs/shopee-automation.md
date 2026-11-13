@@ -1,6 +1,6 @@
 # Shopee Affiliate API · Dropou Tech & Games
 
-Implementação iniciada em 11/11/2026. Base inicial: `main`, sincronizada com `origin/main` em `2a95200`. Três migrações incrementais instaladas no Supabase existente. A busca `keyword:"gamer"` com `listType:2,sortType:2` foi validada em 12/11. Código local, sem push/deploy; automação pausada. Uma postagem manual anterior foi explicitamente autorizada. Guia atual de qualidade, pontuação e histórico: [Garimpo gamer](shopee-gamer-quality.md).
+Implementação iniciada em 11/11/2026. Base inicial: `main`, sincronizada com `origin/main` em `2a95200`. Quatro migrações incrementais instaladas no Supabase existente. A busca `keyword:"gamer"` com `listType:2,sortType:2` foi validada em 12/11. Código local, sem push/deploy. O usuário controla a ativação operacional; o redesign/aprovação não a habilitam. Uma postagem manual anterior foi explicitamente autorizada. Guias atuais: [Garimpo gamer](shopee-gamer-quality.md) e [painel escuro / Próximos posts](premium-dashboard.md).
 
 ## Funcionalidades
 
@@ -23,13 +23,15 @@ Migrações geradas pela CLI oficial, instaladas no projeto existente: `supabase
 
 A segunda migração usa o relógio do banco para finalizar requisições e calcular o backoff, com conclusão idempotente. Isso evita que a diferença observada de cerca de 2min40 entre computador e servidor libere consultas antes do prazo. O erro GraphQL `10000: System Error` é transitório (`provider`), sem simular resultados vazios nem causar uma suspensão de um dia por contrato.
 
-A terceira migração, `20261112112950_shopee_gamer_quality_history.sql`, também já foi aplicada (remoto `20261112114322`): acrescenta avaliação detalhada e observações históricas protegidas por RLS, sem mudar o estado dos canais/agendador. Em outra instalação, aplicar as três incrementais após as bases necessárias. Não reaplicar no projeto atual.
+A terceira migração, `20261112112950_shopee_gamer_quality_history.sql`, também já foi aplicada (remoto `20261112114322`): acrescenta avaliação detalhada e observações históricas protegidas por RLS, sem mudar o estado dos canais/agendador.
+
+A quarta, `20261112122158_shopee_next_posts.sql` (remoto `20261112124511`), liga a aprovação explícita ao rascunho do catálogo, sem agendar/enviar. Em outra instalação, aplicar as quatro incrementais após as bases necessárias. Não reaplicar no projeto atual. Detalhes de segurança e fluxo em [Próximos posts](premium-dashboard.md).
 
 Reutiliza `operation_settings` (novo JSON `shopee_config`), produtos/ofertas, fila, recibos, histórico, intenções de republicação, logs e reservas de execução. Acrescenta somente `shopee_offers`, `shopee_runs`, `shopee_requests` e os vínculos/evidências/leases necessários na fila existente.
 
 Novas tabelas têm RLS e leitura por proprietário/marca. Escritas e funções são exclusivas do backend `service_role`; as APIs exigem sessão verificada, marca Dropou e autorização em `telegram_dispatch_config.owner_ids`. Não há `SECURITY DEFINER` novo. Credenciais ficam exclusivamente no servidor.
 
-O modo `official` nos recibos indica observação da API, sem alegar estoque. Os modos manuais `safe`/`verified` mantêm suas validações. A simulação **não cria produtos, ofertas, jobs ou recibos**: persiste somente cache, requisições, rodada e planejamento. Leases/tokens impedem revalidações concorrentes; recibos incertos exigem conferência do canal.
+O modo `official` nos recibos indica observação da API, sem alegar estoque. Os modos manuais `safe`/`verified` mantêm suas validações. A busca/planejamento em simulação **não cria produtos, ofertas, jobs ou recibos**: persiste somente cache, requisições, rodada e planejamento. A aprovação manual explícita prepara um produto/rascunho em Próximos posts, inclusive com o motor em simulação, sem agendar ou enviar. Leases/tokens impedem revalidações concorrentes; recibos incertos exigem conferência do canal.
 
 ## Variáveis na Vercel
 
@@ -56,7 +58,7 @@ Não usar `NEXT_PUBLIC_` nas credenciais. O operador deve constar na lista admin
 2. Configurar as credenciais na Vercel, manter `SHOPEE_AUTOMATION_LIVE=false` e publicar o código. Não é necessário ligar o dispatcher para a busca manual.
 3. Entrar em **Dropou → Automação de Ofertas**. Manter **Modo de teste** e **Exigir aprovação** marcados; salvar.
 4. Clicar em **Buscar ofertas agora**. Conferir aceitação da assinatura, campos disponíveis no contrato da conta, fotos, links de afiliado, relevância e orçamento. Repetir no mesmo dia deve reutilizar o cache.
-5. Aprovar candidatos e usar **Planejar horários com o cache**. A simulação é registrada na rodada; não cria publicações nem recupera horários passados.
+5. Aprovar um candidato abre **Próximos posts**, com **Agendar**, **Publicar agora** e **Ver prévia**. A ação prepara um rascunho sem disparar mensagens. **Planejar horários com o cache** continua disponível na Automação; sua simulação é registrada na rodada, sem criar publicações ou recuperar horários passados.
 6. Para um envio real **de teste**, configurar o canal separado e `SHOPEE_TELEGRAM_TEST_ENABLED=true`. Clicar em **Preparar teste Telegram**, conferir nome/ID e confirmar **Enviar somente no canal de teste**. O envio real fica somente naquele canal e em logs, sem contar como publicação do grupo. Não repetir resultados incertos. Desabilitar a variável de teste ao terminar.
 7. Conferir persistência, foto acima da legenda, preço/omissão, limite de requisições e ausência de confirmações WhatsApp. Um erro GraphQL exige conferir a documentação autorizada da conta; não substituir por scraping ou dados inventados.
 

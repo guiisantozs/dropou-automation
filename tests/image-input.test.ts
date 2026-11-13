@@ -60,7 +60,7 @@ test('React paste/drop/file events show images immediately, keep them in memory 
   await act(async()=>checkbox('Conferi ou corrigi').click());await act(async()=>checkbox('Conferi agora na loja').click());
   await act(async()=>container.querySelector('form')!.dispatchEvent(new dom.window.Event('submit',{bubbles:true,cancelable:true})));
   assert.equal(saved.length,1);assert.equal(saved[0].product.affiliateUrl,p.affiliateUrl);assert.equal(saved[0].product.inStock,true);assert.equal(saved[0].product.pixVerified,true);assert.equal(saved[0].product.screenshotConfirmed,true);assert.ok(saved[0].product.checkedAt);
-  assert.match(saved[0].caption!,/MAIS CONTROLE/);assert.match(saved[0].caption!,/138,66/);assert.equal(fetches,0);
+  assert.match(saved[0].caption!,/MAIS CONTROLE/);assert.match(saved[0].caption!,/299,00/);assert.match(saved[0].caption!,/160,34/);assert.equal(fetches,0);
  }finally{
   await act(async()=>root.unmount());assert.equal(active.size,0);dom.window.close();URL.createObjectURL=create;URL.revokeObjectURL=revoke;globalThis.fetch=originalFetch;
   for(const [key,descriptor] of previous){if(descriptor)Object.defineProperty(globalThis,key,descriptor);else Reflect.deleteProperty(globalThis,key);}

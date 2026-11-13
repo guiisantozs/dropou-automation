@@ -58,10 +58,10 @@ test('Bahia boundaries and future-only slots preserve four requested publication
 });
 test('local captions retain exact affiliate URLs, use ranges honestly and never derive an old price from a reported discount',()=>{
  const now=Date.now(),offer=mockShopeeOffer({checkedAt:new Date(now).toISOString()}),text=shopeeCaption(offer,now);
- assert.match(text,/Por R\$\s*180,00/);assert.ok(text.includes(offer.offerLink));assert.match(text,/Link de afiliado/);assert.ok(!/70%|De:|estoque|Pix/i.test(text));assert.ok(text.length<1024);
- assert.match(shopeeCaption({...offer,priceMax:250},now),/A partir de/);
- const stale={...offer,checkedAt:new Date(now-16*60000).toISOString()};assert.equal(priceCurrent(stale,now),false);assert.doesNotMatch(shopeeCaption(stale,now),/R\$|%/);
- assert.match(shopeeCaption({...offer,previousPrice:200,previousAt:new Date(now-86400000).toISOString()},now),/10% abaixo do preço observado/);
+ assert.match(text,/POR APENAS R\$\s*180,00/);assert.ok(text.includes(offer.offerLink));assert.doesNotMatch(text,/Link de afiliado/);assert.ok(!/70%|De:|estoque|Pix/i.test(text));assert.ok(text.length<1024);
+ assert.match(shopeeCaption({...offer,priceMax:250},now),/A PARTIR DE/);
+ const stale={...offer,checkedAt:new Date(now-16*60000).toISOString()};assert.equal(priceCurrent(stale,now),false);assert.match(shopeeCaption(stale,now),/R\$/);assert.doesNotMatch(shopeeCaption(stale,now),/Link de afiliado/);
+ assert.match(shopeeCaption({...offer,previousPrice:200,previousAt:new Date(now-86400000).toISOString()},now),/AGORA POR/);
  assert.doesNotMatch(shopeeCaption({...offer,previousPrice:200,previousAt:new Date(now+86400000).toISOString()},now),/%/);
 });
 test('a ranked offer uses one sendPhoto message, caption below image; uncertain delivery never retries',async()=>{

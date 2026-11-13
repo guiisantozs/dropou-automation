@@ -34,7 +34,7 @@ test('visual draft keeps brand/model/selected variant and original link without 
  const link='https://meli.la/oferta?tracking=a%2Fb&x=1';
  const p=visualDraft({...emptyProduct(),affiliateUrl:link},validateVisual(extraction),'dropou');
  assert.equal(p.affiliateUrl,link);assert.equal(p.name,'Controle GameSir T4 Nova Lite — Branco');assert.equal(p.visualDetails?.model,'T4 Nova Lite');assert.equal(p.checkedAt,null);assert.equal(p.inStock,null);assert.equal(p.screenshotConfirmed,false);assert.equal(p.previousVerified,false);assert.equal(p.pixVerified,false);
- const preview=visualPreview(p,'dropou');assert.match(preview,/138,66/);assert.match(preview,/160,34/);assert.ok(preview.includes(link));assert.match(preview,/Nota 4,9/);
+ const preview=visualPreview(p,'dropou');assert.match(preview,/299,00/);assert.match(preview,/160,34/);assert.ok(preview.includes(link));assert.doesNotMatch(preview,/Nota 4,9/);
  const missing=visualDraft({...emptyProduct(),affiliateUrl:link},{...extraction,currentPrice:null},'dropou');assert.match(visualPreview(missing,'dropou'),/Confirme/);
 });
 test('visual request uses optimized images, no tools/history/links and a bounded structured response',()=>{

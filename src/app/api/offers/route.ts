@@ -3,6 +3,9 @@ import {caption,productSchema} from '@/lib/domain';
 import {z} from 'zod';
 import {isDeepStrictEqual} from 'node:util';
 import {savedCaptionError} from '@/lib/publication-copy';
+import {dropouCaption,replaceDropouOpening} from '@/lib/dropou-captions';
+import {publicationAdmin} from '@/server/telegram-offer';
+import {reserveDropouHeadline} from '@/server/dropou-captions';
 export async function POST(request:Request){try{
  const {db,user}=await sessionDb(request);
  const {productId,caption:selected,expected,originalCaption,manualEdit}=z.object({productId:z.string().uuid(),caption:z.string().min(1).max(4000).optional(),originalCaption:z.string().min(1).max(4000).optional(),manualEdit:z.boolean().default(false),expected:productSchema.optional()}).parse(await request.json());
@@ -11,7 +14,12 @@ export async function POST(request:Request){try{
  const p=productSchema.parse(row.data);
  if(selected&&(!expected||!isDeepStrictEqual(p,expected)))throw new Error('Produto alterado. Confira a legenda novamente.');
  if(selected){const issue=savedCaptionError(selected,p);if(issue)throw new Error(issue);}
- const {data,error}=await db.rpc('dropou_save_offer_version',{p_product:p.id,p_expected:p,p_caption:selected||caption(p),p_original:originalCaption||selected||caption(p),p_manual:manualEdit});
+ let final=selected||caption(p),original=originalCaption||final;
+ if((p.operation||'dropou')==='dropou'&&!manualEdit&&(!selected||selected===dropouCaption(p))){
+  const existing=await db.from('offers').select('id').eq('product_id',p.id).eq('owner_id',user.id).neq('status','excluido').maybeSingle();if(existing.error)throw dbError(existing.error);
+  if(!existing.data){const admin=await publicationAdmin(user.id),headline=await reserveDropouHeadline(admin.db,user.id,p.id,p.name);final=replaceDropouOpening(dropouCaption(p),headline);original=final;}
+ }
+ const {data,error}=await db.rpc('dropou_save_offer_version',{p_product:p.id,p_expected:p,p_caption:final,p_original:original,p_manual:manualEdit});
  if(error)throw dbError(error);
  return Response.json({offer:data});
 }catch(e){return apiError(e);}}

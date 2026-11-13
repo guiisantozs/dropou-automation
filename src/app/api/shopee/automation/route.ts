@@ -4,6 +4,8 @@ import {publicationAdmin} from '@/server/telegram-offer';
 import {shopeeAutomation} from '@/server/shopee/automation';
 import {adminDb} from '@/server/db';
 import {shopeeProduct} from '@/lib/shopee-product';
+import {dropouCaption} from '@/lib/dropou-captions';
+import {reserveDropouHeadline} from '@/server/dropou-captions';
 import {bahiaDay,shopeeConfigSchema,assessShopeeOffer,type OfferObservation} from '@/lib/shopee-automation';
 export const runtime='nodejs';
 export const maxDuration=60;
@@ -43,7 +45,9 @@ export async function POST(request:Request){try{
  if(body.action==='prepare'||body.action==='decide'&&body.decision==='approved'){
   if(body.action==='prepare'&&offer.decision!=='approved')throw new Error('Aprove a oferta antes de preparar a publicação.');
   const assessment=await automation.review(user.id,offer.data);if(!assessment.eligible)throw new Error('Aprovação bloqueada: '+assessment.reasons.join(' · '));
-  const staged=await adminDb().rpc('dropou_shopee_stage',{p_owner:user.id,p_cache:offer.id,p_product:shopeeProduct(offer.data,offer.id),p_assessment:assessment});
+  const service=adminDb(),product=shopeeProduct(offer.data,offer.id);
+  const headline=await reserveDropouHeadline(service,user.id,'shopee:'+offer.id,product.name);
+  const staged=await service.rpc('dropou_shopee_stage',{p_owner:user.id,p_cache:offer.id,p_product:{...product,_draftCaption:dropouCaption(product,headline)},p_assessment:assessment});
   if(staged.error)throw new Error('Não foi possível preparar o produto. Atualize a curadoria e confira se o cadastro está arquivado.');
   return Response.json({updated:true,productId:staged.data});
  }

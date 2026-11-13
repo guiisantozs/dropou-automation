@@ -7,6 +7,7 @@ import {assessShopeeOffer,defaultShopeeConfig,bahiaTime,bahiaDay,shopeeCaption,t
 import {emptyProduct} from '../src/lib/product-draft';
 import {safePublicationCaption,pricedDraftCaption} from '../src/lib/publication-copy';
 import {productSchema} from '../src/lib/domain';
+import {dropouCalls} from '../src/lib/dropou-captions';
 const owner='10000000-0000-4000-8000-000000000001',other='10000000-0000-4000-8000-000000000002',target={id:'-100111',key:'a'.repeat(64),title:'Canal de teste isolado'};
 test('Shopee migration and shared queue: atomic budgets, leases, RLS, real evidence and channel independence',async t=>{
  const db=new PGlite();
@@ -35,6 +36,7 @@ test('Shopee migration and shared queue: atomic budgets, leases, RLS, real evide
   await db.exec(readFileSync('supabase/migrations/20261112112950_shopee_gamer_quality_history.sql','utf8'));
   await db.exec(readFileSync('supabase/migrations/20261112122158_shopee_next_posts.sql','utf8'));
   await db.exec(readFileSync('supabase/migrations/20261112125940_shopee_priced_drafts.sql','utf8'));
+  await db.exec(readFileSync('supabase/migrations/20261112170713_dropou_caption_rotation.sql','utf8'));
   // Match the existing hosted service-role grants, verified before the live test.
   await db.exec('grant select,insert on public.runs to service_role');
   assert.deepEqual(await one('select (select count(*) from products) products,(select count(*) from publications) whatsapp,(select automation_enabled from telegram_dispatch_config where id=true) enabled'),before);
@@ -63,7 +65,7 @@ test('Shopee migration and shared queue: atomic budgets, leases, RLS, real evide
    await configure();cached=await cache();completed=await enqueue(cached);assert.ok(completed.id);assert.equal(await enqueue(cached),null);assert.equal((await db.query('select * from dropou_due_operation_jobs()')).rows.length,0);
    const prep=await due(completed);assert.ok(prep.shopee_lease_token);assert.equal((await one('select dropou_shopee_prepare($1) j',[completed.id])).j,null);
    assert.equal((await one('select dropou_shopee_claim($1,$2,$3,$4,$5,$6) j',[prep.id,crypto.randomUUID(),target.key,JSON.stringify({...product(cached.data),id:prep.product_id}),shopeeCaption(cached.data),JSON.stringify(cached.data)])).j,null);
-   const claimed=await claim(prep,cached);assert.equal(claimed.state,'sending');assert.equal(claimed.publication_mode,'official');assert.equal(claimed.snapshot.inStock,null);assert.match(claimed.caption,/Por R\$/);assert.equal(await claim(prep,cached),null);
+   const claimed=await claim(prep,cached);assert.equal(claimed.state,'sending');assert.equal(claimed.publication_mode,'official');assert.equal(claimed.snapshot.inStock,null);assert.match(claimed.caption,/POR APENAS R\$/);assert.equal(await claim(prep,cached),null);
    await one("select dropou_publication_receipt($1,'[\"901\"]','sending',null)",[completed.id]);await one("select dropou_publication_receipt($1,'[\"901\"]','sent',null)",[completed.id]);assert.equal((await one('select state from telegram_jobs where id=$1',[completed.id])).state,'sent');assert.equal((await one('select count(*) n from publications')).n,0);assert.equal((await one("select count(*) n from channel_events where job_id=$1 and event='sent'",[completed.id])).n,1);
   });
   await t.test('30-day cooldown survives cache refresh; one manual release retains previous proof in existing republication history',async()=>{
@@ -73,11 +75,11 @@ test('Shopee migration and shared queue: atomic budgets, leases, RLS, real evide
    const again=await enqueue(cached);assert.equal(again.id,completed.id);assert.equal((await one('select count(*) n from republication_intents where used_at is not null')).n,1);const proof=await one('select previous_receipt from republication_intents where product_id=$1',[completed.product_id]);assert.deepEqual(proof.previous_receipt.message_ids,previous.message_ids);assert.equal(proof.previous_receipt.caption,previous.caption);assert.equal((await one('select repeat_until from shopee_offers where id=$1',[cached.id])).repeat_until,null);
    await db.query("update telegram_jobs set state='cancelled',shopee_slot=null where id=$1",[again.id]);
   });
-  await t.test('rejected offers and wrong destinations cannot queue; stale price skips or is explicitly omitted',async()=>{
+  await t.test('rejected offers and wrong destinations cannot queue; stale price is held even with a legacy omit configuration',async()=>{
    await configure();const rejected=await cache({decision:'rejected'});await assert.rejects(enqueue(rejected),/aprovada/);
    const fresh=await cache();await assert.rejects(one('select dropou_shopee_enqueue($1,$2,$3,$4,$5)',[owner,fresh.id,at(),JSON.stringify({...target,id:'-100999'}),JSON.stringify(product(fresh.data))]),/canal/);
    const j=await enqueue(fresh),prep=await due(j);fresh.data.checkedAt=new Date(Date.now()-3600000).toISOString();await db.query("update shopee_offers set checked_at=now()-interval '1 hour',data=$2 where id=$1",[fresh.id,JSON.stringify(fresh.data)]);assert.equal(await claim(prep,fresh),null);assert.equal((await one('select state from telegram_jobs where id=$1',[j.id])).state,'blocked');await db.query('update telegram_jobs set shopee_slot=null where id=$1',[j.id]);
-   await configure({stalePolicy:'omit'});const omit=await cache(),j2=await enqueue(omit),prep2=await due(j2);omit.data.checkedAt=new Date(Date.now()-3600000).toISOString();await db.query("update shopee_offers set checked_at=now()-interval '1 hour',data=$2 where id=$1",[omit.id,JSON.stringify(omit.data)]);const result=await claim(prep2,omit);assert.equal(result.state,'sending');assert.doesNotMatch(result.caption,/R\$|%/);await one("select dropou_publication_receipt($1,'[]','uncertain','simulated timeout')",[j2.id]);assert.equal((await one('select dropou_shopee_prepare($1) j',[j2.id])).j,null);
+   await configure({stalePolicy:'omit'});const omit=await cache(),j2=await enqueue(omit),prep2=await due(j2);omit.data.checkedAt=new Date(Date.now()-3600000).toISOString();await db.query("update shopee_offers set checked_at=now()-interval '1 hour',data=$2 where id=$1",[omit.id,JSON.stringify(omit.data)]);const result=await claim(prep2,omit);assert.equal(result,null);assert.equal((await one('select state from telegram_jobs where id=$1',[j2.id])).state,'blocked');assert.equal((await one('select dropou_shopee_prepare($1) j',[j2.id])).j,null);
   });
   await t.test('an explicitly authorized single manual Shopee photo retains the ordinary receipt while all automation is paused',async()=>{
    await db.query("update operation_settings set automation_enabled=false,shopee_config='{}' where owner_id=$1",[owner]);await db.exec('update telegram_dispatch_config set automation_enabled=false');
@@ -96,9 +98,21 @@ test('Shopee migration and shared queue: atomic budgets, leases, RLS, real evide
    assert.equal((await one('select count(*) n from operation_settings where automation_enabled')).n,0);assert.equal((await one('select count(*) n from publications')).n,0);
    assert.equal((await one('select dropou_publication_claim_v2($1,$2,false) j',[j.id,target.key])).j,null);
   });
+  await t.test('headline history rotates durably, respects ownership and cannot be written by clients',async()=>{
+   await role();const before=await one('select (select count(*) from telegram_jobs) jobs,(select count(*) from deliveries) receipts');
+   const calls=[...dropouCalls.controls],rotate=(uid=owner,current='')=>one('select dropou_caption_rotate($1,$2,$3,$4,$5) headline',[uid,'fixture','controls',calls,current]);
+   const a=(await rotate()).headline,b=(await rotate(owner,a)).headline,c=(await rotate(owner,b)).headline;assert.notEqual(a,b);assert.notEqual(b,c);assert.equal(new Set([a,b,c]).size,3);
+   assert.equal((await one('select count(*) n from dropou_caption_history where owner_id=$1',[owner])).n,3);
+   await role('authenticated',other);assert.equal((await one('select count(*) n from dropou_caption_history')).n,0);await assert.rejects(rotate(),/permission/);
+   await role('authenticated',owner,'bruto');assert.equal((await one('select count(*) n from dropou_caption_history')).n,0);
+   await role('authenticated',owner);assert.equal((await one('select count(*) n from dropou_caption_history')).n,3);await assert.rejects(db.query("insert into dropou_caption_history(owner_id,subject,category,headline) values($1,'x','controls',$2)",[owner,a]),/permission/);
+   await role();await db.exec('begin');
+   const published=calls.find(h=>h!==c)!;await db.query("insert into channel_events(owner_id,brand_id,product_name,channel,event,message_ids,caption) values($1,'dropou','fixture','telegram','sent','[901]',$2)",[owner,published+'\n\nfixture']);assert.notEqual((await rotate(owner,c)).headline,published);await db.exec('rollback');
+   assert.deepEqual(await one('select (select count(*) from telegram_jobs) jobs,(select count(*) from deliveries) receipts'),before);
+  });
   await t.test('approval stages one draft atomically; repeated preparation retains edits and never schedules or sends',async()=>{
    await role();const c=await cache({decision:'found'}),p=shopeeProduct(c.data,c.id),before=await one('select (select count(*) from telegram_jobs) jobs,(select count(*) from deliveries) receipts,(select count(*) from shopee_requests) requests');
-   const stage=(uid=owner,data=p)=>one('select dropou_shopee_stage($1,$2,$3,$4) id',[uid,c.id,JSON.stringify(data),JSON.stringify(assessShopeeOffer(c.data,defaultShopeeConfig()))]);
+   const stage=(uid=owner,data=p)=>one('select dropou_shopee_stage($1,$2,$3,$4) id',[uid,c.id,JSON.stringify({...data,_draftCaption:pricedDraftCaption(data)}),JSON.stringify(assessShopeeOffer(c.data,defaultShopeeConfig()))]);
    await assert.rejects(stage(other),/indispon/);await assert.rejects(stage(owner,{...p,price:1}),/diverg/);
    await db.query('update shopee_offers set eligible=false where id=$1',[c.id]);assert.equal((await stage()).id,p.id);assert.equal((await one('select eligible from shopee_offers where id=$1',[c.id])).eligible,true);assert.equal((await one('select decision,prepared_product_id from shopee_offers where id=$1',[c.id])).decision,'approved');
    const saved=await one('select data from products where id=$1',[p.id]);assert.equal(saved.data.inStock,null);const offer=await one('select id,caption from offers where product_id=$1',[p.id]);assert.equal(offer.caption,pricedDraftCaption(saved.data));assert.match(offer.caption,/R\$/);
@@ -108,9 +122,9 @@ test('Shopee migration and shared queue: atomic budgets, leases, RLS, real evide
   });
   await t.test('priced draft matches the client; an expired priced schedule is held without removing its value',async()=>{
    await role();const c=await cache({decision:'found'}),p=shopeeProduct(c.data,c.id),a=assessShopeeOffer(c.data,defaultShopeeConfig());
-   const pid=(await one('select dropou_shopee_stage($1,$2,$3,$4) id',[owner,c.id,JSON.stringify(p),JSON.stringify(a)])).id;
+   const pid=(await one('select dropou_shopee_stage($1,$2,$3,$4) id',[owner,c.id,JSON.stringify({...p,_draftCaption:pricedDraftCaption(p)}),JSON.stringify(a)])).id;
    let o=await one('select * from offers where product_id=$1',[pid]);const stored=(await one('select data from products where id=$1',[pid])).data;assert.equal(o.caption,pricedDraftCaption(stored));
-   for(const price of [0.01,199.9,1234.56,1000000])assert.equal((await one('select dropou_priced_draft_caption($1) caption',[JSON.stringify({...stored,price})])).caption,pricedDraftCaption({...stored,price}));
+   for(const price of [0.01,199.9,1234.56,1000000]){const fallback=(await one('select dropou_priced_draft_caption($1) caption',[JSON.stringify({...stored,price})])).caption;assert.match(fallback,/POR APENAS R\$/);assert.match(fallback,/#publi \| Dropou/);assert.ok(fallback.includes(new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL'}).format(price)));}
    o=(await one('select dropou_publication_reconfirm($1,$2,$3) o',[owner,o.id,JSON.stringify(stored)])).o;
    const j=(await one("select dropou_publication_queue_v2($1,$2,'telegram',$3,$4,$5,$5,'verified',false) j",[owner,o.id,new Date(Date.now()+60000).toISOString(),JSON.stringify({...target,mediaMode:'photo',photoConfirmed:true}),o.caption])).j;
    await db.query("update telegram_jobs set scheduled_at=now(),authorized_until=now()-interval '1 minute' where id=$1",[j.id]);

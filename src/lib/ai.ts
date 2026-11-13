@@ -1,6 +1,7 @@
 import {z} from 'zod';
 import {caption, freshPrice, money, Product} from './domain';
 import {safeInstallments,shortProductName} from './commerce';
+import {dropouCaption,dropouCalls,dropouCategory} from './dropou-captions';
 
 export const PROMPT_VERSION='dropou-2';
 export const brands={
@@ -25,6 +26,7 @@ export function generationError(p:Product){
  return null;
 }
 export function localHeadline(p:Product,brand:Brand='dropou',variation=0){
+ if(brand==='dropou'){const calls=dropouCalls[dropouCategory(p.name)];return calls[variation%calls.length];}
  if(brand==='bruto')return ['🛠️ UMA FERRAMENTA PARA SUA ROTINA!','🔧 UTILIDADE PARA SUA OFICINA!','🧰 CONFIRA ESSE ACHADO!'][variation%3];
  if(brand==='moda')return ['👔 ESTILO PARA O SEU DIA!','👟 CONFIRA SEU PRÓXIMO LOOK!','🖤 UM ACHADO PARA SEU ESTILO!'][variation%3];
  if(brand==='linda')return ['✨ SEU MOMENTO DE SE CUIDAR!','💖 UM CARINHO NA SUA ROTINA!','✨ ENCONTRE SEU PRÓXIMO FAVORITO!'][variation%3];
@@ -44,6 +46,7 @@ export function renderCaption(p:Product,brand:Brand='dropou',headline=localHeadl
 }
 // Draft previews use this formatter with an explicit "not revalidated" label in the UI.
 export function formatCaption(p:Product,brand:Brand='dropou',headline=localHeadline(p,brand)){
+ if(brand==='dropou')return dropouCaption(p,headline);
  const old=p.previousVerified&&p.previousPrice&&p.previousPrice>p.price?p.previousPrice:null;
  const savings=old?(Math.round(old*100)-Math.round(p.price*100))/100:0;
  return [headline+' #publi','⚡ *'+(p.shortName||shortProductName(p.name)).replace(/[\n\r*_~]/g,' ')+'*',[

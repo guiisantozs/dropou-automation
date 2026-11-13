@@ -4,6 +4,7 @@ import {shopeeSearchPlan} from '../../lib/shopee-search';
 import {shopeeProduct as product} from '../../lib/shopee-product';
 import {requestShopee,ShopeeApiError,shopeeEndpoint} from './client';
 import {sendTelegramTo,TelegramFailure,type TelegramTarget} from '../telegram-core';
+import {reserveDropouHeadline} from '../dropou-captions';
 
 type CacheRow={id:string;data:ShopeeOffer;decision:string;eligible:boolean;score:number;checked_at:string;repeat_until?:string|null};
 export type ShopeeDependencies={db:SupabaseClient;env:Record<string,string|undefined>;http?:typeof fetch;target:(owner:string)=>Promise<TelegramTarget>;telegramEnv:(owner:string)=>Promise<Record<string,string|undefined>>};
@@ -103,8 +104,9 @@ export function shopeeEngine(deps:ShopeeDependencies){
      if(exact){await save(prepared.owner_id,[exact],config);row=await checked(db.from('shopee_offers').select('*').eq('id',row.id).single()) as CacheRow;}
     }catch(e){if(config.stalePolicy==='skip'){await block(e instanceof ShopeeApiError?e.message:'Não foi possível confirmar o preço.');return {sent:false};}}
    }
-   if(!assessShopeeOffer(row.data,config).eligible||!priceCurrent(row.data)&&config.stalePolicy==='skip'){await block('Preço ou critérios não confirmados; horário pulado.');return {sent:false};}
-   const target=await deps.target(prepared.owner_id),caption=shopeeCaption(row.data),p={...product(row.data,prepared.product_id),createdAt:prepared.snapshot.createdAt};
+   if(!assessShopeeOffer(row.data,config).eligible||!priceCurrent(row.data)){await block('Preço ou critérios não confirmados; revalide o valor antes de publicar.');return {sent:false};}
+   const headline=await reserveDropouHeadline(db,prepared.owner_id,prepared.product_id,row.data.name,prepared.caption||'');
+   const target=await deps.target(prepared.owner_id),caption=shopeeCaption(row.data,Date.now(),headline),p={...product(row.data,prepared.product_id),createdAt:prepared.snapshot.createdAt};
    const claim=await checked(db.rpc('dropou_shopee_claim',{p_job:id,p_token:prepared.shopee_lease_token,p_target:target.key,p_product:p,p_caption:caption,p_evidence:row.data})) as any;if(!claim)return {sent:false};sending=true;
    const telegramEnv=await deps.telegramEnv(prepared.owner_id);
    const before=async()=>{

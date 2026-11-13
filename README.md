@@ -90,3 +90,5 @@ A fila existente `telegram_jobs` usa um único pg_cron, `dropou-telegram-dispatc
 Migração incremental aplicada ao projeto existente: `supabase/migrations/20261106150839_publication_dispatch_and_review.sql`. Em instalações novas, aplique as migrações anteriores de IA, Telegram e editor antes desta. Telegram aceita `TELEGRAM_CHAT_ID` ou `TELEGRAM_CHANNEL_ID`; se ambos existirem, precisam ser iguais. O backend de fila e conferência usa `SUPABASE_SECRET_KEY` e o administrador já autorizado em `telegram_dispatch_config.owner_ids`. Nunca exponha esses segredos com `NEXT_PUBLIC_`.
 
 Referência: [Supabase — grants e RLS](https://supabase.com/docs/guides/api/securing-your-api).
+
+Fluxo atual do painel: [Próximos posts e redesign](docs/premium-dashboard.md), [curadoria gamer](docs/shopee-gamer-quality.md) e [legendas Tech & Games com agendamento rápido](docs/legendas-tech-games.md).

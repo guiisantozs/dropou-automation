@@ -41,7 +41,7 @@ test('cache keys change with verified data, brand, prompt/model/variants, never 
 });
 test('integer cents, verified conditions, exact affiliate link and brand are formatted locally',()=>{
  const p=product({price:418.41,previousPrice:449.90});
- const text=renderCaption(p);assert.match(text,/31,49/);assert.match(text,/~R\$\s449,90~/);assert.ok(text.includes(p.affiliateUrl));assert.match(text,/#publi/);
+ const text=renderCaption(p);assert.match(text,/418,41/);assert.doesNotMatch(text,/ECONOMIZE/);assert.match(text,/~R\$\s449,90~/);assert.ok(text.includes(p.affiliateUrl));assert.match(text,/#publi/);
  assert.ok(!renderCaption({...p,previousVerified:false}).includes('ECONOMIZE'));
  assert.ok(!renderCaption({...p,installments:'SEM JUROS',installmentsVerified:false}).includes('SEM JUROS'));
  assert.match(renderCaption(p,'linda'),/Amiga, tá linda/);
@@ -80,7 +80,7 @@ test('Postgres ledger: cache, duplicates, budgets, retries, roles and Telegram',
   await t.test('paid generation disabled by default: zero provider calls',async()=>{const r=await generate([p],'dropou',1,store,config,provider(counter));assert.equal(r[0].source,'local');assert.equal(counter.calls,0);});
   await db.exec('update ai_budget set enabled=true');
   await t.test('one new caption; repeated requests avoid two provider calls through durable cache',async()=>{
-   const r=await generate([p],'dropou',1,store,config,provider(counter));assert.equal(r[0].source,'openai');assert.equal(counter.calls,1);assert.match(r[0].captions[0],/150,00/);
+   const r=await generate([p],'dropou',1,store,config,provider(counter));assert.equal(r[0].source,'openai');assert.equal(counter.calls,1);assert.match(r[0].captions[0],/599,00/);assert.match(r[0].captions[0],/749,00/);
    for(let i=0;i<2;i++){const cached=await generate([p],'dropou',1,store,config,provider(counter));assert.equal(cached[0].source,'cache');assert.equal(cached[0].captions[0],r[0].captions[0]);}
    assert.equal(counter.calls,1);const hits=await db.query<{n:number}>('select count(*)::int n from ai_cache_hits');assert.equal(hits.rows[0].n,2);
   });

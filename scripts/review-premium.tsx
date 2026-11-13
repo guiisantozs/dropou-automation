@@ -15,7 +15,7 @@ import PublicationActions from '../src/components/publication-actions';
 import {PublicationHistoryRow} from '../src/components/publication-history';
 import {defaultShopeeConfig} from '../src/lib/shopee-automation';
 import {shopeeProduct} from '../src/lib/shopee-product';
-import {safePublicationCaption} from '../src/lib/publication-copy';
+import {safePublicationCaption,pricedDraftCaption} from '../src/lib/publication-copy';
 import type {api} from '../src/lib/api';
 import type {Offer} from '../src/lib/offers';
 import type {WorkspaceBrandId} from '../src/lib/workspace-brands';
@@ -47,4 +47,7 @@ writeFileSync(out+'/offer.html',wrap('Prévia da publicação',renderToStaticMar
 writeFileSync(out+'/empty.html',wrap('Automação de Ofertas',renderToStaticMarkup(h(OfferAutomation,{operation:'dropou',initialData:{...automation,offers:[]}}))));
 const verificationRequest=(async()=>({enabled:false,telegram:{available:false,id:'-100123',title:'Canal de exemplo',reason:'O canal está salvo, mas a permissão do bot ainda precisa ser verificada.'}})) as typeof api;
 writeFileSync(out+'/verification.html',wrap('Agendamentos',await mounted(h(PublicationActions,{product:products[0],offer:offers[0],text:offers[0].caption,initialAction:'schedule',request:verificationRequest,save:async()=>offers[0],onUpdate:async()=>{},onEdit:noop}))));
+const quickRequest=(async()=>({enabled:false,slots:['09:00','12:30','16:30','20:30'],serverNow:now.toISOString(),telegram:{available:true,id:'-100123',title:'Canal fixture',key:'a'.repeat(64)}})) as typeof api;
+const quickOffer={...offers[0],caption:pricedDraftCaption(products[0])};
+writeFileSync(out+'/quickschedule.html',wrap('Agendamento rápido',await mounted(h(PublicationActions,{product:products[0],offer:quickOffer,text:quickOffer.caption,initialAction:'schedule',preference:'priced',request:quickRequest,save:async()=>quickOffer,onUpdate:async()=>{},onEdit:noop}))));
 console.log('Isolated fixture previews: '+out);

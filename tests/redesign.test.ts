@@ -37,7 +37,7 @@ test('OCR rejects marketplace navigation as a title and omits the exact noisy in
 
 test('caption editing preserves the original link, disclosure and verified commercial values',()=>{
  const p=product(),text=formatCaption(p,'dropou',p.creativeHeadline);
- assert.equal(captionError(text,p),null);assert.match(text,/UM UPGRADE/);assert.match(text,/Processador AMD Ryzen 3 3200G\*/);
+ assert.equal(captionError(text,p),null);assert.match(text,/UM UPGRADE/);assert.match(text,/Processador AMD Ryzen 3 3200G[^*]*\*/);
  assert.equal(captionError(text.replace('UM UPGRADE','SEU NOVO UPGRADE')+'\n\n💙 Bora conferir!',p),null);
  assert.match(captionError(text.replace('#publi',''),p)!,/#publi/);assert.match(captionError(text.replace('?tracking=preservado','?tracking=alterado'),p)!,/original/);
  assert.match(captionError(text+'\nR$ 99,00',p)!,/valor diferente/);assert.match(captionError(text+'\n90% de desconto',p)!,/desconto/);assert.match(captionError(text+'\n💳 8x de R$ 55,88 sem juros',p)!,/valor diferente|parcelamento/);

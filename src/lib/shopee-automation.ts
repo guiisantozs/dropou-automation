@@ -1,5 +1,6 @@
 import {z} from 'zod';
 import {assessOffer} from './shopee-quality';
+import {dropouCaption} from './dropou-captions';
 export {salesTrend,diversifyOffers,offerFingerprint} from './shopee-quality';
 export type {OfferAssessment,OfferObservation} from './shopee-quality';
 
@@ -31,11 +32,11 @@ export function dailyKeywords(c:ShopeeConfig,day:string){const offset=Math.floor
 export function futureSlots(c:ShopeeConfig,now=new Date()){const day=bahiaDay(now);return [...c.times].sort().map(t=>new Date(day+'T'+t+':00-03:00')).filter(d=>d.getTime()>now.getTime());}
 export function priceCurrent(o:ShopeeOffer,now=Date.now()){const t=Date.parse(o.checkedAt);return Number.isFinite(t)&&t<=now+1000&&now-t<=15*60000;}
 const brl=(n:number)=>new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL'}).format(n);
-export function shopeeCaption(o:ShopeeOffer,now=Date.now()){
- const name=o.name.replace(/[\r\n*_~<>\[\]]/g,' ').slice(0,140),current=priceCurrent(o,now);
+export function shopeeCaption(o:ShopeeOffer,now=Date.now(),headline?:string){
  // Shopee's reported percentage is NOT evidence of an old price. Never derive one.
  const previous=o.previousPrice&&o.previousAt&&Date.parse(o.previousAt)<Date.parse(o.checkedAt)&&Date.parse(o.checkedAt)-Date.parse(o.previousAt)<=30*86400000&&o.priceMax===o.price&&o.previousPrice>o.price?o.previousPrice:null;
- const discount=current&&previous?`🔥 ${Math.floor((Math.round(previous*100)-Math.round(o.price*100))*100/Math.round(previous*100))}% abaixo do preço observado em ${new Intl.DateTimeFormat('pt-BR',{timeZone:'America/Bahia'}).format(new Date(o.previousAt!))}`:'';
- return ['🎮 ACHADO GAMER! #publi','🎯 '+name,current?`💰 ${o.priceMax>o.price?'A partir de':'Por'} ${brl(o.price)}`:'Confira preço e disponibilidade na loja.',discount,'🛒 Aproveite:\n'+o.offerLink,'🔗 Link de afiliado'].filter(Boolean).join('\n\n');
+ // This is also a draft preview. Expired prices remain visible; the sender must revalidate.
+ const caption=dropouCaption({name:o.name,price:o.price,previousVerified:!!previous,previousPrice:previous,paymentMethod:'nao_informado',affiliateUrl:o.offerLink},headline);
+ return o.priceMax>o.price?caption.replace('POR APENAS','A PARTIR DE'):caption;
 }
 export function liveShopeeAllowed(c:ShopeeConfig,env:Record<string,string|undefined>){return c.enabled&&!c.dryRun&&env.SHOPEE_AUTOMATION_LIVE==='true';}

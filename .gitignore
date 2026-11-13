@@ -4,8 +4,12 @@ outputs/
 .env*
 !.env.example
 *.tsbuildinfo
+*.log
 supabase/.temp/
 .vercel/
-
-.vercel
-.env*
+.agents/
+.codex/
+.aws/
+*.pem
+*.p12
+*.pfx

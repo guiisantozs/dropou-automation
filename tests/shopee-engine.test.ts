@@ -10,6 +10,7 @@ class MemoryDb{
  receipts:unknown[]=[];
  from(table:string){return new Query(this,table);}
  async rpc(name:string,args:any){
+  if(name==='dropou_caption_rotate')return {data:args.p_candidates.find((h:string)=>h!==args.p_current),error:null};
   if(name==='dropou_shopee_finish'){const r=this.tables.shopee_requests.find(r=>r.id===args.p_request);if(r?.state==='reserved')Object.assign(r,{state:args.p_state,finished_at:new Date().toISOString(),blocked_until:args.p_state==='ok'?null:new Date(Date.now()+args.p_retry_seconds*1000).toISOString()});return {data:null,error:null};}
   if(name==='dropou_shopee_cache'){for(const row of args.p_rows){const previous=this.tables.shopee_offers.find(r=>r.shop_id===row.shop_id&&r.item_id===row.item_id);if(previous)Object.assign(previous,row);else this.tables.shopee_offers.push({id:crypto.randomUUID(),owner_id:args.p_owner,brand_id:'dropou',decision:'found',...row});}return {data:null,error:null};}
   if(name==='dropou_shopee_run'){if(this.tables.shopee_runs.length)return {data:null,error:null};const r={id:crypto.randomUUID(),owner_id:args.p_owner,brand_id:'dropou',day:bahiaDay(),state:'running'};this.tables.shopee_runs.push(r);return {data:r.id,error:null};}

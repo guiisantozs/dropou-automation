@@ -2,6 +2,7 @@ import {operationCopy} from './workspace-brands';
 import {affiliateStore} from './affiliate';
 import {captionError} from './caption-editor';
 import {freshPrice,money,Product} from './domain';
+import {dropouCaption} from './dropou-captions';
 export type PublicationMode='verified'|'safe';
 export type PublicationPreference='auto'|'safe'|'priced';
 export function publicationIdentityError(p:Product){
@@ -22,8 +23,9 @@ export function safePublicationCaption(p:Product){
  return [copy.headline,'⚡ *'+name+'*','🛒 Veja o preço e a disponibilidade atualizados na loja 👇\n'+p.affiliateUrl,'As condições podem ter mudado.',copy.closing].join('\n\n');
 }
 export function pricedDraftCaption(p:Product){
+ if((p.operation||'dropou')==='dropou')return dropouCaption(p);
  const parts=safePublicationCaption(p).split('\n\n');
- return [parts[0],parts[1],'💙 *POR '+money(p.price)+'!*','🛒 CONFIRA A OFERTA 👇\n'+p.affiliateUrl,parts[4]].join('\n\n');
+ return [parts[0],parts[1],'💙 *POR '+money(p.price)+(p.paymentMethod==='pix'?' no Pix':'')+'!*','🛒 CONFIRA A OFERTA 👇\n'+p.affiliateUrl,parts[4]].join('\n\n');
 }
 export function publicationCaptionError(text:string,p:Product,mode:PublicationMode,now=Date.now()){
  const identity=publicationIdentityError(p);if(identity)return identity;
