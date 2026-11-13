@@ -34,3 +34,11 @@ Os produtos desta aba são selecionados manualmente pelo usuário. Salvar ou pre
 Verificações: 225 testes completos, tipos/build finais, 18 testes de banco após o ajuste de preços e revisão Chrome de 52 combinações em 320/375/768/1440 px. Consulta real de leitura e teste remoto transacional com rollback executados; biblioteca continuou vazia, sem produtos de teste permanentes ou postagens. Detalhes em `VALIDACAO.md`. Script `scripts/verify-shopee-import.ts` é uma sondagem explícita de leitura, consome uma reserva de API e não deve ser executado automaticamente.
 
 Referências: [orientações de links de afiliado Shopee](https://help.shopee.com.br/portal/10/article/128461-Como-gerar-links-de-produtos-ou-lojas) e [RLS Supabase](https://supabase.com/docs/guides/database/postgres/row-level-security). O contrato da consulta é comprovado também pela resposta real autenticada da conta, com relatório local ignorado pelo Git.
+
+## Cards e publicação após conferência
+
+O card exibe foto contida, nome e preço. **Abrir para conferir** prepara/reabre a oferta; produtos sem legenda ou com variação pendente abrem a revisão. **Agendar publicação** mantém o modal e os horários configurados. Ao voltar, você retorna aos produtos salvos.
+
+Após conferir preço, disponibilidade e salvar a legenda, **Postar no Telegram** abre a confirmação de envio; **Copiar para WhatsApp** copia a versão final salva após consultar novamente a oferta. Conferência vencida bloqueia a cópia. Copiar continua sendo uma ação manual e não registra postagem. **Postado no Telegram** depende de recibo confirmado; entregas incertas e agendamentos existentes não ganham um novo envio pelo card.
+
+**Dados e outras ações** reúne avaliação/vendas disponíveis, data do preço, links, atualização de dados e remoção. O preço/foto/nome da oferta preparada são preservados quando houve edição; o card não substitui a edição por uma nova observação da API. Atualizar lista e retornar à aba releem os estados sem gastar consultas Shopee.

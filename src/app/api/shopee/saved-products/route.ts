@@ -16,7 +16,19 @@ export async function GET(request:Request){try{
   db.from('shopee_requests').select('id',{count:'exact',head:true}).eq('owner_id',user.id).eq('brand_id','dropou').eq('day',day),
   db.from('shopee_requests').select('id',{count:'exact',head:true}).eq('day',day),
  ]);for(const r of [rows,settings,local,global])if(r.error)throw dbError(r.error);
- return Response.json({products:rows.data,total:rows.count||0,more:(rows.count||0)>(page+1)*24,budget:{used:local.count||0,limit:shopeeConfigSchema.parse(settings.data?.shopee_config).dailyLimit,globalUsed:global.count||0,globalLimit:Number(process.env.SHOPEE_DAILY_REQUEST_LIMIT||10)},credentialsReady:!!process.env.SHOPEE_AFFILIATE_APP_ID&&!!process.env.SHOPEE_AFFILIATE_SECRET&&process.env.SHOPEE_AFFILIATE_APPROVED==='true'},{headers:{'Cache-Control':'no-store'}});
+ const ids=[...new Set((rows.data||[]).map(r=>r.prepared_product_id).filter((id):id is string=>!!id))];
+ const publications:Record<string,unknown>={};
+ if(ids.length){
+  const [products,offers,jobs,deliveries]=await Promise.all([
+   db.from('products').select('id,data,archived_at').eq('owner_id',user.id).eq('brand_id','dropou').in('id',ids),
+   db.from('offers').select('*').eq('owner_id',user.id).eq('brand_id','dropou').in('product_id',ids).neq('status','excluido'),
+   db.from('telegram_jobs').select('product_id,id,state,channel,scheduled_at,destination_title,message_ids,attempts').eq('owner_id',user.id).eq('brand_id','dropou').in('product_id',ids),
+   db.from('deliveries').select('product_id,state,message_ids,destination_title,sent_at').eq('owner_id',user.id).eq('brand_id','dropou').eq('channel','telegram').in('product_id',ids),
+  ]);
+  for(const r of [products,offers,jobs,deliveries])if(r.error)throw dbError(r.error);
+  for(const p of products.data||[])publications[p.id]={product:p.data,archived:!!p.archived_at,offer:offers.data?.find(o=>o.product_id===p.id),jobs:jobs.data?.filter(j=>j.product_id===p.id),delivery:deliveries.data?.find(d=>d.product_id===p.id)};
+ }
+ return Response.json({publications,serverNow:new Date().toISOString(),products:rows.data,total:rows.count||0,more:(rows.count||0)>(page+1)*24,budget:{used:local.count||0,limit:shopeeConfigSchema.parse(settings.data?.shopee_config).dailyLimit,globalUsed:global.count||0,globalLimit:Number(process.env.SHOPEE_DAILY_REQUEST_LIMIT||10)},credentialsReady:!!process.env.SHOPEE_AFFILIATE_APP_ID&&!!process.env.SHOPEE_AFFILIATE_SECRET&&process.env.SHOPEE_AFFILIATE_APPROVED==='true'},{headers:{'Cache-Control':'no-store'}});
  }catch(e){return apiError(e);}}
 const bodySchema=z.discriminatedUnion('action',[
  z.object({action:z.literal('save'),links:z.array(z.string().max(2048)).min(1).max(50)}),

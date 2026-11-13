@@ -15,6 +15,13 @@ try{
  for(const width of [320,375,768,1440]){const page=await browser.newPage({viewport:{width,height:1000},reducedMotion:'reduce'});const errors=[];page.on('pageerror',e=>errors.push(e.message));
   for(const name of pages){await page.goto('http://127.0.0.1:4189/'+name+'.html');await page.evaluate(()=>document.fonts.ready);const state=await page.evaluate(()=>({overflow:document.documentElement.scrollWidth>innerWidth+1,bg:getComputedStyle(document.body).backgroundColor,primary:getComputedStyle(document.documentElement).getPropertyValue('--primary').trim(),broken:[...document.images].filter(i=>i.complete&&!i.naturalWidth).length}));assert.equal(state.overflow,false,name+' '+width+' horizontal overflow');assert.equal(state.bg,'rgb(11, 11, 13)');assert.equal(state.primary,'#FF6A1A');assert.equal(state.broken,0);assert.deepEqual(errors,[]);checks++;
    if(width===375||width===1440)await page.screenshot({path:'outputs/premium-review/screenshots/'+name+'-'+width+'.png',fullPage:true});
+   if(name==='saved'){
+    await page.locator('.saved-product-photo img').evaluateAll(async images=>await Promise.all(images.map(async img=>{img.loading='eager';await img.decode();})));
+    await page.locator('.saved-product-card').last().scrollIntoViewIfNeeded();
+    const geometry=await page.locator('.saved-product-card').evaluateAll(cards=>cards.map(card=>{const slot=card.querySelector('.saved-product-photo').getBoundingClientRect(),title=card.querySelector('h3').getBoundingClientRect(),price=card.querySelector('.saved-product-price')?.getBoundingClientRect();return {titleClear:title.top>=slot.bottom,titleVisible:title.height>0,priceClear:!price||price.top>=title.bottom-1,images:[...card.querySelectorAll('.saved-product-photo img')].map(img=>{const r=img.getBoundingClientRect();return img.complete&&img.naturalWidth>0&&r.top>=slot.top&&r.bottom<=slot.bottom+1&&r.left>=slot.left&&r.right<=slot.right+1;})};}));
+    for(const result of geometry){assert.equal(result.titleClear,true,'photo overlaps title '+width);assert.equal(result.titleVisible,true);assert.equal(result.priceClear,true);assert.ok(result.images.every(Boolean),'image must remain within its slot '+width);}
+    await page.locator('.saved-product-card').first().scrollIntoViewIfNeeded();
+   }
    if(name==='automation'){await page.locator('.automation-details').first().locator('summary').first().click();assert.equal(await page.locator('.automation-details').first().evaluate(e=>e.open),true);await page.screenshot({path:'outputs/premium-review/screenshots/automation-details-'+width+'.png',fullPage:true});}
   }await page.close();
  }
