@@ -1,4 +1,4 @@
-﻿# Verificação do fluxo manual — 05/11/2026
+# Verificação do fluxo manual — 05/11/2026
 
 ## O que foi executado
 
@@ -129,4 +129,4 @@ Nenhuma chave privada é necessária para esse fluxo manual. Credenciais e aprov
 - Listagem agrega em quatro consultas os produtos/ofertas/fila/recibos dos até 24 salvos preparados, sempre por proprietário e marca Dropou, sem mudança de schema. Usa relógio do servidor para expiração. Retorno da revisão preserva a aba Meus links Shopee; foco/Atualizar lista relê estados sem consultar a Shopee.
 - Arquivos principais: shopee-saved-products.tsx, saved-publication.ts, rota api/shopee/saved-products, premium.css, dashboard.tsx e offer-workspace.tsx. Integrações Shopee, transporte Telegram, grupos restantes e fluxo manual WhatsApp preservados.
 - Validação: 228/228 testes completos; cinco testes direcionados após os ajustes finais; typecheck e build finais aprovados. Chrome em 320/375/768/1440 px com fotos horizontal/vertical e estados conferido/publicado/pendente, verificando geometricamente que imagem não invade nome/preço. Capturas desktop/mobile inspecionadas. Teste de cópia reconsulta a oferta, preserva a legenda e recusa expiração sem POST. Estrutura remota das quatro tabelas conferida por leitura; nenhuma migração, consulta Shopee ou mensagem real executada nesta etapa.
-- Envio/publicação desta revisão serão registrados após confirmação do GitHub/Vercel.
+- Entrega: commit técnico 6aba9d985d665913b6633cdb8224630b67fca094 enviado a origin/main, hash remoto confirmado. Vercel READY em dropou-automation-r6hdgd53u-guisantozs-projects.vercel.app e alias dropou-automation.vercel.app conferido. GET da aba retornou 200 e API sem sessão retornou 401. Auditoria do índice: 265 arquivos sem achados de credenciais/arquivos privados. Nenhum envio real como teste.
