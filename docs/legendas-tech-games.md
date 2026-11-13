@@ -6,10 +6,9 @@ O novo modelo é exclusivo de Dropou. Bruto & Barato, Moda Masculina e os perfis
 
 1. Em **Automação de Ofertas → Elegíveis**, aprove o produto. Ele passa para **Próximos posts**, com rascunho preparado.
 2. Clique em **Agendar**. O mesmo botão está visível no catálogo e nos produtos recentes. O pop-up mostra os próximos horários de `routine_slots` da marca, hoje/amanhã, em America/Bahia. Você também pode informar outra data.
-3. Confira a loja e clique em **Conferi agora**. A confirmação cobre o preço registrado, disponibilidade e condições. Edite/revalide o produto se o valor da loja mudou.
-4. Confira a legenda e a apresentação no Telegram. Foto exige arquivo e autorização; texto e prévia de link continuam disponíveis. Salve a versão final se houver edição.
-5. Confirme o agendamento ou **Publicar agora no Telegram**. Abrir o pop-up, preparar, copiar e salvar não enviam mensagens. WhatsApp continua manual.
-
+3. Revise a prévia com nome, foto, preço e legenda já preenchidos. O preço encontrado pela API não exige uma segunda conferência separada; se o valor estiver ausente, informe-o no cadastro, sem inventar valores.
+4. Clique em **Salvar oferta**. Esse salvamento aprova os dados, a legenda e a foto exibidos; a revisão necessária é registrada no servidor no mesmo fluxo. Não há outra caixa obrigatória para a imagem nem botão Conferi agora na tela simplificada do Dropou.
+5. Escolha **Publicar agora no Telegram**, **Copiar para WhatsApp** ou **Agendar publicação**. O Telegram mantém uma confirmação final com destino e prévia. Histórico, download da imagem e demais ações ficam recolhidos. Salvar/copiar/abrir o pop-up não envia mensagens.
 O preço permanece na legenda do Dropou. Sem conferência válida, o envio fica bloqueado. A conferência humana dura até 15 minutos: se vencer antes de um agendamento manual, ele ficará aguardando nova validação/autorização, sem retirar o preço silenciosamente. O worker Shopee mantém sua revalidação oficial orçada; se não conseguir confirmar o preço, retém o envio, inclusive com uma configuração antiga `stalePolicy=omit`.
 
 O destino precisa estar verificado e a automação da marca ativa para processar agendamentos futuros. Isso não é ativado pelos botões de geração de legenda ou testes.

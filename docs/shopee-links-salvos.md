@@ -4,7 +4,7 @@ Na marca **Dropou | Tech & Games**, abra **Meus links Shopee**. Link direto: `/?
 
 1. Cole até 50 links de produto, um por linha, e clique em **Salvar e buscar produtos**.
 2. Os links ficam guardados na sua conta antes da consulta. A API fornece nome, imagem, preço/faixa, avaliação, vendas, comissão, desconto informado e o link de afiliado da conta configurada, quando esses campos estiverem disponíveis. Não precisa enviar print.
-3. Use **Preparar postagem** para abrir a legenda com foto e link já preenchidos ou **Agendar** para abrir a revisão e os horários existentes. A confirmação do preço e a autorização da imagem continuam necessárias antes do envio.
+3. Use **Abrir para conferir** para revisar foto, nome, preço e legenda já preenchidos. Clique em **Salvar oferta** para aprovar a revisão e liberar as ações de Telegram/WhatsApp. **Agendar publicação** abre os horários existentes. As opções extras ficam recolhidas, sem repetir a conferência de preço ou a autorização da foto em campos separados.
 
 O fluxo do Mercado Livre permanece com link/foto/print. Esta etapa não habilita importação em outros grupos nem altera legendas, cron, Telegram ou WhatsApp manual.
 

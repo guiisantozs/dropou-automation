@@ -97,7 +97,7 @@ test('editor preserves expired manual copy on mount, saves without AI, restores 
  const buttons=(text:string)=>Array.from(container.querySelectorAll<HTMLButtonElement>('button')).filter(b=>b.textContent?.includes(text));
  try{
   dom.window.document.getElementById('opener')!.focus();await act(async()=>root.render(createElement(OfferPreview,{product:p,offer:current,request,onRefresh:async()=>{},onClose:()=>{closed++;},onEdit(){}})));
-  assert.match(container.querySelector('.message-preview')!.textContent!,/R\$/);assert.equal((buttons('Preparar para WhatsApp')[0]).disabled,true);assert.equal(calls,0);
+  assert.match(container.querySelector('.message-preview')!.textContent!,/R\$/);assert.equal((buttons('Copiar para WhatsApp')[0]).disabled,true);assert.equal(calls,0);
   await act(async()=>buttons('Editar legenda')[0].click());assert.equal(container.querySelector('textarea')?.value,edited);await act(async()=>buttons('Salvar edição')[0].click());assert.equal(current.caption,edited);assert.equal(calls,1);
   await act(async()=>root.render(createElement(OfferPreview,{key:'reopened',product:p,offer:current,request,onRefresh:async()=>{},onClose:()=>{closed++;},onEdit(){}})));assert.match(container.querySelector('.message-preview')!.textContent!,/R\$/);
   await act(async()=>buttons('Editar legenda')[0].click());assert.equal(container.querySelector('textarea')?.value,edited);await act(async()=>buttons('Restaurar versão original')[0].click());assert.equal(container.querySelector('textarea')?.value,original);await act(async()=>buttons('Salvar edição')[0].click());assert.equal(current.caption,original);assert.equal(calls,2);
