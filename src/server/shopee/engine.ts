@@ -71,7 +71,7 @@ export function shopeeEngine(deps:ShopeeDependencies){
   return {mode:live?'live':'simulation',preview,reviewRequired:config.requireReview};
  }
  async function scan(owner:string,automatic=false){
-  const {config}=await settings(owner);if(automatic&&!config.enabled)return {paused:true};ready();
+  const {config}=await settings(owner);if(automatic)return {paused:true};ready();
   const runId=await checked(db.rpc('dropou_shopee_run',{p_owner:owner})) as string|null;
   if(!runId){const current=await checked(db.from('shopee_runs').select('state').eq('owner_id',owner).eq('brand_id','dropou').eq('day',bahiaDay()).maybeSingle()) as {state:string}|null;if(current?.state==='running')return {busy:true,cached:true};return {...await plan(owner),cached:true};}
   try{
@@ -132,11 +132,8 @@ export function shopeeEngine(deps:ShopeeDependencies){
   for(const row of rows){const c=shopeeConfigSchema.parse(row.shopee_config);if(!c.enabled)continue;
    const due=await checked(db.from('telegram_jobs').select('id').eq('owner_id',row.owner_id).eq('state','queued').not('shopee_offer_id','is',null).lte('scheduled_at',new Date().toISOString()).order('scheduled_at').limit(1)) as {id:string}[];
    if(due[0]&&liveShopeeAllowed(c,env)){await dispatch(due[0].id);return;}
-   if(bahiaTime()<c.scanAt)continue;
-   const run=await checked(db.from('shopee_runs').select('state').eq('owner_id',row.owner_id).eq('day',bahiaDay()).maybeSingle()) as {state:string}|null;
-   if(run?.state!=='complete'){await scan(row.owner_id,true);return;}
-   // Newly approved candidates may fill still-future slots without another API search.
-   await plan(row.owner_id);
+   // Discovery and planning are initiated exclusively by an operator.
+
   }
  }
  async function review(owner:string,offer:ShopeeOffer){const {config}=await settings(owner);return assessShopeeOffer(offer,config,await observations(owner));}

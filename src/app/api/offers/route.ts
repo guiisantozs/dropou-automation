@@ -1,3 +1,5 @@
+import {isShopeeOperation} from '@/lib/workspace-brands';
+import {operatorAudit} from '@/server/operator-audit';
 import {sessionDb,apiError,dbError} from '@/server/session';
 import {caption,productSchema} from '@/lib/domain';
 import {z} from 'zod';
@@ -7,7 +9,7 @@ import {dropouCaption,replaceDropouOpening} from '@/lib/dropou-captions';
 import {publicationAdmin} from '@/server/telegram-offer';
 import {reserveDropouHeadline} from '@/server/dropou-captions';
 export async function POST(request:Request){try{
- const {db,user}=await sessionDb(request);
+ const {db,user,actorId,operation}=await sessionDb(request);
  const {productId,caption:selected,expected,originalCaption,manualEdit,review}=z.object({productId:z.string().uuid(),caption:z.string().min(1).max(4000).optional(),originalCaption:z.string().min(1).max(4000).optional(),manualEdit:z.boolean().default(false),expected:productSchema.optional(),review:z.boolean().default(false)}).parse(await request.json());
  const {data:row,error:readError}=await db.from('products').select('data,curation_state').eq('id',productId).eq('owner_id',user.id).single();
  if(readError)throw dbError(readError);
@@ -22,12 +24,12 @@ export async function POST(request:Request){try{
  }
  const {data,error}=await db.rpc('dropou_save_offer_version',{p_product:p.id,p_expected:p,p_caption:final,p_original:original,p_manual:manualEdit});
  if(error)throw dbError(error);
- if(review&&(p.operation||'dropou')==='dropou'&&!confirmedConditions(data.snapshot)){
+ if(review&&isShopeeOperation(p.operation||'dropou')&&!confirmedConditions(data.snapshot)){
   const {db:admin}=await publicationAdmin(user.id);
   const checked=await admin.rpc('dropou_publication_reconfirm',{p_owner:user.id,p_offer:data.id,p_expected:data.snapshot});if(checked.error)throw dbError(checked.error);
-  const approved=await admin.from('products').update({curation_state:'approved'}).eq('id',p.id).eq('owner_id',user.id).eq('brand_id','dropou');if(approved.error)throw dbError(approved.error);
-  return Response.json({offer:checked.data,serverNow:checked.data.snapshot.checkedAt});
+  const approved=await admin.from('products').update({curation_state:'approved'}).eq('id',p.id).eq('owner_id',user.id).eq('brand_id',p.operation||'dropou');if(approved.error)throw dbError(approved.error);
+  await operatorAudit(user.id,actorId,operation,'Oferta validada',p.id);return Response.json({offer:checked.data,serverNow:checked.data.snapshot.checkedAt});
  }
- if(review&&(p.operation||'dropou')==='dropou'){const {db:admin}=await publicationAdmin(user.id);const approved=await admin.from('products').update({curation_state:'approved'}).eq('id',p.id).eq('owner_id',user.id).eq('brand_id','dropou');if(approved.error)throw dbError(approved.error);}
- return Response.json({offer:data,serverNow:new Date().toISOString()});
+ if(review&&isShopeeOperation(p.operation||'dropou')){const {db:admin}=await publicationAdmin(user.id);const approved=await admin.from('products').update({curation_state:'approved'}).eq('id',p.id).eq('owner_id',user.id).eq('brand_id',p.operation||'dropou');if(approved.error)throw dbError(approved.error);}
+ if(review)await operatorAudit(user.id,actorId,operation,'Oferta validada',p.id);return Response.json({offer:data,serverNow:new Date().toISOString()});
 }catch(e){return apiError(e);}}

@@ -12,13 +12,13 @@ test('economia real usa diferença positiva, nunca desconto inventado',()=>{
  const p={...base(),price:80,previousPrice:100,previousVerified:true};assert.equal(discount(p),20);
  assert.ok(caption(p).includes('20,00'));assert.equal(discount({...p,price:120}),null);assert.ok(!caption({...p,price:120}).includes('De:'));
 });
-test('publicação bloqueia demo, estoque, ausência de link e preço expirado',()=>{
+test('publicação bloqueia demo, estoque, ausência de link e confirmação ausente ou futura',()=>{
  const p=base();assert.equal(publicationError(p),null);
  assert.ok(publicationError({...p,demo:true}));assert.ok(publicationError({...p,inStock:false}));assert.ok(publicationError({...p,affiliateUrl:''}));assert.ok(publicationError({...p,checkedAt:null}));
- assert.ok(publicationError({...p,checkedAt:new Date(Date.now()-16*60000).toISOString()}));assert.ok(publicationError({...p,checkedAt:new Date(Date.now()+60000).toISOString()}));
+ assert.equal(publicationError({...p,checkedAt:new Date(Date.now()-16*60000).toISOString()}),null);assert.ok(publicationError({...p,checkedAt:new Date(Date.now()+60000).toISOString()}));
 });
-test('remove duplicados, esgotados, publicados e preços expirados dos candidatos',()=>{
- const p=base();assert.equal(cleanCandidates([p,{...p,id:crypto.randomUUID(),originalUrl:p.originalUrl+'?utm_source=x'},{...p,id:crypto.randomUUID(),originalUrl:'https://www.mercadolivre.com.br/esgotado',inStock:false},{...p,id:crypto.randomUUID(),originalUrl:'https://www.mercadolivre.com.br/velho',checkedAt:'2020-01-01T00:00:00.000Z'}]).length,1);
+test('remove duplicados, esgotados e publicados, preservando preços já confirmados',()=>{
+ const p=base();assert.equal(cleanCandidates([p,{...p,id:crypto.randomUUID(),originalUrl:p.originalUrl+'?utm_source=x'},{...p,id:crypto.randomUUID(),originalUrl:'https://www.mercadolivre.com.br/esgotado',inStock:false},{...p,id:crypto.randomUUID(),originalUrl:'https://www.mercadolivre.com.br/velho',checkedAt:'2020-01-01T00:00:00.000Z'}]).length,2);
 });
 test('horários são calculados no fuso America/Bahia',()=>{
  const s={...defaultSchedule,enabled:true};assert.equal(scheduleSlot(s,new Date('2026-11-05T12:00:00Z')),'2026-11-05T09:00');assert.equal(scheduleSlot(s,new Date('2026-11-05T12:01:00Z')),null);assert.equal(scheduleSlot(defaultSchedule,new Date('2026-11-05T12:00:00Z')),null);

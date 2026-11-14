@@ -1,5 +1,7 @@
 ﻿# Dropou Automação
 
+Atualização local de 14/11/2026: novos canais Celulares & Gadgets, Tênis & Sneakers e Auto & Moto, equipe por canal, descoberta somente por clique e cotas separadas para importação Shopee. A conferência de uma oferta salva não vence mais após 15 minutos; o agendamento conserva os dados aprovados. Guia de configuração e limites em [docs/expansao-canais-e-agendamento.md](docs/expansao-canais-e-agendamento.md). A conexão remota e os destinos serão configurados posteriormente.
+
 Integração Shopee e curadoria Tech & Games: [configuração, modo de teste e orçamento](docs/shopee-automation.md). A nova área **Automação de Ofertas** amplia a fila e o dispatcher existentes. A entrega começa desativada e em simulação; migração e credenciais exigem configuração no ambiente.
 
 Refinamento gamer de 12/11: [busca de desempenho, score 40/25/20/15, filtros ajustáveis, variedade e histórico](docs/shopee-gamer-quality.md). Implementado somente para Dropou; outros grupos continuam desativados. Não libera postagens por conta própria.
@@ -47,7 +49,7 @@ O navegador mantém apenas a sessão. Produtos, preços, legendas, status e publ
 3. **Salvar produto** grava cadastro e registro de preço em uma transação. A tela recarrega o que foi persistido.
 4. **Gerar legenda**: sem revalidação, gera rascunho com aviso histórico, sem anunciar desconto/Pix/parcelamento como atuais. Com revalidação, usa o formato pedido, calcula a economia em centavos e omite condições não comprovadas.
 5. **Salvar oferta** persiste legenda e cópia dos dados usados. Alterar o produto invalida a oferta. **Copiar legenda completa** e **Copiar link de afiliado** usam a Clipboard API e informam erros de permissão. Use localhost ou HTTPS.
-6. Publique você mesmo no WhatsApp. Marque **Publiquei manualmente…** e **Marcar como publicada**. O banco verifica link, estoque, validade de 15 minutos, Pix e correspondência dos dados. Histórico e estados são gravados em uma transação. Repetir não duplica a publicação.
+6. Publique você mesmo no WhatsApp. Marque **Publiquei manualmente…** e **Marcar como publicada**. O banco verifica link, estoque, confirmação salva, Pix e correspondência dos dados. Histórico e estados são gravados em uma transação. Repetir não duplica a publicação.
 7. **Excluir oferta** pede confirmação e remove a oferta da fila por exclusão lógica. Produto, preços e histórico de publicação permanecem. Métricas de publicação vêm do histórico; excluir a oferta não apaga esse fato.
 
 Não há envio ao WhatsApp nem comprovação externa da postagem. O histórico registra a declaração do administrador. RLS separa dados por usuário; o proprietário administra seus registros, que não são prova forense imutável.
@@ -85,7 +87,7 @@ Hospede em um provedor Next.js/Node, configurando as duas variáveis públicas a
 
 Cadastro completo em `/ofertas/nova`, edição em `/ofertas/[produto]/editar` e publicação em `/ofertas/[produto]`. Telegram confirma o canal antes do envio; WhatsApp usa compartilhamento manual e registra o destino apenas depois da confirmação do administrador. Veja o [relatório de publicação, agendamento e performance](docs/publicacoes-agendamento-performance.md).
 
-A fila existente `telegram_jobs` usa um único pg_cron, `dropou-telegram-dispatch`, a cada minuto, chamando `POST /api/telegram/dispatch`. Não adicione um segundo cron na Vercel. A pausa fica em `telegram_dispatch_config.automation_enabled`, controlada em **Agendamento**, inicialmente desativada. O antigo `ENABLE_AUTOMATIONS` não controla essa fila. O segredo do dispatcher permanece no banco e no backend. Cada execução processa no máximo uma oferta; atrasos são possíveis. Sem conferência humana válida por até 15 minutos, Telegram fica aguardando conferência. WhatsApp fica apenas pronto para compartilhar. Nenhuma publicação real é executada pelos testes.
+A fila existente `telegram_jobs` usa um único pg_cron, `dropou-telegram-dispatch`, a cada minuto, chamando `POST /api/telegram/dispatch`. Não adicione um segundo cron na Vercel. A pausa fica em `telegram_dispatch_config.automation_enabled`, controlada em **Agendamento**, inicialmente desativada. O antigo `ENABLE_AUTOMATIONS` não controla essa fila. O segredo do dispatcher permanece no banco e no backend. Cada execução processa no máximo uma oferta; atrasos são possíveis. A conferência humana salva não vence por tempo. O envio agendado usa a legenda e os dados aprovados, mantendo os bloqueios de edição, destino e entrega incerta. WhatsApp fica apenas pronto para compartilhar. Nenhuma publicação real é executada pelos testes.
 
 Migração incremental aplicada ao projeto existente: `supabase/migrations/20261106150839_publication_dispatch_and_review.sql`. Em instalações novas, aplique as migrações anteriores de IA, Telegram e editor antes desta. Telegram aceita `TELEGRAM_CHAT_ID` ou `TELEGRAM_CHANNEL_ID`; se ambos existirem, precisam ser iguais. O backend de fila e conferência usa `SUPABASE_SECRET_KEY` e o administrador já autorizado em `telegram_dispatch_config.owner_ids`. Nunca exponha esses segredos com `NEXT_PUBLIC_`.
 

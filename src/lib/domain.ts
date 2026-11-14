@@ -18,7 +18,7 @@ export const productSchema = z.object({
   features:z.array(z.string().trim().min(1).max(80)).max(2).optional(),featuresVerified:z.boolean().optional(),
   imagePath:z.string().regex(/^[a-f0-9-]{36}\/[a-f0-9-]{36}\.(?:jpg|webp)$/).optional(),thumbnailPath:z.string().regex(/^[a-f0-9-]{36}\/[a-f0-9-]{36}\.webp$/).optional(),needsHumanReview:z.boolean().optional(),
   installmentPlan:z.object({count:z.number().int().min(2).max(24),amount:z.number().positive().max(1e6),interestFree:z.boolean()}).optional(),
-  creativeHeadline:z.string().max(105).optional(),creativeBrand:z.enum(['dropou','barato','linda','bruto','moda']).optional(),socialVerified:z.boolean().optional(),
+  creativeHeadline:z.string().max(105).optional(),creativeBrand:z.enum(['dropou','barato','linda','bruto','moda','celulares','tenis','automoto']).optional(),socialVerified:z.boolean().optional(),
   visualDetails:z.object({brand:z.string().max(80).nullable(),model:z.string().max(100).nullable(),selectedVariant:z.string().max(100).nullable(),rating:z.number().min(0).max(5).nullable(),salesCount:z.string().max(60).nullable(),sellerName:z.string().max(120).nullable(),displayedDiscount:z.number().min(0).max(100).nullable(),uncertainFields:z.array(z.string().max(40)).max(20)}).optional(),
   source:z.object({provider:z.enum(['mercado_livre','shopee']),itemId:z.string().max(100),verifiedAt:z.string().datetime(),priceEndpoint:z.string().url(),referenceAmount:z.number().positive().nullable(),previousEvidence:z.enum(['none','recorded_history'])}).optional(),
 }).superRefine((p, ctx) => {
@@ -36,9 +36,10 @@ export const productSchema = z.object({
 export type Product = z.infer<typeof productSchema>;
 export const money = (n: number) => new Intl.NumberFormat('pt-BR', { style:'currency', currency:'BRL' }).format(n);
 export function discount(p: Product) { return freshPrice(p) && p.previousVerified && p.previousPrice && p.previousPrice > p.price ? Math.floor(((Math.round(p.previousPrice*100)-Math.round(p.price*100))*100)/Math.round(p.previousPrice*100)) : null; }
+// A recorded confirmation does not expire with time. Publication also checks stock, conditions and the saved snapshot.
 export function freshPrice(p:Product, now=Date.now()) {
   const checked=p.checkedAt?Date.parse(p.checkedAt):NaN;
-  return Number.isFinite(checked)&&checked<=now+1000&&now-checked<=15*60*1000;
+  return Number.isFinite(checked)&&checked<=now+1000;
 }
 export function caption(p: Product, now=Date.now()) {
   if(!freshPrice(p,now) || (p.paymentMethod==='pix'&&!p.pixVerified)) return [
@@ -57,7 +58,7 @@ export function publicationError(p: Product, now = Date.now()): string | null {
   if(p.dataOrigin==='screenshot'&&!p.screenshotConfirmed)return 'Confirme os dados extraídos do print antes de publicar.';
   if (!p.affiliateUrl) return 'Adicione um link oficial de afiliado.';
   if (p.inStock!==true) return 'Confirme que o produto está em estoque.';
-  if (!freshPrice(p,now)) return 'Revalide preço e estoque nos últimos 15 minutos.';
+  if (!freshPrice(p,now)) return 'Confira e salve o preço e a disponibilidade antes de publicar.';
   if(p.paymentMethod==='pix'&&!p.pixVerified)return 'Confirme que o preço é válido no Pix.';
   if (!['pronto','agendado'].includes(p.status)) return 'A oferta precisa estar pronta ou agendada.';
   return null;

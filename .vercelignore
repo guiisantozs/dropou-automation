@@ -2,6 +2,9 @@
 .git/
 .next/
 node_modules/
+.npm-cache/
+outputs/
+.vercel/
 *.tsbuildinfo
 .agents/
 .codex/

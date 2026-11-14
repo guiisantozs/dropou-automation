@@ -46,7 +46,7 @@ test('integer cents, verified conditions, exact affiliate link and brand are for
  assert.ok(!renderCaption({...p,installments:'SEM JUROS',installmentsVerified:false}).includes('SEM JUROS'));
  assert.match(renderCaption(p,'linda'),/Amiga, tá linda/);
  assert.ok(generationError({...p,dataOrigin:'screenshot',screenshotConfirmed:false}));
- assert.match(renderCaption({...p,checkedAt:new Date(Date.now()-16*60000).toISOString()}),/RASCUNHO/);
+ assert.doesNotMatch(renderCaption({...p,checkedAt:new Date(Date.now()-16*60000).toISOString()}),/RASCUNHO/);assert.match(renderCaption({...p,checkedAt:null}),/RASCUNHO/);
 });
 test('Responses request is text only, compact, structured, no tools, no history, no reasoning',()=>{
  const body=responseBody([product()],'dropou',1,config.model);
@@ -96,8 +96,8 @@ test('Postgres ledger: cache, duplicates, budgets, retries, roles and Telegram',
    const before=counter.calls;const first=generate([second],'dropou',1,store,config,slow);await started;
    const duplicate=await generate([second],'dropou',1,store,config,provider(counter));assert.equal(duplicate[0].source,'local');finish();await first;assert.equal(counter.calls-before,1);
   });
-  await t.test('stale and unconfirmed screenshot products incur no paid calls and cannot use a cached price',async()=>{
-   const before=counter.calls;const stale={...p,checkedAt:new Date(Date.now()-16*60000).toISOString()};
+  await t.test('unconfirmed prices and screenshots incur no paid calls and cannot use a cached price',async()=>{
+   const before=counter.calls;const stale={...p,checkedAt:null};
    const r=await generate([stale,{...p,id:crypto.randomUUID(),dataOrigin:'screenshot',screenshotConfirmed:false}],'dropou',1,store,config,provider(counter));assert.equal(counter.calls,before);assert.ok(r.every(r=>r.source==='local'));
   });
   await t.test('operational and daily limits include in-flight reservations; cache still works at cap',async()=>{

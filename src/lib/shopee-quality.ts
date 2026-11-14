@@ -1,4 +1,6 @@
 import type {ShopeeOffer,ShopeeConfig} from './shopee-automation';
+import type {OperationId} from './workspace-brands';
+import {channelClassification} from './channel-profiles';
 
 const norm=(s:string)=>s.normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();
 const clamp=(n:number)=>Number.isFinite(n)?Math.max(0,Math.min(1,n)):0;
@@ -13,7 +15,7 @@ const niches:[string,RegExp,boolean][]=[
  ['Smartwatches',/\b(smartwatch|smart watch|smartband|relogio inteligente)\b/,false],
  ['Tecnologia',/\b(webcam|hub usb|carregador|powerbank|power bank|roteador|tablet|notebook|microfone|smartphone|celular|iphone)\b/,false],
 ];
-const brands=['logitech','redragon','razer','corsair','hyperx','kingston','sandisk','samsung','xiaomi','amazfit','huawei','anker','ugreen','baseus','sony','microsoft','nintendo','8bitdo','gamesir','aoc','lg','asus','acer','dell','lenovo','intel','amd','fifine','attack shark','havit','knup','jbl','qcy','edifier'];
+const brands=['apple','motorola','oppo','realme','nike','adidas','puma','olympikus','fila','new balance','asics','mizuno','vans','converse','under armour','tramontina','bosch','black decker','logitech','redragon','razer','corsair','hyperx','kingston','sandisk','samsung','xiaomi','amazfit','huawei','anker','ugreen','baseus','sony','microsoft','nintendo','8bitdo','gamesir','aoc','lg','asus','acer','dell','lenovo','intel','amd','fifine','attack shark','havit','knup','jbl','qcy','edifier'];
 export type OfferObservation={shop_id:string;item_id:string;observed_at:string;sales:number|null;price:number;price_max:number;rating?:number|null};
 export type SalesTrend={state:'insufficient'|'growing'|'stable'|'accelerating'|'counter_reset';delta:number|null;perDay:number|null;days:number|null;samples:number};
 export type OfferAssessment={relevant:boolean;recommended:boolean;eligible:boolean;score:number;reasons:string[];recommendationReasons:string[];warnings:string[];category:string;brand:string;priceBand:string;confidence:number;components:{sales:number|null;rating:number|null;relevance:number;price:number|null;trend:number|null};weights:{sales:number;rating:number;relevance:number;price:number;trend:number};trend:SalesTrend;discountSource:'observed'|'reported'|'none';observedDiscount:number|null;fingerprint:string;version:3};
@@ -50,10 +52,10 @@ export function salesTrend(o:ShopeeOffer,history:OfferObservation[]):SalesTrend{
  return {state,delta,perDay:Math.round(perDay*10)/10,days:Math.round(days*10)/10,samples:points.length};
 }
 function safeUrl(raw:string,domains:string[]){try{const u=new URL(raw);return u.protocol==='https:'&&!u.username&&!u.password&&!u.port&&domains.some(d=>u.hostname===d||u.hostname.endsWith('.'+d));}catch{return false;}}
-export function assessOffer(o:ShopeeOffer,c:ShopeeConfig,history:OfferObservation[]=[]):OfferAssessment{
- const title=norm(o.name),{category,relevant}=classifyGamingTech(o.name);
+export function assessOffer(o:ShopeeOffer,c:ShopeeConfig,history:OfferObservation[]=[],operation:OperationId='dropou'):OfferAssessment{
+ const title=norm(o.name),{category,relevant}=channelClassification(o.name,operation)||classifyGamingTech(o.name);
  const reasons:string[]=[],warnings:string[]=[];
- if(!relevant)reasons.push('Sem relação clara com Tech & Games');
+ if(!relevant)reasons.push('Sem relação clara com '+(operation==='dropou'?'Tech & Games':'este canal'));
  if(c.avoid.some(w=>title.includes(norm(w)))||/\b(gratis|frete|cupom|pix|estoque|desconto|imperdivel|original garantido|reais|replica|falsificado|somente caixa|apenas caixa)\b|por\s+\d|https?:|www\.|R\$|[%<>\n\r]/i.test(title))reasons.push('Título suspeito ou alegações não verificadas');
  const sales=o.sales!==null&&Number.isSafeInteger(o.sales)&&o.sales>=0?o.sales:null,rating=o.rating!==null&&o.rating>=0&&o.rating<=5?o.rating:null;
  const commission=o.commission!==null&&o.commission>=0&&o.commission<=1?o.commission:null;

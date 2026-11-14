@@ -21,7 +21,7 @@ test('confirmed saved card opens Telegram confirmation and copies the final capt
  const product={...shopeeProduct({...item.data,checkedAt:new Date().toISOString()}),inStock:true},offer={id:item.id,product_id:product.id,caption:dropouCaption(product),snapshot:product,status:'pronto' as const,created_at:product.createdAt,updated_at:product.createdAt};
  const publication={product,offer,serverNow:new Date().toISOString()},data={...fixtureData,serverNow:publication.serverNow,products:[{...item,prepared_product_id:product.id}],publications:{[product.id]:publication}};
  const root=createRoot(document.getElementById('root')!),opened:unknown[][]=[],calls:{path:string;method:string}[]=[];let expired=false;
- const request=(async(path:string,method='GET')=>{calls.push({path,method});assert.equal(method,'GET');assert.equal(path,'/api/products/'+product.id+'/offer');return expired?{...publication,product:{...product,checkedAt:'2020-01-01T00:00:00Z'}}:publication;}) as typeof api;
+ const request=(async(path:string,method='GET')=>{calls.push({path,method});assert.equal(method,'GET');assert.equal(path,'/api/products/'+product.id+'/offer');return expired?{...publication,product:{...product,checkedAt:null}}:publication;}) as typeof api;
  try{
   await act(async()=>root.render(createElement(ShopeeSavedProducts,{operation:'dropou',initialData:data,request,onOpen:(...args)=>{opened.push(args);}})));
   const button=(name:string)=>[...document.querySelectorAll<HTMLButtonElement>('button')].find(b=>b.textContent?.trim()===name)!;

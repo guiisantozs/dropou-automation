@@ -9,11 +9,11 @@ function fixture():SavedPublication{
  const product={...shopeeProduct({itemId:'456',shopId:'123',name:'Controle PC Bluetooth',price:149.9,priceMax:149.9,image:'https://down-br.img.susercontent.com/file/fixture',offerLink:'https://s.shopee.com.br/fixture',productLink:'https://shopee.com.br/product/123/456',rating:4.8,sales:1000,commission:.08,reportedDiscount:15,checkedAt:new Date(now).toISOString()}),inStock:true};
  return {product,offer:{id:'10000000-0000-4000-8000-000000000009',product_id:product.id,caption:dropouCaption(product),snapshot:product,status:'pronto',created_at:product.createdAt,updated_at:product.createdAt}};
 }
-test('saved cards require a saved current price and stock confirmation; no invented ready state',()=>{
+test('saved cards require a saved price and stock confirmation without time expiration; no invented ready state',()=>{
  assert.ok(savedPublicationState(undefined,now).common);
  const value=fixture();assert.equal(savedPublicationState(value,now).common,null);
  assert.ok(savedPublicationState({...value,product:{...value.product,inStock:null}},now).common);
- assert.ok(savedPublicationState(value,now+16*60000).common);
+ assert.equal(savedPublicationState(value,now+86400000).common,null);
  assert.ok(savedPublicationState({...value,offer:undefined},now).common);
  assert.ok(savedPublicationState({...value,archived:true},now).common);
  assert.ok(savedPublicationState({...value,product:{...value.product,image:''}},now).common);

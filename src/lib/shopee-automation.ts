@@ -42,7 +42,7 @@ const brl=(n:number)=>new Intl.NumberFormat('pt-BR',{style:'currency',currency:'
 export function shopeeCaption(o:ShopeeOffer,now=Date.now(),headline?:string){
  // Shopee's reported percentage is NOT evidence of an old price. Never derive one.
  const previous=o.previousPrice&&o.previousAt&&Date.parse(o.previousAt)<Date.parse(o.checkedAt)&&Date.parse(o.checkedAt)-Date.parse(o.previousAt)<=30*86400000&&o.priceMax===o.price&&o.previousPrice>o.price?o.previousPrice:null;
- // This is also a draft preview. Expired prices remain visible; the sender must revalidate.
+ // Provider observations retain a short cache TTL. Human-reviewed saved snapshots use their own publication approval.
  const caption=dropouCaption({name:o.name,price:o.price,previousVerified:!!previous,previousPrice:previous,paymentMethod:'nao_informado',affiliateUrl:o.offerLink},headline);
  return o.priceMax>o.price?caption.replace('POR APENAS','A PARTIR DE'):caption;
 }

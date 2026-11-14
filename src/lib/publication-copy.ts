@@ -30,7 +30,7 @@ export function pricedDraftCaption(p:Product){
 export function publicationCaptionError(text:string,p:Product,mode:PublicationMode,now=Date.now()){
  const identity=publicationIdentityError(p);if(identity)return identity;
  if(mode==='safe')return text===safePublicationCaption(p)?null:'Sem conferência, use a versão local sem preços, descontos ou alegações de estoque.';
- if(!confirmedConditions(p,now))return 'A conferência venceu ou está incompleta. Confira agora ou continue com o texto sem valores.';
+ if(!confirmedConditions(p,now))return 'A conferência está incompleta. Confira e salve os dados ou continue com o texto sem valores.';
  const issue=captionError(text,p);if(issue)return issue;
  if(/frete\s+gr[aá]tis|cupom|brinde|[uú]ltimas?\s+unidades?|menor\s+pre[cç]o|desconto\s+garantido/i.test(text))return 'Remova alegações comerciais que não estão comprovadas nos dados da oferta.';
  if(/desconto|economiz/i.test(text)&&(!p.previousVerified||!p.previousPrice||p.previousPrice<=p.price))return 'O desconto não está comprovado nos dados da oferta.';
