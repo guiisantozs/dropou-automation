@@ -6,6 +6,22 @@ import {createRoot} from 'react-dom/client';
 import ProductOperations,{type OperationsData} from '../src/components/product-operations';
 import {recentPublicationDays} from '../src/lib/publication-history';
 import type {api} from '../src/lib/api';
+
+test('catalog exposes deletion for failed imported links without preparing or marking a publication',async()=>{
+ const {JSDOM}=createRequire(import.meta.url)('jsdom'),dom=new JSDOM('<div id="root"></div>',{url:'https://dropou.test/?brand=tenis'}),old=new Map<string,PropertyDescriptor|undefined>();
+ for(const [k,v]of Object.entries({window:dom.window,document:dom.window.document,navigator:dom.window.navigator,IS_REACT_ACT_ENVIRONMENT:true})){old.set(k,Object.getOwnPropertyDescriptor(globalThis,k));Object.defineProperty(globalThis,k,{value:v,configurable:true,writable:true});}
+ const id=crypto.randomUUID(),row={id,kind:'saved' as const,data:{name:'Produto aguardando consulta',store:'Shopee',originalUrl:'https://shopee.com.br/product/123/456'},saved_state:'error',saved_error:'Consulta falhou',catalog_at:new Date().toISOString()},calls:any[]=[];let removed=false;
+ const data=():OperationsData=>({rows:removed?[]:[row],total:removed?0:1,page:0,more:false,recent:[],recentTotal:0,channels:{},summary:{pending:0,approved:0,published:0,recent:0,archived:0}});
+ const request=(async(path:string,method='GET',body?:any)=>{calls.push({path,method,body});if(method==='DELETE'){assert.equal(path,'/api/shopee/saved-products?brand=tenis');assert.deepEqual(body,{id});removed=true;return {removed:true};}assert.equal(method,'GET');assert.ok(path.startsWith('/api/product-operations?'));return data();}) as typeof api;
+ const root=createRoot(document.getElementById('root')!);try{
+  await act(async()=>root.render(createElement(ProductOperations,{operation:'tenis',mode:'catalog',initialData:data(),request,onOpen(){throw Error('Pending import must not open a product');},onNavigate(){}})));
+  const button=(name:string)=>[...document.querySelectorAll<HTMLButtonElement>('button')].find(b=>b.textContent?.trim()===name)!;
+  assert.equal(calls.length,0);assert.equal(button('Excluir').closest('details'),null);assert.ok(document.querySelector('a[href*="/ofertas/nova"]'));assert.equal(button('Publicado no Telegram'),undefined);
+  await act(async()=>button('Excluir').click());assert.equal(calls.length,0);await act(async()=>button('Cancelar').click());assert.equal(calls.length,0);
+  await act(async()=>button('Excluir').click());await act(async()=>button('Confirmar exclusão').click());
+  assert.equal(document.querySelectorAll('[data-product-id]').length,0);assert.equal(calls.filter(c=>c.method==='DELETE').length,1);assert.ok(calls.every(c=>c.method==='GET'||c.method==='DELETE'));
+ }finally{await act(async()=>root.unmount());dom.window.close();for(const [k,v]of old){if(v)Object.defineProperty(globalThis,k,v);else Reflect.deleteProperty(globalThis,k);}}
+});
 test('recent publication days follow Bahia midnight rather than UTC or browser time',()=>{
  assert.deepEqual(recentPublicationDays(Date.parse('2026-11-14T02:59:59Z')),{from:'2026-11-12',to:'2026-11-13'});
  assert.deepEqual(recentPublicationDays(Date.parse('2026-11-14T03:00:00Z')),{from:'2026-11-13',to:'2026-11-14'});

@@ -2,6 +2,7 @@
 import {adminDb} from '@/server/db';
 import {dispatchJob} from '@/server/telegram-offer';
 import {shopeeAutomation} from '@/server/shopee/automation';
+import {maintainSavedProducts} from '@/server/saved-retention';
 export const runtime='nodejs';
 export const dynamic='force-dynamic';
 export const maxDuration=60;
@@ -11,7 +12,9 @@ export async function POST(request:Request){
   const db=adminDb(),config=await db.from('telegram_dispatch_config').select('secret,automation_enabled').eq('id',true).single();
   const expected='Bearer '+config.data?.secret;
   if(config.error||Buffer.byteLength(received)!==Buffer.byteLength(expected)||!timingSafeEqual(Buffer.from(received),Buffer.from(expected)))return Response.json({error:'Não autorizado'},{status:401});
-  if(!config.data.automation_enabled)return Response.json({paused:true});
+  // Housekeeping reuses this scheduler and continues while publishing is paused.
+  async function maintenance(){try{return await maintainSavedProducts(db);}catch{return {pending:true};}}
+  if(!config.data.automation_enabled)return Response.json({paused:true,maintenance:await maintenance()});
   // Sending jobs never return to the queue after a crash or a timeout.
   const stale=await db.from('telegram_jobs').select('id,message_ids').eq('channel','telegram').eq('state','sending').lt('started_at',new Date(Date.now()-120000).toISOString()).limit(20);
   if(stale.error)throw stale.error;
@@ -26,7 +29,7 @@ export async function POST(request:Request){
    const shopeeConfig=await db.from('operation_settings').select('owner_id').eq('brand_id','dropou').contains('shopee_config',{enabled:true}).limit(1);
    if(!shopeeConfig.error&&shopeeConfig.data.length){try{await shopeeAutomation().tick();}catch{ /* Sanitized failures remain in shopee_runs/requests. */ }}
   }
-  return Response.json({processed});
+  return Response.json({processed,maintenance:await maintenance()});
  }catch{return Response.json({error:'Falha no processamento. Consulte o histórico; não repita envios incertos.'},{status:500});}
 }
 export const GET=POST;
