@@ -5,13 +5,16 @@ import {dropouCaption,dropouCalls,dropouCategory} from './dropou-captions';
 
 export const PROMPT_VERSION='dropou-2';
 export const brands={
+ celulares:{name:'Dropou Celulares & Gadgets',tone:'Prático, celulares e gadgets',closing:'📱 #publi | Dropou Celulares & Gadgets'},
+ tenis:{name:'Dropou Tênis & Sneakers',tone:'Casual, esportivo, sem afirmar autenticidade não comprovada',closing:'👟 #publi | Dropou Tênis & Sneakers'},
+ automoto:{name:'Dropou Auto & Moto',tone:'Útil, sem presumir compatibilidade',closing:'🚗 #publi | Dropou Auto & Moto'},
  dropou:{name:'Dropou Tech & Games',tone:'Jovem, tecnologia e games',closing:'💙 Dropou o preço? A gente te avisa!'},
  barato:{name:'Amiga, Tá Barato!',tone:'Amigável, moda, acessórios e achadinhos',closing:'💖 Amiga, tá barato! Compartilha esse achadinho!'},
  linda:{name:'Amiga, Tá Linda!',tone:'Acolhedor, beleza e autocuidado',closing:'✨ Amiga, tá linda! Seu momento de se cuidar!'},
  bruto:{name:'Bruto & Barato',tone:'Prático, direto, ferramentas, oficina e utilidade comprovada',closing:'🛠️ Bruto & Barato — ferramenta certa para o seu dia!'},
  moda:{name:'Moda Masculina',tone:'Moderno, estilo masculino e custo-benefício, sem promessas inventadas',closing:'🖤 Estilo e custo-benefício para o seu dia.'},
 } as const;
-export const brandSchema=z.enum(['dropou','barato','linda','bruto','moda']);
+export const brandSchema=z.enum(['dropou','barato','linda','bruto','moda','celulares','tenis','automoto']);
 export type Brand=keyof typeof brands;
 export const generationSchema=z.object({productIds:z.array(z.string().uuid()).min(1).max(20),brand:brandSchema.default('dropou'),variants:z.number().int().min(1).max(3).default(1)});
 export type GenerationResult={productId:string;captions:string[];source:'openai'|'cache'|'local';message?:string;model?:string};
@@ -20,12 +23,15 @@ export function verifiedFacts(p:Product){
 }
 export function generationError(p:Product){
  if(p.demo)return 'Dados demonstrativos não geram chamadas pagas.';
- if(!p.name||!p.affiliateUrl||!freshPrice(p)||p.inStock!==true)return 'Confirme nome, link, preço e estoque nos últimos 15 minutos.';
+ if(!p.name||!p.affiliateUrl||!freshPrice(p)||p.inStock!==true)return 'Confirme nome, link, preço e estoque antes de gerar.';
  if(p.paymentMethod==='pix'&&!p.pixVerified)return 'Confirme a condição Pix antes de gerar.';
  if(p.dataOrigin==='screenshot'&&!p.screenshotConfirmed)return 'Confirme os dados extraídos do print.';
  return null;
 }
 export function localHeadline(p:Product,brand:Brand='dropou',variation=0){
+ if(brand==='celulares')return ['📱 UM ACHADO PARA O SEU DIA!','🔌 UM UPGRADE PARA SUA ROTINA!','🎧 CONFIRA ESSE ACHADO TECH!'][variation%3];
+ if(brand==='tenis')return ['👟 SEU PRÓXIMO PASSO ESTÁ AQUI!','✨ UM ACHADO PARA O SEU ESTILO!','🏃 CONFIRA ESSE MODELO!'][variation%3];
+ if(brand==='automoto')return ['🚗 UM ACHADO PARA O SEU VEÍCULO!','🔧 UTILIDADE PARA SUA ROTINA!','🏍️ CONFIRA ESSE ACESSÓRIO!'][variation%3];
  if(brand==='dropou'){const calls=dropouCalls[dropouCategory(p.name)];return calls[variation%calls.length];}
  if(brand==='bruto')return ['🛠️ UMA FERRAMENTA PARA SUA ROTINA!','🔧 UTILIDADE PARA SUA OFICINA!','🧰 CONFIRA ESSE ACHADO!'][variation%3];
  if(brand==='moda')return ['👔 ESTILO PARA O SEU DIA!','👟 CONFIRA SEU PRÓXIMO LOOK!','🖤 UM ACHADO PARA SEU ESTILO!'][variation%3];

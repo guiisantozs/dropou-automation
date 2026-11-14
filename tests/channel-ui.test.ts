@@ -56,7 +56,7 @@ test('switching funnel tabs discards a late Telegram response instead of showing
 });
 
 test('recent products and catalog show proven Telegram publication separately from price review and WhatsApp',()=>{
- const p={...product(),checkedAt:'2020-01-01T00:00:00Z'},channels={[p.id]:{telegram:{...unpublished,published:true,publishedAt:'2026-11-06T20:32:36Z',state:'sent'},whatsapp:unpublished}},callbacks={onCreate(){},onOpen(){},onPreview(){},onImport(){}};
+ const p={...product(),checkedAt:null},channels={[p.id]:{telegram:{...unpublished,published:true,publishedAt:'2026-11-06T20:32:36Z',state:'sent'},whatsapp:unpublished}},callbacks={onCreate(){},onOpen(){},onPreview(){},onImport(){}};
  for(const html of [renderToStaticMarkup(createElement(DashboardOverview,{products:[p],publications:[],channelStatus:channels,overview:true,onNavigate(){},...callbacks})),renderToStaticMarkup(createElement(ProductCatalog,{products:[p],channelStatus:channels,...callbacks}))]){
   assert.match(html,/Publicado no Telegram/);assert.match(html,/WhatsApp: não publicado/);assert.match(html,/Preço:/);assert.match(html,/A conferir/);assert.doesNotMatch(html,/Publicado no WhatsApp/);
  }

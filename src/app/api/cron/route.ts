@@ -20,8 +20,8 @@ export async function POST(request:Request){
   let processed=0;for(const job of jobs.data||[]){try{await dispatchJob(job.id,true);processed++;}catch{ /* Outcome is retained. A queued preflight failure is blocked for review. */
    const r=await db.from('telegram_jobs').update({state:'blocked',error:'Não foi possível conferir canal, legenda ou imagem. Revise a configuração e autorize novamente.'}).eq('id',job.id).eq('state','queued');if(r.error)throw r.error;
   }}
-  // Reuse idle invocations of this dispatcher. Never add another cron, or run a
-  // provider search and the ordinary publisher in the same bounded invocation.
+  // Reuse idle invocations only for already scheduled legacy Shopee jobs.
+  // Discovery and planning require an explicit operator request.
   if(!processed){
    const shopeeConfig=await db.from('operation_settings').select('owner_id').eq('brand_id','dropou').contains('shopee_config',{enabled:true}).limit(1);
    if(!shopeeConfig.error&&shopeeConfig.data.length){try{await shopeeAutomation().tick();}catch{ /* Sanitized failures remain in shopee_runs/requests. */ }}

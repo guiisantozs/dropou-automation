@@ -157,3 +157,16 @@ Nenhuma chave privada é necessária para esse fluxo manual. Credenciais e aprov
 - Guia atualizado em docs/shopee-gamer-quality.md. scripts/review-discovery-cache.ts verifica somente leituras do projeto esperado. A API calcula avaliações atuais em memória; não regrava em massa o histórico antigo. Nenhuma geração paga ou envio de teste. Entrega GitHub/Vercel confirmada no registro abaixo.
 
 - Entrega confirmada: implementação 564f97df7f2ac7a2e409f1848b295f6006d7e43f enviada a origin/main, hash remoto conferido. Vercel READY no deploy dropou-automation-iidu24nig-guisantozs-projects.vercel.app, alias dropou-automation.vercel.app confirmado. GET da Curadoria retornou 200; GET da API operacional sem sessão retornou 401. Auditoria do índice: 276 arquivos, sem segredos detectados ou artefatos privados. Nenhum POST de teste em produção.
+
+
+## 14/11/2026 — Expansão dos canais e agendamento sem expiração
+
+Implementação local sobre `5a0c38e`. O usuário solicitou configurar os serviços e destinos posteriormente. Guia completo e nomes das variáveis/migrações em [expansao-canais-e-agendamento.md](docs/expansao-canais-e-agendamento.md).
+
+- `npm.cmd test`: **250/250 aprovados**, zero falhas ou testes ignorados. Inclui nova regra de aprovação persistente, snapshot editado bloqueado, separação por canal/proprietário, membership/RLS com header forjado, suspensão imediata, acesso a imagens, importação oficial e preservação de URL afiliada, reserva/cota manual independente e prioridade sobre descoberta, cooldown real, curadoria/rejeição e independência de Telegram/WhatsApp. Testes históricos isolam também o schema anterior à migração; seus cenários antigos de expiração não descrevem a regra atual.
+- `npm.cmd run typecheck` e `npm.cmd run build`: aprovados. Build com 33 páginas geradas e rota de equipe incluída. `git diff --check`: aprovado.
+- Chrome instalado, fixtures dos componentes reais: três canais × 320/375/768/1440 px = **12 verificações** de tema, overflow, imagens e erros. Capturas desktop/mobile inspecionadas. Gerador em `scripts/review-channel-expansion.tsx`; artefatos em `outputs/premium-review/`, ignorados pelo Git. Fixtures não acessam Supabase, Shopee, IA ou Telegram reais.
+- HTTP em servidor local de produção temporário: `/` retornou 200; GET de equipe/operações/curadoria e POST sem sessão de busca/importação retornaram 401. Servidor encerrado após os testes.
+- Dois arquivos incrementais gerados pela CLI oficial e executados em PGlite com usuários, roles, grants e políticas reais. Não houve acesso de escrita a banco remoto, nova ativação de cron, postagem real ou alteração das flags do ambiente de produção.
+
+**Pendente de configuração combinada:** conectar o projeto Supabase correto, conferir histórico e aplicar somente as duas migrações novas; cadastrar ambiente privado, bots/Chat IDs e contas de operadores; implantar o código na hospedagem existente e verificar os advisors remotos. O conector atual pertence a outro projeto. Nenhum destino foi simulado como conectado e nenhum usuário existente foi alterado. A validação local não comprova credenciais, permissões reais da conta Shopee, entrega em Telegram ou sessão autenticada na produção.

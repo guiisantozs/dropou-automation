@@ -4,7 +4,7 @@ import {adminDb} from './db';
 import {operationSettings} from './operations';
 import type {OperationId} from '@/lib/workspace-brands';
 const cached=new Map<string,{target:TelegramTarget;expires:number}>();
-export async function operationTelegramEnv(owner:string,brand:OperationId){const settings=await operationSettings(adminDb(),owner,brand);const chat=settings.telegram_chat_id||(brand==='dropou'?(process.env.TELEGRAM_CHAT_ID||process.env.TELEGRAM_CHANNEL_ID):null);if(!chat)throw new Error('Configure o canal Telegram desta marca em Configurações.');return {...process.env,TELEGRAM_CHAT_ID:chat,TELEGRAM_CHANNEL_ID:chat,DROPOU_TARGET_SETTING:settings.telegram_chat_id||''};}
+export async function operationTelegramEnv(owner:string,brand:OperationId){const settings=await operationSettings(adminDb(),owner,brand);const chat=settings.telegram_chat_id||(brand==='dropou'?(process.env.TELEGRAM_CHAT_ID||process.env.TELEGRAM_CHANNEL_ID):null);if(!chat)throw new Error('Configure o canal Telegram desta marca em Configurações.');const token=process.env[settings.telegram_bot_env||'TELEGRAM_BOT_TOKEN'];if(!token)throw new Error('Configure no servidor o token do bot selecionado para este canal.');return {...process.env,TELEGRAM_BOT_TOKEN:token,TELEGRAM_CHAT_ID:chat,TELEGRAM_CHANNEL_ID:chat,DROPOU_TARGET_SETTING:settings.telegram_chat_id||''};}
 export async function telegramTarget(owner?:string,brand:OperationId='dropou',force=false){
  const env:Record<string,string|undefined>=owner?await operationTelegramEnv(owner,brand):process.env;
  const key=[owner||'',brand,env.TELEGRAM_BOT_TOKEN,env.TELEGRAM_CHAT_ID,env.TELEGRAM_CHANNEL_ID].join('|');

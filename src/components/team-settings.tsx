@@ -1,0 +1,12 @@
+'use client';
+import {useEffect,useState} from 'react';
+import {api} from '@/lib/api';
+import {workspaceBrands,type OperationId} from '@/lib/workspace-brands';
+type Member={member_id:string;role:string;brands:OperationId[];active:boolean};
+export default function TeamSettings(){
+ const [admin,setAdmin]=useState(false),[members,setMembers]=useState<Member[]>([]),[email,setEmail]=useState(''),[role,setRole]=useState('operator'),[brands,setBrands]=useState<OperationId[]>([]),[busy,setBusy]=useState(false),[message,setMessage]=useState('');
+ async function load(){const r=await api<{access:{admin:boolean};members:Member[]}>('/api/team');setAdmin(r.access.admin);setMembers(r.members);}
+ useEffect(()=>{void load().catch(e=>setMessage(e.message));},[]);
+ if(!admin)return null;
+ return <section className="settings-card"><h2>Equipe e acesso aos canais</h2><p>Crie a conta no Supabase Auth e libere aqui os canais do operador.</p><form onSubmit={async e=>{e.preventDefault();if(busy)return;setBusy(true);setMessage('');try{await api('/api/team','POST',{email,role,brands});await load();setEmail('');setMessage('Acesso salvo. As permissões já valem no servidor e no banco.');}catch(e){setMessage((e as Error).message);}finally{setBusy(false);}}}><div className="form-grid"><label>Email da conta<input type="email" value={email} required onChange={e=>setEmail(e.target.value)}/></label><label>Perfil<select value={role} onChange={e=>setRole(e.target.value)}><option value="operator">Operador</option><option value="admin">Administrador</option></select></label></div><div className="copy-actions">{workspaceBrands.filter(b=>b.id!=='all').map(b=><label key={b.id} className="check-label"><input type="checkbox" checked={brands.includes(b.id as OperationId)} onChange={e=>setBrands(v=>e.target.checked?[...v,b.id as OperationId]:v.filter(id=>id!==b.id))}/>{b.name}</label>)}</div><button className="primary" disabled={busy||!brands.length}>Salvar acesso</button></form><div className="logs-list">{members.map(m=><div key={m.member_id}><span>{m.member_id}<small>{m.role==='admin'?'Administrador':m.brands.map(id=>workspaceBrands.find(b=>b.id===id)?.name).join(' · ')}</small></span><button className="secondary" disabled={busy} onClick={async()=>{setBusy(true);try{await api('/api/team','PATCH',{memberId:m.member_id,active:!m.active});await load();}catch(e){setMessage((e as Error).message);}finally{setBusy(false);}}}>{m.active?'Suspender acesso':'Reativar acesso'}</button></div>)}</div><p role="status">{message}</p></section>;
+}
