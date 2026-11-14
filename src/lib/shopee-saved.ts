@@ -1,5 +1,5 @@
 import type {ShopeeOffer} from './shopee-automation';
-export type SavedShopeeProduct={id:string;input_url:string;canonical_url:string;data:ShopeeOffer|null;state:'pending'|'fetching'|'ready'|'error';error:string|null;prepared_product_id:string|null;created_at:string;updated_at:string};
+export type SavedShopeeProduct={id:string;input_url:string;canonical_url:string;data:ShopeeOffer|null;state:'pending'|'fetching'|'ready'|'error';error:string|null;prepared_product_id:string|null;created_at:string;updated_at:string;catalog_at?:string|null};
 export const shopeeLinkHosts=['shopee.com.br','www.shopee.com.br','s.shopee.com.br','shope.ee','br.shp.ee'];
 export function shopeeProductLink(raw:string){
  if(raw.length>2048||/[\s<>\\]/.test(raw))throw new Error('Use um link HTTPS de produto da Shopee.');

@@ -2,6 +2,8 @@ import {isShopeeOperation} from '@/lib/workspace-brands';
 import {formatCaption} from '@/lib/ai';
 import {shopeeLimit} from '@/lib/shopee-limits';
 import {operatorAudit} from '@/server/operator-audit';
+import {maintainSavedProducts} from '@/server/saved-retention';
+import {removeUnusedImages} from '@/server/product-lifecycle';
 import {z} from 'zod';
 import {sessionDb,apiError,dbError} from '@/server/session';
 import {publicationAdmin} from '@/server/telegram-offer';
@@ -14,8 +16,9 @@ export const runtime='nodejs';export const maxDuration=60;
 async function context(request:Request){const session=await sessionDb(request);if(!isShopeeOperation(session.operation))throw new Error('Selecione Dropou | Tech & Games para importar produtos Shopee.');const admin=await publicationAdmin(session.user.id);return {...session,db:admin.db,operation:session.operation};}
 export async function GET(request:Request){try{
  const {db,user,operation,actorId}=await context(request),page=z.coerce.number().int().min(0).max(10000).parse(new URL(request.url).searchParams.get('page')||0),day=bahiaDay();
+ await maintainSavedProducts(db,user.id,operation);
  const [rows,settings,local,global]=await Promise.all([
-  db.from('shopee_saved_products').select(savedShopeeColumns,{count:'exact'}).eq('owner_id',user.id).eq('brand_id',operation).order('created_at',{ascending:false}).order('id').range(page*24,page*24+23),
+  db.from('shopee_saved_products').select(savedShopeeColumns,{count:'exact'}).eq('owner_id',user.id).eq('brand_id',operation).is('catalog_at',null).order('created_at',{ascending:false}).order('id').range(page*24,page*24+23),
   db.from('operation_settings').select('shopee_config,manual_daily_limit').eq('owner_id',user.id).eq('brand_id',operation).single(),
   db.from('shopee_requests').select('id',{count:'exact',head:true}).eq('owner_id',user.id).eq('brand_id',operation).eq('day',day).eq('kind','manual'),
   db.from('shopee_requests').select('id',{count:'exact',head:true}).eq('day',day).eq('kind','manual'),
@@ -49,4 +52,11 @@ export async function POST(request:Request){try{
  const result=await db.rpc('dropou_shopee_saved_prepare_channel',{p_brand:operation,p_owner:user.id,p_id:body.id,p_product:product,p_caption:formatCaption(product,operation,headline)});if(result.error)throw dbError(result.error);
  await operatorAudit(user.id,actorId,operation,'Importa??o preparada',result.data.productId);return Response.json(result.data);
  }catch(e){return apiError(e);}}
-export async function DELETE(request:Request){try{const {db,user,operation,actorId}=await context(request),{id}=z.object({id:z.string().uuid()}).parse(await request.json());const r=await db.from('shopee_saved_products').delete().eq('id',id).eq('owner_id',user.id).eq('brand_id',operation);if(r.error)throw dbError(r.error);return Response.json({removed:true});}catch(e){return apiError(e);}}
+export async function DELETE(request:Request){try{
+ const {db,user,operation,actorId}=await context(request),{id}=z.object({id:z.string().uuid()}).parse(await request.json());
+ const r=await db.rpc('dropou_saved_catalog_remove',{p_owner:user.id,p_brand:operation,p_saved:id,p_product:null});if(r.error)throw dbError(r.error);
+ if(r.data.protected)throw new Error(r.data.message);
+ if(r.data.removed)await operatorAudit(user.id,actorId,operation,'Produto excluído dos salvos e catálogo',id);
+ let imagesPending=false;if(r.data.deleted&&r.data.images?.length)try{await removeUnusedImages(user.id,r.data.images);}catch{imagesPending=true;}
+ return Response.json({...r.data,imagesPending});
+}catch(e){return apiError(e);}}
