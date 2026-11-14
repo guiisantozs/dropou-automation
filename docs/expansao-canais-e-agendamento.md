@@ -52,11 +52,17 @@ O proprietário existente mantém o acesso. Crie as contas adicionais no Supabas
 
 `operation_members` associa cada membro a um workspace e canais. As funções privadas resolvem o proprietário pela sessão autenticada, sem confiar em metadata editável ou UUID enviado pelo navegador. APIs validam o acesso antes de usar funções privilegiadas; RLS também restringe leituras e escritas diretas, inclusive quando alguém forja `brand=all`. Uploads de imagens conservam marca e ator, e URLs assinadas também verificam acesso. O registro `operation_audit` identifica quem aprovou, validou, agendou e publicou; operadores veem suas próprias ações, e administradores podem consultar a equipe.
 
-## Configurar depois
+## Atualização remota em 14/11/2026
 
-1. Conectar o projeto **Dropou**, referência `wqpdyfipjsnyzxktacqh`. A conexão Supabase disponível nesta sessão pertence a outro projeto, que não foi alterado.
-2. Conferir o histórico remoto e aplicar **somente** as novas migrações `20261114155746_persistent_publication_approval.sql` e `20261114155749_channel_expansion_team_and_imports.sql`. Não reaplicar schema, seeds ou migrações históricas. Há versões remotas antigas com timestamps diferentes dos arquivos locais, documentadas no AGENTS; não executar um `db push` indiscriminado.
-3. Preencher `.env.local` e o ambiente de hospedagem com a configuração Supabase, a chave privilegiada já utilizada pelo backend, credenciais Shopee autorizadas e tokens dos bots. Esta cópia não contém `.env.local` preenchido. Usar `.env.example` como referência de nomes, mantendo chaves privadas exclusivamente no servidor.
+Após autorização explícita do usuário, a CLI autenticada nesta máquina confirmou acesso ao projeto Dropou `wqpdyfipjsnyzxktacqh`. As duas migrações novas foram aplicadas separadamente, em transações, com os timestamps locais registrados no histórico remoto. Nenhuma migração histórica foi reaplicada.
+
+A conferência remota preservou 27 produtos, 27 ofertas, 18 entregas e 98 eventos. O Dropou continuou ativo e verificado; os três canais novos ficaram desativados, sem destino configurado. Os quatro jobs bloqueados e as 18 entregas concluídas mantiveram seus estados. Um teste somente de leitura, como proprietário autenticado e encerrado com rollback, confirmou acesso aos seis canais e aprovação válida após dois dias. Todas as seis tabelas novas têm RLS. A auditoria de segurança manteve somente o aviso anterior de proteção contra senhas vazadas desativada.
+
+## Configurações restantes
+
+1. O projeto **Dropou**, referência `wqpdyfipjsnyzxktacqh`, já foi atualizado pela CLI autenticada. O conector Supabase desta sessão continua associado a outra conta; nenhum outro projeto foi alterado.
+2. As migrações `20261114155746_persistent_publication_approval.sql` e `20261114155749_channel_expansion_team_and_imports.sql` já constam no histórico remoto. Não reaplicar schema, seeds ou migrações históricas. Há versões remotas antigas com timestamps diferentes dos arquivos locais, documentadas no AGENTS; não executar um `db push` indiscriminado.
+3. O ambiente de produção existente da Vercel já contém as configurações Supabase, Shopee e do bot principal. Se forem usados bots específicos, adicionar somente os respectivos tokens novos no servidor. Para desenvolvimento local, usar `.env.example` como referência; não baixar o conjunto de segredos de produção.
 4. Cadastrar os três Chat IDs, escolher/verificar cada bot e cadastrar os acessos dos operadores. Conferir a lista de proprietários autorizados em `telegram_dispatch_config`; operadores usam o workspace desse proprietário, sem incluir seus IDs na lista de publicação privilegiada.
 5. Publicar o código atualizado na hospedagem existente e conferir por leitura as APIs, o cron existente e os advisors. Fazer testes reais de envio somente pelas confirmações explícitas da interface. Nenhum segundo cron deve ser criado.
 
