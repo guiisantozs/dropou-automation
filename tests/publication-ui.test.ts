@@ -14,7 +14,7 @@ import type {Offer} from '../src/lib/offers';
 import type {api} from '../src/lib/api';
 function domFixture(){
  const {JSDOM}=createRequire(import.meta.url)('jsdom'),dom=new JSDOM('<div id="root"></div>',{url:'https://dropou.test'}),previous=new Map<string,PropertyDescriptor|undefined>();
- for(const [key,value] of Object.entries({window:dom.window,document:dom.window.document,navigator:dom.window.navigator,Image:dom.window.Image,IS_REACT_ACT_ENVIRONMENT:true})){previous.set(key,Object.getOwnPropertyDescriptor(globalThis,key));Object.defineProperty(globalThis,key,{value,configurable:true,writable:true});}
+ for(const [key,value] of Object.entries({window:dom.window,self:dom.window,document:dom.window.document,navigator:dom.window.navigator,Image:dom.window.Image,IS_REACT_ACT_ENVIRONMENT:true})){previous.set(key,Object.getOwnPropertyDescriptor(globalThis,key));Object.defineProperty(globalThis,key,{value,configurable:true,writable:true});}
  return {dom,container:document.getElementById('root')!,restore(){dom.window.close();for(const [key,value]of previous){if(value)Object.defineProperty(globalThis,key,value);else Reflect.deleteProperty(globalThis,key);}}};
 }
 test('saved offer enables manual preparation, explains blocks and confirms Telegram destination without duplicate calls or AI',async()=>{
@@ -77,5 +77,5 @@ test('image preparation reuses one decode and compressed Blob per crop, invalida
 });
 test('dashboard keeps heavy work behind dedicated routes and dynamic imports; OCR only imports after a click',()=>{
  const dashboard=readFileSync('src/components/dashboard.tsx','utf8'),form=readFileSync('src/components/product-form.tsx','utf8'),images=readFileSync('src/components/image-input.tsx','utf8');
- assert.ok(!dashboard.includes("import ProductForm from"));assert.ok(!dashboard.includes("import OfferPreview from"));assert.match(dashboard,/ofertas\/nova/);assert.match(form,/dynamic\(\(\)=>import\('\.\/image-input'\)/);assert.match(images,/await import\('tesseract.js'\)/);assert.ok(!images.includes("import {createWorker} from"));
+ assert.ok(!dashboard.includes("import ProductForm from"));assert.ok(!dashboard.includes("import OfferPreview from"));assert.match(dashboard,/openOffer\('nova',workspaceBrand\)/);assert.match(form,/dynamic\(\(\)=>import\('\.\/image-input'\)/);assert.match(images,/await import\('tesseract.js'\)/);assert.ok(!images.includes("import {createWorker} from"));
 });
