@@ -24,6 +24,7 @@ async function call(token:string,method:string,body:object,http:typeof fetch){
 export async function resolveTelegramTarget(env:Record<string,string|undefined>,http:typeof fetch=fetch):Promise<TelegramTarget>{
  const {token,chat}=telegramConfig(env);
  const [me,target]=await Promise.all([call(token,'getMe',{},http),call(token,'getChat',{chat_id:chat},http)]);
+ if(env.TELEGRAM_EXPECTED_BOT_USERNAME&&String(me.username||'').toLowerCase()!==env.TELEGRAM_EXPECTED_BOT_USERNAME.replace(/^@/,'').toLowerCase())throw new Error('O token cadastrado não pertence ao bot esperado para este canal.');
  if(target.type!=='channel'||!target.id||typeof target.title!=='string'||!me.id)throw new Error('Configure um canal Telegram válido para o bot.');
  const member=await call(token,'getChatMember',{chat_id:String(target.id),user_id:me.id},http);
  if(member.status!=='creator'&&(member.status!=='administrator'||member.can_post_messages!==true))throw new Error('O bot precisa ser administrador com permissão de postar no canal.');

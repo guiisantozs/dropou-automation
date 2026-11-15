@@ -89,5 +89,30 @@ test('scheduling/history database: independent platforms, receipt proof, correct
    await role('authenticated',other,'all');assert.equal((await one('select dropou_publication_records_page() p')).p.total,0);assert.equal((await db.query('select * from publication_updates')).rows.length,0);
    await role();await db.query('update operation_members set active=false where member_id=$1',[operator]);await role('authenticated',operator,'all');assert.equal((await one('select dropou_publication_records_page() p')).p.total,0);
   });
+  await t.test('multi-channel queue isolates destinations, preserves the source, rolls back invalid batches and never reserves twice',async()=>{
+   const source=await offer();const cell={...target,id:'-1005678',key:'c'.repeat(64),brand:'celulares'};
+   await db.query("update operation_settings set telegram_chat_id=$1 where owner_id=$2 and brand_id='celulares'",[cell.id,owner]);
+   const request=crypto.randomUUID(),payload={caption:source.caption,brands:['dropou','celulares']};
+   async function batch(r=request,targets:any[]=[{...target,brand:'dropou'},cell],actor=owner){return (await one('select dropou_multichannel_queue($1,$2,$3,$4,$5,$6,$7,now(),$8) b',[owner,actor,source.id,r,JSON.stringify(source.snapshot),source.caption,JSON.stringify(targets),JSON.stringify(payload)])).b;}
+   const count=(await one('select count(*) n from products')).n;
+   await assert.rejects(batch(crypto.randomUUID(),[{...target,brand:'dropou'},{...cell,id:target.id}]),/distintos/);assert.equal((await one('select count(*) n from products')).n,count);
+   await assert.rejects(batch(crypto.randomUUID(),[{...target,brand:'dropou'},cell],operator),/sem acesso/);
+   const result=await batch();assert.equal(result.jobs.length,2);assert.equal(result.alreadyReserved,false);
+   const rows=(await db.query<any>('select * from telegram_jobs where id=any($1)',[result.jobs.map((j:any)=>j.id)])).rows;
+   assert.deepEqual(new Set(rows.map(j=>j.brand_id)),new Set(['dropou','celulares']));assert.equal(rows.find(j=>j.brand_id==='celulares').destination_id,cell.id);assert.equal(rows.find(j=>j.brand_id==='dropou').destination_id,target.id);
+   assert.equal(rows.find(j=>j.brand_id==='dropou').product_id,source.product_id);assert.ok(rows.find(j=>j.brand_id==='celulares').product_id!==source.product_id);
+   assert.ok(rows.every(j=>j.caption===source.caption&&j.snapshot.price===source.snapshot.price&&j.queued_by===owner));
+   assert.equal((await batch()).alreadyReserved,true);assert.equal((await one('select count(*) n from telegram_jobs where id=any($1)',[result.jobs.map((j:any)=>j.id)])).n,2);
+   await assert.rejects(batch(crypto.randomUUID()),/não será repetido/);
+   const tg=rows.find(j=>j.brand_id==='dropou'),cg=rows.find(j=>j.brand_id==='celulares');assert.ok(await claim(tg));await one("select dropou_publication_receipt($1,'[\"910\"]','sent',null)",[tg.id]);
+   await db.query('update telegram_jobs set scheduled_at=now() where id=$1',[cg.id]);assert.ok((await one('select dropou_publication_claim_v2($1,$2,false) j',[cg.id,cell.key])).j);
+   await one("select dropou_publication_receipt($1,'[]','uncertain','Resposta desconhecida')",[cg.id]);assert.equal((await batch()).alreadyReserved,true);
+   assert.equal((await one('select state from telegram_jobs where id=$1',[tg.id])).state,'sent');assert.equal((await one('select state from telegram_jobs where id=$1',[cg.id])).state,'uncertain');
+   const published=await offer(),first=await queue(published);assert.ok(await claim(first));await one("select dropou_publication_receipt($1,'[\"911\"]','sent',null)",[first.id]);
+   const current=(await one('select snapshot from offers where id=$1',[published.id])).snapshot;
+   const onlyCell=(await one('select dropou_multichannel_queue($1,$1,$2,$3,$4,$5,$6,now(),$7) b',[owner,published.id,crypto.randomUUID(),JSON.stringify(current),published.caption,JSON.stringify([cell]),JSON.stringify({only:'celulares'})])).b;
+   assert.equal(onlyCell.jobs.length,1);assert.equal(onlyCell.jobs[0].brand,'celulares');assert.equal((await one('select state from telegram_jobs where id=$1',[first.id])).state,'sent');
+   await role('authenticated');await assert.rejects(db.query('select * from publication_batches'),/permission denied/);
+  });
  }finally{await db.close();}
 });
