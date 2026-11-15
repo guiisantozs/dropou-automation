@@ -19,7 +19,7 @@ test('ordinary-link form imports only on click and preserves the official affili
  try{
   await act(async()=>root.render(createElement(ProductForm,{product:{...emptyProduct(),operation:'tenis',affiliateUrl:plain},request,onSave:async p=>{saved=p;},onClose(){}})));
   assert.equal(calls.filter(p=>p.includes('/resolve')).length,0);
-  await act(async()=>button('Tentar dados oficiais').click());assert.equal(calls.filter(p=>p.includes('/resolve')).length,1);
+  await act(async()=>button('Importar produto').click());assert.equal(calls.filter(p=>p.includes('/resolve')).length,1);
   assert.ok([...document.querySelectorAll<HTMLInputElement>('input')].some(input=>input.value===affiliate));
   await act(async()=>button('Continuar').click());
   await act(async()=>document.querySelector('form')!.dispatchEvent(new dom.window.Event('submit',{bubbles:true,cancelable:true})));

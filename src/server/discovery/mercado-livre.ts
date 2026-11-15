@@ -2,15 +2,14 @@
 import {z} from 'zod';
 import {Product,productSchema} from '../../lib/domain';
 import {discoveryCategories,DiscoveryFilters,eligibleCandidates,SourceReport} from '../../lib/discovery';
+import {mercadoLivreIdentity} from '../../lib/mercado-livre-link';
 const base='https://api.mercadolibre.com';
 export class OfficialApiError extends Error{constructor(message:string,public status?:number){super(message);}}
 const itemSchema=z.object({id:z.string().regex(/^MLB\d+$/),title:z.string().min(3),permalink:z.string().url(),status:z.string().optional(),available_quantity:z.number().optional(),secure_thumbnail:z.string().optional(),pictures:z.array(z.object({secure_url:z.string().optional()})).optional()});
 const saleSchema=z.object({amount:z.number().positive().max(1000000),regular_amount:z.number().positive().nullable().optional(),currency_id:z.literal('BRL')});
 export function meliItemId(input:string){
  if(/^MLB\d+$/.test(input))return input;
- let u:URL;try{u=new URL(input);}catch{throw new OfficialApiError('Informe uma URL original do Mercado Livre com o ID MLB.');}
- if(u.protocol!=='https:'||!(u.hostname==='mercadolivre.com.br'||u.hostname.endsWith('.mercadolivre.com.br')))throw new OfficialApiError('Use o endereço original do produto, não um encurtador.');
- const match=u.pathname.match(/(?:^|[\/-])(MLB)-?(\d+)(?:\b|_)/i);if(!match)throw new OfficialApiError('Não foi possível identificar o anúncio MLB na URL original.');return `MLB${match[2]}`;
+ try{const p=mercadoLivreIdentity(input);if(!p.itemId||p.short)throw new Error();return p.itemId;}catch{throw new OfficialApiError('Informe o endereço do anúncio com ID MLB; um produto de catálogo não identifica sozinho o anúncio do vendedor.');}
 }
 export function mercadoLivreClient(config:{token?:string;approved:boolean},http:typeof fetch=fetch){
  function credentials(){if(!config.token||!config.approved)throw new OfficialApiError('Integração pendente: configure MERCADO_LIVRE_ACCESS_TOKEN e confirme a autorização da busca com MERCADO_LIVRE_SEARCH_APPROVED=true.');}

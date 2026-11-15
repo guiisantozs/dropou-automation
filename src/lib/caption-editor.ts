@@ -5,7 +5,7 @@ export function captionError(text:string,p:Product){
  if(!text.trim()||text.length>4000)return 'A legenda deve ter entre 1 e 4.000 caracteres.';
  if(!/(?:^|\s)#publi\b/i.test(text))return 'Mantenha #publi na legenda.';
  const urls:string[]=text.match(/https?:\/\/[^\s<>]+/g)||[];
- if(!p.affiliateUrl||!urls.includes(p.affiliateUrl)||urls.some(url=>url!==p.affiliateUrl))return 'Mantenha somente o link de afiliado original, sem alterar o rastreamento.';
+ if(p.affiliateUrl?(!urls.includes(p.affiliateUrl)||urls.some(url=>url!==p.affiliateUrl)):urls.length>0)return 'Mantenha somente o link de afiliado original, sem alterar o rastreamento.';
  const cents=(v:number)=>Math.round(v*100),allowed=new Set([cents(p.price)]);
  if(p.previousVerified&&p.previousPrice&&p.previousPrice>p.price){allowed.add(cents(p.previousPrice));allowed.add(cents(p.previousPrice)-cents(p.price));}
  const plan=p.installmentsVerified?parseInstallments(p.installments):null;
