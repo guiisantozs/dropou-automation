@@ -1,4 +1,5 @@
 'use client';
+import {usePublicationRefresh} from '@/lib/publication-sync';
 import {useEffect,useRef,useState} from 'react';
 import {BookmarkPlus,CalendarClock,CheckCheck,Copy,ExternalLink,Link2,Loader2,RefreshCw,Trash2,Send,ImageOff} from 'lucide-react';
 import {api} from '@/lib/api';
@@ -29,6 +30,7 @@ export default function ShopeeSavedProducts({operation,request=api,onOpen,initia
  async function prepare(row:SavedShopeeProduct,intent:'preview'|'schedule'){
   await run(async()=>{const result=await request<{productId:string;needsReview:boolean}>('/api/shopee/saved-products','POST',{action:'prepare',id:row.id});if(alive.current)onOpen(result.productId,result.needsReview?'edit':intent);});
  }
+ usePublicationRefresh(async()=>{if(!locked.current&&isShopeeOperation(operation))await load();});
  if(!isShopeeOperation(operation))return <section className="settings-card"><h2>Meus links Shopee</h2><p>Selecione um canal Dropou para importar seus produtos.</p></section>;
  async function copyWhatsApp(row:SavedShopeeProduct){await run(async()=>{if(!row.prepared_product_id)throw new Error('Abra e confira a oferta primeiro.');const fresh=await request<SavedPublication>('/api/products/'+row.prepared_product_id+'/offer');const reason=savedPublicationState(fresh,Date.parse(fresh.serverNow||'')||Date.now()).common;if(reason)throw new Error(reason);await copyText(fresh.offer!.caption);setMessage('Legenda conferida copiada para WhatsApp. A publicação continua manual.');});}
  const pending=data?.products.filter(p=>p.state!=='ready').map(p=>p.id)||[];

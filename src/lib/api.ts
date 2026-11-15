@@ -2,6 +2,7 @@
 import {supabase} from './supabase';
 import {authUnavailable} from './auth-errors';
 import {ApiError} from './api-error';
+import {notifyPublicationChange} from './publication-sync';
 import {selectedOperation,operationScopeSchema} from './workspace-brands';
 export async function api<T>(path:string,method='GET',body?:unknown):Promise<T>{
  if(!supabase)throw new Error('Configure o Supabase antes de continuar.');
@@ -16,5 +17,5 @@ export async function api<T>(path:string,method='GET',body?:unknown):Promise<T>{
   if(refreshed.data.session)response=await send(refreshed.data.session.access_token);
   if(response.status===401){await supabase.auth.signOut({scope:'local'});throw new Error('Sessão expirada. Entre novamente.');}
  }
- const data=await response.json();if(!response.ok){let actionUrl:string|undefined;if(data.code==='origin'&&typeof data.actionUrl==='string'){try{const u=new URL(data.actionUrl);if(u.protocol==='https:'&&!u.username&&!u.password&&u.pathname==='/'&&!u.search&&!u.hash)actionUrl=u.href;}catch{}}throw new ApiError(data.error||'A operação falhou.',typeof data.code==='string'?data.code:undefined,actionUrl);}return data as T;
+ const data=await response.json();if(!response.ok){let actionUrl:string|undefined;if(data.code==='origin'&&typeof data.actionUrl==='string'){try{const u=new URL(data.actionUrl);if(u.protocol==='https:'&&!u.username&&!u.password&&u.pathname==='/'&&!u.search&&!u.hash)actionUrl=u.href;}catch{}}throw new ApiError(data.error||'A operação falhou.',typeof data.code==='string'?data.code:undefined,actionUrl);}if(method!=='GET')notifyPublicationChange();return data as T;
 }

@@ -1,4 +1,5 @@
 'use client';
+import {usePublicationRefresh} from '@/lib/publication-sync';
 import {useEffect,useRef,useState} from 'react';
 import {Check,Clipboard,Clock3,ExternalLink,Send,Share2,ShieldCheck,X} from 'lucide-react';
 import {Product,money} from '@/lib/domain';
@@ -34,11 +35,13 @@ export default function PublicationActions({product,offer,text,save,onUpdate,onE
  async function refresh(){setHistoryRevision(v=>v+1);await load();await onUpdate();}
  function intentFor(c:Channel){return state.republications?.find(i=>i.channel===c);}
  function reasonFor(destinationChannel:Channel){
+  if(destinationChannel==='whatsapp'&&state.channels?.whatsapp.published&&!intentFor('whatsapp'))return 'Publicação manual já confirmada no WhatsApp.';
   if(state.archived)return 'Produto arquivado. Restaure-o no catálogo antes de publicar.';
   if(destinationChannel==='whatsapp'&&state.whatsapp&&(state.whatsapp.review_required||!intentFor('whatsapp')))return state.whatsapp.review_required?'Histórico WhatsApp ambíguo: revise a confirmação antiga antes de publicar novamente.':'Publicação manual já confirmada no WhatsApp.';
   const job=jobs.find(j=>j.channel===destinationChannel),receipt=destinationChannel==='telegram'?state.delivery:undefined,blockSource=receipt&&['sending','sent','partial','uncertain'].includes(receipt.state)?receipt:job;
   return publicationBlock(product,offer,text,busy||pending,intentFor(destinationChannel)&&blockSource?.state==='sent'||destinationChannel==='whatsapp'&&job?.state==='sent'?undefined:blockSource,selected,now);
  }
+ usePublicationRefresh(async()=>{if(offer&&!lock.current)await load();});
  const telegramReason=reasonFor('telegram'),whatsappReason=reasonFor('whatsapp'),common=publicationBlock(product,offer,text,busy||pending,undefined,selected,now),inFlight=jobs.some(j=>['sending','partial','uncertain'].includes(j.state))||!!state.delivery&&['sending','partial','uncertain'].includes(state.delivery.state);
  const initialOpened=useRef(false);
  useEffect(()=>{if(!initialAction||initialOpened.current||pending)return;initialOpened.current=true;void run(async()=>{if(initialAction==='telegram'&&telegramReason)throw new Error(telegramReason);const c=await configuration();if(initialAction==='telegram'&&!c.telegram.available)throw new Error(c.telegram.reason||'Configure o canal Telegram.');setChannel('telegram');if(initialAction==='schedule')openSchedule(c);else setModal('telegram');});},[initialAction,offer?.id,pending]);

@@ -28,7 +28,7 @@ export async function GET(request:Request){try{
  }catch(e){return apiError(e);}}
 const bodySchema=z.discriminatedUnion('action',[
  z.object({action:z.literal('delete'),id:z.string().uuid()}),
- z.object({action:z.literal('mark'),id:z.string().uuid(),channel:z.enum(['telegram','whatsapp']),requestId:z.string().uuid(),undo:z.string().uuid().optional(),repost:z.boolean().default(false)}),
+ z.object({action:z.literal('mark'),id:z.string().uuid(),channel:z.enum(['telegram','whatsapp']),requestId:z.string().uuid(),undo:z.string().uuid().optional(),repost:z.boolean().default(false),cancelScheduled:z.boolean().default(false)}),
  z.object({action:z.literal('decide'),id:z.string().uuid(),kind:z.enum(['cache','product']),decision:z.enum(['approved','rejected'])}),
 ]);
 export async function POST(request:Request){try{
@@ -41,7 +41,7 @@ export async function POST(request:Request){try{
   let imagesPending=false;if(result.deleted&&result.images?.length)try{await removeUnusedImages(user.id,result.images);}catch{imagesPending=true;}
   return Response.json({...result,imagesPending});
  }
- if(body.action==='mark'){const result=checked(await db.rpc('dropou_channel_mark_channel',{p_brand:operation,p_owner:user.id,p_product:body.id,p_channel:body.channel,p_request:body.requestId,p_undo:body.undo||null,p_repost:body.repost}));await operatorAudit(user.id,actorId,operation,body.undo?'Marcação desfeita':'Publicado manualmente no '+body.channel,body.id);return Response.json(result);}
+ if(body.action==='mark'){const result=checked(await db.rpc('dropou_publication_mark_actor',{p_brand:operation,p_owner:user.id,p_actor:actorId,p_cancel:body.cancelScheduled,p_product:body.id,p_channel:body.channel,p_request:body.requestId,p_undo:body.undo||null,p_repost:body.repost}));return Response.json(result);}
  let product=null,caption=null;
  if(body.decision==='approved'){
   const row=checked(await session.from(body.kind==='cache'?'shopee_offers':'products').select('data').eq('owner_id',user.id).eq('brand_id',operation).eq('id',body.id).single());

@@ -15,7 +15,7 @@ export async function GET(request:Request){try{
  const ids=rows.data.map(r=>r.id),products=rows.data.map(r=>productSchema.parse(r.data));
  const [offers,publications,logs,channels]=await Promise.all([
  ids.length?db.from('offers').select('*').eq('owner_id',user.id).in('product_id',ids).neq('status','excluido') : Promise.resolve({data:[],error:null}),
- withHistory?db.from('publications').select('*').eq('owner_id',user.id).order('published_at',{ascending:false}).range(historyPage*20,historyPage*20+20):Promise.resolve({data:[],error:null}),
+ withHistory?db.from('publications').select('*').eq('owner_id',user.id).is('revoked_at',null).order('published_at',{ascending:false}).range(historyPage*20,historyPage*20+20):Promise.resolve({data:[],error:null}),
  withHistory?db.from('logs').select('event,detail,created_at').eq('owner_id',user.id).order('created_at',{ascending:false}).range(historyPage*20,historyPage*20+20):Promise.resolve({data:[],error:null}),
  ids.length?db.rpc('dropou_product_channel_summaries',{p_ids:ids}):Promise.resolve({data:[],error:null})]);
  for(const r of [offers,publications,logs,channels])if(r.error)throw dbError(r.error);

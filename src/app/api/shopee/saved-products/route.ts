@@ -33,7 +33,8 @@ export async function GET(request:Request){try{
    db.from('deliveries').select('product_id,state,message_ids,destination_title,sent_at').eq('owner_id',user.id).eq('brand_id',operation).eq('channel','telegram').in('product_id',ids),
   ]);
   for(const r of [products,offers,jobs,deliveries])if(r.error)throw dbError(r.error);
-  for(const p of products.data||[])publications[p.id]={product:p.data,archived:!!p.archived_at,offer:offers.data?.find(o=>o.product_id===p.id),jobs:jobs.data?.filter(j=>j.product_id===p.id),delivery:deliveries.data?.find(d=>d.product_id===p.id)};
+  const summaries=await db.rpc('dropou_product_channel_summaries',{p_ids:ids});if(summaries.error)throw dbError(summaries.error);const states=new Map((summaries.data||[]).map((r:any)=>[r.product_id,{telegram:r.telegram,whatsapp:r.whatsapp}]));
+  for(const p of products.data||[])publications[p.id]={product:p.data,channels:states.get(p.id),archived:!!p.archived_at,offer:offers.data?.find(o=>o.product_id===p.id),jobs:jobs.data?.filter(j=>j.product_id===p.id),delivery:deliveries.data?.find(d=>d.product_id===p.id)};
  }
  return Response.json({publications,serverNow:new Date().toISOString(),products:rows.data,total:rows.count||0,more:(rows.count||0)>(page+1)*24,budget:{used:local.count||0,limit:settings.data?.manual_daily_limit||200,globalUsed:global.count||0,globalLimit:shopeeLimit(process.env,'manual')},credentialsReady:!!process.env.SHOPEE_AFFILIATE_APP_ID&&!!process.env.SHOPEE_AFFILIATE_SECRET&&process.env.SHOPEE_AFFILIATE_APPROVED==='true'},{headers:{'Cache-Control':'no-store'}});
  }catch(e){return apiError(e);}}
