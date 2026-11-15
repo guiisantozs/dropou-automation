@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import {safeInstallments} from './commerce';
 import {operationSchema,operationCopy} from './workspace-brands';
+import {mercadoLivreIdentityKey} from './mercado-livre-link';
 
 export const statuses = ['encontrado', 'aguardando link', 'pronto', 'agendado', 'publicado'] as const;
 const webUrl = z.string().url().refine(v => { try {const u = new URL(v); return u.protocol === 'https:' && !u.username && !u.password;} catch {return false;} }, 'Use uma URL HTTPS sem credenciais');
@@ -15,6 +16,7 @@ export const productSchema = z.object({
   checkedAt: z.string().datetime().nullable(), status: z.enum(statuses), scheduledAt: z.string().datetime().nullable(),
   createdAt: z.string().datetime(), demo: z.boolean(),
   dataOrigin:z.enum(['manual','official','screenshot']).optional(), screenshotConfirmed:z.boolean().optional(),
+  mercadoLivreImport:z.object({inputUrl:webUrl,resolvedUrl:webUrl,itemId:z.string().regex(/^MLB\d{5,20}$/).nullable(),catalogId:z.string().regex(/^MLB\d{5,20}$/).nullable(),userProductId:z.string().regex(/^MLBU\d{1,20}$/).optional(),referenceCatalogId:z.string().regex(/^MLB\d{5,20}$/).optional(),affiliateState:z.enum(['pending','informed','verified','failed']),affiliateConfirmed:z.boolean()}).optional(),
   features:z.array(z.string().trim().min(1).max(80)).max(2).optional(),featuresVerified:z.boolean().optional(),
   imagePath:z.string().regex(/^[a-f0-9-]{36}\/[a-f0-9-]{36}\.(?:jpg|webp)$/).optional(),thumbnailPath:z.string().regex(/^[a-f0-9-]{36}\/[a-f0-9-]{36}\.webp$/).optional(),needsHumanReview:z.boolean().optional(),
   installmentPlan:z.object({count:z.number().int().min(2).max(24),amount:z.number().positive().max(1e6),interestFree:z.boolean()}).optional(),
@@ -52,7 +54,7 @@ export function caption(p: Product, now=Date.now()) {
   return [`🚨 ${p.shortName||p.name.toLocaleUpperCase('pt-BR')} EM OFERTA! #publi`,prices,p.installmentsVerified&&safeInstallments(p.installments)?`💳 ${safeInstallments(p.installments)}`:'',p.affiliateUrl?`🛒 GARANTA O SEU 👇\n${p.affiliateUrl}`:'',operationCopy[p.operation||'dropou'].closing].filter(Boolean).join('\n\n');
 }
 export function canonical(url: string) { const u = new URL(url); return u.hostname.toLowerCase().replace(/^www\./,'') + u.pathname.replace(/\/$/,''); }
-export const productKey=(p:Product)=>canonical(p.originalUrl||p.affiliateUrl);
+export const productKey=(p:Product)=>{if(p.store==='Mercado Livre'&&p.mercadoLivreImport){const key=mercadoLivreIdentityKey(p.mercadoLivreImport.resolvedUrl);if(key.startsWith('item:')||key.startsWith('catalog:'))return 'mercadolivre.com.br/'+key;}return canonical(p.originalUrl||p.affiliateUrl);};
 export function publicationError(p: Product, now = Date.now()): string | null {
   if (p.demo) return 'Dados demonstrativos não podem ser publicados de verdade.';
   if(p.dataOrigin==='screenshot'&&!p.screenshotConfirmed)return 'Confirme os dados extraídos do print antes de publicar.';

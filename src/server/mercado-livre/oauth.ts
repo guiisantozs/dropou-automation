@@ -32,6 +32,10 @@ export async function finishOAuth(input:{state:string;browser:string;code:string
  const verifier=unseal(flow.encrypted_verifier,config.key,`flow:${stateHash}:${flow.owner_id}`);
  const tokens=await requestTokens(new URLSearchParams({grant_type:'authorization_code',client_id:config.id,client_secret:config.secret,code:input.code,redirect_uri:config.redirect,code_verifier:verifier}));
  const {error:saveError}=await db.from('mercado_livre_connections').upsert({owner_id:flow.owner_id,ml_user_id:String(tokens.user_id),encrypted_tokens:seal(JSON.stringify(tokens),config.key,`connection:${flow.owner_id}:${tokens.user_id}`),expires_at:new Date(Date.now()+tokens.expires_in*1000).toISOString(),status:'active',version:randomUUID(),lock_id:null,refresh_started_at:null,updated_at:new Date().toISOString()});check(saveError);
+ // A newly granted authorization must not inherit an older permission/rate-limit result.
+ // Optional until the incremental import migration is installed; OAuth itself remains usable.
+ await db.from('mercado_livre_import_cache').delete().eq('owner_id',flow.owner_id);
+ await db.from('mercado_livre_import_cooldowns').delete().eq('owner_id',flow.owner_id);
 }
 export function tokenStore():TokenStore{
  const db=vault();return {

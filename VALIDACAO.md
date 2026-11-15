@@ -204,3 +204,14 @@ Implementação local sobre `5a0c38e`. O usuário solicitou configurar os servi�
 - Tema exclusivo Celulares: preto azulado, branco/prata e ciano #00E5DD, incluindo navegação, botões, indicadores, oferta e diálogos. Nome visível da operação e mascote no dashboard. PNG transparente gerado com imagegen a partir da referência, otimizado em public/images/celulares-mascot.png. Demais cores e controles de publicação multicanal explícita preservados.
 - Validação: 282/282 testes completos, seis regressões de contexto/UI, tipos/build e diff aprovados. Chrome: 32 combinações de oito telas em 320/375/768/1440 px, mais quatro de controle laranja do Tech & Games, sem overflow/imagens quebradas/erros; capturas inspecionadas. Leituras RLS remotas read-only/rollback: Celulares quatro produtos/dois registros e nenhum dado de outras marcas; Tech & Games 35 produtos/36 registros, sem mistura. Operação real do usuário não foi atribuída ao agente.
 - Sem nova migração, mensagem, busca/importação Shopee, geração paga pelo aplicativo, ativação ou mudança de credenciais/destinos como teste. Guia docs/celulares-theme-and-scope.md. Deploy deve registrar o commit efetivamente publicado; fixtures não comprovam navegação autenticada completa.
+
+
+## 2026-11-14 ? Importacao Mercado Livre e afilia??o assistida
+
+Guia e relatorio completo: [docs/mercado-livre-link-import.md](docs/mercado-livre-link-import.md). 301/301 testes completos, typecheck/build e diff check aprovados; 16 combinacoes visuais em 320/375/768/1440 px, sem overflow ou imagens quebradas, capturas inspecionadas. APIs novas/alteradas exigiram login no HTTP local (401); paginas 200. Servidor temporario encerrado.
+
+Migracao incremental 20261115015645 aplicada no Dropou, com historico atomico. Reserva real em rollback; tabelas vazias depois do teste, RLS ativo, funcoes de cache somente service_role, um unico dispatcher. 39 produtos e 30 entregas antes/depois, sem alteracoes de dados operacionais pelo agente. Advisors mantiveram apenas o WARN preexistente de senhas vazadas.
+
+Diagnostico real autenticado do usuario confirmou conta 200, anuncio MLB3574638387 403, bulk 403 interno e catalogo 200. HEAD/GET publico do link curto recebido retornaram 403 neste ambiente. Nao se comprovou recuperacao real desse anuncio. Client Secret recadastrado somente em locais privados autorizados; nova conexao OAuth ativa em 14/11 as 23h10 confirmou aceitacao da chave. Redeploy READY da versao anterior 5fe6c14 em dpl_FvSrxUhSGrbjY8v3qCowpgmLB4EW. A publicacao da interface nova deve ser registrada separadamente.
+
+Fila/Telegram/historico/multicanal foram exercitados com fixtures automatizadas e recibos simulados em PGlite; nenhuma mensagem real, consulta Shopee, geracao paga ou ativacao. Sondagem reproduzivel em scripts/verify-mercado-livre-import.ts; saidas datadas ignoradas, sem credenciais nem URL afiliada completa.
