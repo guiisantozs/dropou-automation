@@ -5,6 +5,7 @@ import {createElement,act} from 'react';
 import {renderToStaticMarkup} from 'react-dom/server';
 import {emptyProduct} from '../src/lib/product-draft';
 import OfferPreview from '../src/components/offer-preview';
+import AIUsage from '../src/components/ai-usage';
 import {createRoot} from 'react-dom/client';
 import {operationPath,bindOperationRequest} from '../src/lib/operation-navigation';
 import {selectOperation,selectedOperation} from '../src/lib/workspace-brands';
@@ -45,4 +46,11 @@ test('the Celulares offer preview identifies its own operation instead of Tech a
  const product={...emptyProduct(),operation:'celulares' as const,name:'Celular de teste'};
  const html=renderToStaticMarkup(createElement(OfferPreview,{product,page:true,onRefresh:async()=>{},onClose(){},onEdit(){}}));
  assert.match(html,/PUBLICAÇÃO · DROPOU \| CELULARES &amp; GADGETS/);assert.doesNotMatch(html,/TECH &amp; GAMES/);
+});
+test('caption tools keep only the selected operation products and language without loading the global budget',async()=>{
+ const {root,close}=fixture(),cell={...emptyProduct(),operation:'celulares' as const,name:'Fone do canal de celulares'},tech={...emptyProduct(),operation:'dropou' as const,name:'Teclado de outra operação'};
+ try{await act(async()=>root.render(createElement(AIUsage,{operation:'celulares',products:[cell,tech],onRefresh:async()=>{}})));
+  assert.match(document.body.textContent!,/Fone do canal de celulares/);assert.doesNotMatch(document.body.textContent!,/Teclado de outra operação|Consumo global de IA|Configure o Supabase/);
+  assert.deepEqual([...document.querySelectorAll('select')[0].options].map(o=>o.value),['celulares']);
+ }finally{await act(async()=>root.unmount());close();}
 });

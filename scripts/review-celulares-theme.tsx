@@ -11,6 +11,7 @@ import ShopeeTools from '../src/components/shopee-tools';
 import PublicationSchedule from '../src/components/publication-schedule';
 import PublicationsWorkspace from '../src/components/publications-workspace';
 import OfferPreview from '../src/components/offer-preview';
+import AIUsage from '../src/components/ai-usage';
 import {emptyProduct} from '../src/lib/product-draft';
 import type {OperationsData} from '../src/components/product-operations';
 const css=['globals.css','workspace.css','premium.css','publication-workspace.css','operation-theme.css'].map(f=>readFileSync('src/app/'+f,'utf8')).join('\n'),stamp=new Date().toISOString();
@@ -25,6 +26,7 @@ const pages=[
  ['celularessaved','Meus links Shopee',h(ShopeeSavedProducts,{operation:'celulares',initialData:{products:[],total:0,more:false,credentialsReady:true,budget:{used:0,limit:200,globalUsed:0,globalLimit:200}},onOpen(){}})],
  ['celularesschedule','Agendamentos',h(PublicationSchedule,{operation:'celulares',initialData:{jobs:[],channels:{},total:0,more:false,serverNow:stamp,summary:{today:0,pending:0,attention:0,next:null}}})],
  ['celularespublications','Publicações',h(PublicationsWorkspace,{operation:'celulares',initialData:{entries:[],total:0,more:false,serverNow:stamp,allowedBrands:['dropou','celulares','tenis','automoto'],admin:true,operators:[]}})],
+ ['celularescaptions','Legendas e IA',h(AIUsage,{operation:'celulares',products:[product],onRefresh:async()=>{}})],
  ['celularesoffer','Oferta',h(OfferPreview,{product,offer,page:true,onRefresh:async()=>{},onClose(){},onEdit(){}})],
 ] as const;
 mkdirSync('outputs/premium-review',{recursive:true});
@@ -36,4 +38,4 @@ for(const [name,title,content]of pages){
 }
 const control=h('main',{className:'content','data-operation':'dropou'},h('h1',null,'Tech & Games'),h(ProductOperations,{operation:'dropou',initialData:{...data,rows:[]},onOpen(){},onNavigate(){}}));
 writeFileSync('outputs/premium-review/techcontrol.html','<!doctype html><html lang="pt-BR" data-operation="dropou"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><style>'+css+'</style></head><body>'+renderToStaticMarkup(control)+'</body></html>');
-console.log('Seven Celulares fixtures plus the unchanged Tech theme control generated.');
+console.log('Eight Celulares fixtures plus the unchanged Tech theme control generated.');
