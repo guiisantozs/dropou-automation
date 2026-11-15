@@ -1,9 +1,10 @@
 'use client';
 import {useEffect,useState} from 'react';
-import {api} from '@/lib/api';
+import {apiForOperation} from '@/lib/api';
 import {operationCategories,operationName,type OperationScope,type OperationId} from '@/lib/workspace-brands';
 import {radarSchema,radarSources,routineTemplates,type OperationSettings} from '@/lib/operation-settings';
 export default function OperationSettingsPanel({operation,onSaved}:{operation:OperationScope;onSaved?:()=>void}){
+ const api=apiForOperation(operation);
  const [settings,setSettings]=useState<OperationSettings>(),[all,setAll]=useState<OperationSettings[]>([]),[message,setMessage]=useState(''),[busy,setBusy]=useState(false);
  useEffect(()=>{let live=true;api<{operations:OperationSettings[]}>('/api/operations').then(r=>{if(live){setAll(r.operations);const s=r.operations.find(s=>s.brand_id===operation);setSettings(s?{...s,radar:radarSchema.parse(s.radar)}:undefined);}}).catch(e=>{if(live)setMessage(e.message);});return()=>{live=false;};},[operation]);
  async function run(fn:()=>Promise<void>){setBusy(true);setMessage('');try{await fn();}catch(e){setMessage((e as Error).message);}finally{setBusy(false);}}

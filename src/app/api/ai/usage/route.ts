@@ -3,7 +3,7 @@ import {aiError,aiSession} from '@/server/ai/service';
 import {adminDb} from '@/server/db';
 import {dbError} from '@/server/session';
 export async function GET(request:Request){try{
- await aiSession(request);const {data,error}=await adminDb().rpc('dropou_economy_ai_usage');if(error)throw dbError(error);
+ const {operation,access}=await aiSession(request);if(!access.admin||operation!=='all')throw new Error('FORBIDDEN: O orçamento de IA é global. Acesse Todas as operações como administrador.');const {data,error}=await adminDb().rpc('dropou_economy_ai_usage');if(error)throw dbError(error);
  const visual=await adminDb().rpc('dropou_economy_visual_usage');
  return Response.json({...data,visual:visual.error?null:visual.data,model:process.env.OPENAI_MODEL||'gpt-6-luna',configured:!!process.env.OPENAI_API_KEY,enabled:process.env.OPENAI_ENABLED==='true'});
 }catch(e){return aiError(e);}}

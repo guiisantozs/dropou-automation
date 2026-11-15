@@ -1,9 +1,10 @@
 'use client';
 import {useEffect,useState} from 'react';
-import {api} from '@/lib/api';
+import {apiForOperation} from '@/lib/api';
 import {operationName,type OperationScope} from '@/lib/workspace-brands';
 type Link={id:string;brand_id:string;url:string;marketplace:string};
 export default function OperationLinks({operation}:{operation:OperationScope}){
+ const api=apiForOperation(operation);
  const [text,setText]=useState(''),[links,setLinks]=useState<Link[]>([]),[message,setMessage]=useState(''),[busy,setBusy]=useState(false);
  async function load(){const r=await api<{links:Link[]}>('/api/operation-links');setLinks(r.links);}
  useEffect(()=>{let alive=true;api<{links:Link[]}>('/api/operation-links').then(r=>{if(alive)setLinks(r.links);}).catch(e=>{if(alive)setMessage(e.message);});return()=>{alive=false;};},[operation]);

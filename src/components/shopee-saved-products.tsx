@@ -2,7 +2,7 @@
 import {usePublicationRefresh} from '@/lib/publication-sync';
 import {useEffect,useRef,useState} from 'react';
 import {BookmarkPlus,CalendarClock,CheckCheck,Copy,ExternalLink,Link2,Loader2,RefreshCw,Trash2,Send,ImageOff} from 'lucide-react';
-import {api} from '@/lib/api';
+import {api,apiForOperation} from '@/lib/api';
 import {copyText} from '@/lib/clipboard';
 import {money} from '@/lib/domain';
 import ProductMedia from './product-media';
@@ -11,7 +11,7 @@ import {clockNow,serverClock} from '@/lib/publication-copy';
 import type {SavedShopeeProduct} from '@/lib/shopee-saved';
 import {isShopeeOperation,type OperationScope} from '@/lib/workspace-brands';
 export type SavedShopeeData={publications?:Record<string,SavedPublication>;serverNow?:string;products:SavedShopeeProduct[];total:number;more:boolean;credentialsReady:boolean;budget:{used:number;limit:number;globalUsed:number;globalLimit:number}};
-export default function ShopeeSavedProducts({operation,request=api,onOpen,initialData}:{operation:OperationScope;request?:typeof api;onOpen:(id:string,intent:'preview'|'schedule'|'edit'|'telegram')=>void;initialData?:SavedShopeeData}){
+export default function ShopeeSavedProducts({operation,request=apiForOperation(operation),onOpen,initialData}:{operation:OperationScope;request?:typeof api;onOpen:(id:string,intent:'preview'|'schedule'|'edit'|'telegram')=>void;initialData?:SavedShopeeData}){
  const [data,setData]=useState(initialData),[text,setText]=useState(''),[page,setPage]=useState(0),[busy,setBusy]=useState(false),[message,setMessage]=useState(''),[error,setError]=useState(''),[progress,setProgress]=useState<{done:number;total:number}>(),[removeId,setRemoveId]=useState<string|null>(null);
  const [clock,setClock]=useState(()=>serverClock(initialData?.serverNow)),[,tick]=useState(0);
  useEffect(()=>{setClock(serverClock(data?.serverNow));},[data?.serverNow]);

@@ -1,10 +1,12 @@
 'use client';
 import {useEffect,useState} from 'react';
-import {api} from '@/lib/api';
+import {apiForOperation} from '@/lib/api';
+import {selectedOperation,type OperationScope} from '@/lib/workspace-brands';
 import {IntegrationStatus,Check} from '@/lib/integration-status';
 import MercadoLivreDiagnosisPanel from './mercado-livre-diagnosis';
 const labels={connected:'Conectado',pending:'Pendente',available:'Disponível',unavailable:'Indisponível',error:'Erro'};
-export default function IntegrationStatusPanel(){
+export default function IntegrationStatusPanel({operation=selectedOperation()}:{operation?:OperationScope}){
+ const api=apiForOperation(operation);
  const [data,setData]=useState<IntegrationStatus|null>(null),[error,setError]=useState(''),[busy,setBusy]=useState(false);
  async function load(run=false){setBusy(true);setError('');try{setData(await api<IntegrationStatus>('/api/integrations/status',run?'POST':'GET'));}catch(e){setError((e as Error).message);}finally{setBusy(false);}}
  useEffect(()=>{void load();},[]);
