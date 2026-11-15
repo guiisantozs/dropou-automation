@@ -67,10 +67,10 @@ test('dashboard upcoming uses the Telegram job date and clearly warns when autom
  assert.match(html,/Agendamentos automáticos pausados/);assert.match(html,/não haverá envio automático/);assert.match(html,/Telegram agendado/);assert.match(html,/17:00/);assert.doesNotMatch(html,/Nenhum agendamento nos produtos exibidos/);
 });
 
-test('resuming automation UI explains future-only activation and reports the expired jobs retained for review',async()=>{
- const {container,close}=fixture(),root=(await import('react-dom/client')).createRoot(container),calls:any[]=[];let enabled=false;
- const request=(async(path:string,method='GET',body:any)=>{calls.push({path,method,body});if(method==='PATCH'){enabled=body.enabled;return {enabled,held:3};}return path.includes('publication-config')?{enabled,telegram:{available:true}}:{jobs:[],more:false};}) as typeof api;
- try{await act(async()=>root.render(createElement(PublicationSchedule,{request})));assert.match(container.textContent!,/horários já vencidos não serão disparados/);await act(async()=>[...container.querySelectorAll<HTMLButtonElement>('button')].find(b=>b.textContent==='Ativar próximos agendamentos')!.click());assert.deepEqual(calls.find(c=>c.method==='PATCH').body,{enabled:true});assert.match(container.textContent!,/3 agendamento\(s\) vencido\(s\) retido\(s\)/);assert.match(container.textContent!,/Automação ativa/);}finally{await act(async()=>root.unmount());close();}
+test('schedule loads real pending totals without activating automation or listing approved products',async()=>{
+ const {container,close}=fixture(),root=(await import('react-dom/client')).createRoot(container),calls:any[]=[];
+ const request=(async(path:string,method='GET')=>{calls.push({path,method});return {jobs:[],channels:{},total:0,more:false,serverNow:new Date().toISOString(),summary:{today:0,pending:0,attention:0,next:null}};}) as typeof api;
+ try{await act(async()=>root.render(createElement(PublicationSchedule,{request})));assert.match(container.textContent!,/Nenhuma publicação agendada/);assert.ok(calls.every(c=>c.method==='GET'&&c.path.startsWith('/api/publication-jobs')));assert.equal([...container.querySelectorAll('button')].some(b=>b.textContent==='Ativar próximos agendamentos'),false);}finally{await act(async()=>root.unmount());close();}
 });
 
 test('history rows show saved destination, actual and scheduled times, message link and a distinct manual actor',()=>{

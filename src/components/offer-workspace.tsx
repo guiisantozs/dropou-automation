@@ -1,4 +1,5 @@
 'use client';
+import {usePublicationRefresh} from '@/lib/publication-sync';
 import {useEffect,useRef,useState} from 'react';
 import {acceptOfferUpdate} from '@/lib/offer-view-state';
 import dynamic from 'next/dynamic';
@@ -23,5 +24,6 @@ export default function OfferWorkspace({id,edit=false}:{id?:string;edit?:boolean
   const result=await api<{offer:Offer}>('/api/offers','POST',{productId:product.id,caption,originalCaption,manualEdit:caption!==originalCaption,expected:product});
   setData(await api<{product:Product;offer?:Offer}&PublicationContext>('/api/products/'+product.id+'/offer'));router.replace('/ofertas/'+product.id+'?brand='+(product.operation||'dropou')+returnQuery);
  }
+ usePublicationRefresh(async()=>{if(id&&!edit)await refresh();});
  return <main className="offer-page" data-operation={data?.product.operation||'dropou'}><header className="offer-page-header"><a className="brand" href="/">dropou<span className="brand-dot">.</span></a><a className="secondary" href={fromSaved?back:'/?brand='+(data?.product.operation||selectedOperation())}>{fromSaved?'Voltar aos produtos salvos':'Voltar ao painel'}</a></header>{error?<div className="section-note" role="alert">{error} <a href="/">Abrir painel / entrar na conta</a></div>:!data||id&&data.product.id!==id?<div className="workspace-skeleton" role="status">Carregando oferta…</div>:edit||!id?<ProductForm lockedOperation={!!id} key={data.product.id} product={data.product} initialCaption={data.offer?.caption} initialOriginalCaption={data.offer?.original_caption} page onClose={()=>router.push(back)} onSave={save}/>:<OfferPreview initialAction={typeof window!=='undefined'&&['schedule','telegram'].includes(new URLSearchParams(window.location.search).get('action')||'')?new URLSearchParams(window.location.search).get('action') as 'schedule'|'telegram':undefined} context={data} key={data.product.id} onStored={(offer,serverNow)=>setData(current=>current&&current.product.id===offer.product_id?{...current,...acceptOfferUpdate(current,{product:offer.snapshot,offer}),serverNow:serverNow||current.serverNow}:current)} product={data.product} offer={data.offer} page onRefresh={refresh} onClose={()=>router.push(back)} onEdit={()=>router.push('/ofertas/'+data.product.id+'/editar?brand='+(data.product.operation||'dropou')+returnQuery)}/>}</main>;
 }

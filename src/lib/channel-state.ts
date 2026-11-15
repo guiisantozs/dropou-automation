@@ -3,8 +3,9 @@ import {publicationIdentityError} from './publication-copy';
 export type Channel='telegram'|'whatsapp';
 export type ProductChannelSummary={telegram:ChannelSummary;whatsapp:ChannelSummary};
 export type ChannelSummary={published:boolean;publishedAt:string|null;state:string|null;scheduledAt:string|null;review?:boolean;manualMarkId?:string|null};
-export type ChannelContext={jobs?:{channel:Channel;state:string;message_ids:string[]}[];job?:{channel:Channel;state:string;message_ids:string[]};delivery?:{state:string;message_ids:string[]};whatsapp?:{review_required?:boolean;confirmed_by?:string|null};archived?:boolean};
+export type ChannelContext={channels?:ProductChannelSummary;jobs?:{channel:Channel;state:string;message_ids:string[]}[];job?:{channel:Channel;state:string;message_ids:string[]};delivery?:{state:string;message_ids:string[]};whatsapp?:{review_required?:boolean;confirmed_by?:string|null};archived?:boolean};
 export function channelState(channel:Channel,context:ChannelContext,hasOffer:boolean,product?:Product){
+ const canonical=context.channels?.[channel];if(canonical){if(['sending','uncertain','partial'].includes(canonical.state||''))return canonical.state!;if(canonical.published)return 'sent';if(canonical.state&&canonical.state!=='not_published')return canonical.state;}
  if(channel==='whatsapp'&&context.whatsapp){if(context.whatsapp.review_required)return 'review';if(context.whatsapp.confirmed_by)return 'sent';return 'review';}
  const job=context.jobs?.find(j=>j.channel===channel)||(context.job?.channel===channel?context.job:undefined);
  if(channel==='telegram'&&context.delivery){if(context.delivery.state==='sent'&&context.delivery.message_ids?.length)return 'sent';if(['sending','uncertain','partial'].includes(context.delivery.state)||context.delivery.state==='failed'&&(!job||job.state==='failed'))return context.delivery.state;}

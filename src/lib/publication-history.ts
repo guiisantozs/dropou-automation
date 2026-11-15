@@ -17,6 +17,7 @@ export function telegramMessageLinks(destinationId:string|null,ids:unknown,statu
  return [...new Set(ids)].filter((id):id is string=>typeof id==='string'&&/^[1-9]\d*$/.test(id)&&Number.isSafeInteger(Number(id))).map(id=>({id,url:'https://t.me/c/'+destinationId.slice(4)+'/'+id}));
 }
 export function historyStatus(entry:Pick<PublicationHistoryEntry,'channel'|'status'|'is_republication'>){
+ if(entry.channel==='telegram'&&entry.status==='manual_confirmed')return 'Marcação manual antiga · sem recibo da API';
  if(entry.status==='sent')return entry.is_republication?'Republicado no Telegram':'Publicado no Telegram';
  if(entry.status==='manual_confirmed')return entry.is_republication?'Republicação confirmada manualmente':'Confirmado manualmente';
  return ({review:'Histórico em revisão',queued:'Agendado',sending:'Envio em andamento',partial:'Publicação parcial · revisar',uncertain:'Entrega incerta · revisar',failed:'Falha no envio',blocked:'Aguardando revisão',cancelled:'Agendamento cancelado',republication_authorized:'Republicação autorizada',ready:'Pronto para compartilhar'} as Record<string,string>)[entry.status]||'Registro de auditoria';
