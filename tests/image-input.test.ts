@@ -24,7 +24,7 @@ test('React paste/drop/file events show images immediately, keep them in memory 
  const {JSDOM}=createRequire(import.meta.url)('jsdom');
  const dom=new JSDOM('<!doctype html><div id="root"></div>',{url:'https://dropou.test'});
  const previous=new Map<string,PropertyDescriptor|undefined>();
- for(const [key,value] of Object.entries({window:dom.window,document:dom.window.document,navigator:dom.window.navigator,Image:dom.window.Image,IS_REACT_ACT_ENVIRONMENT:true})){previous.set(key,Object.getOwnPropertyDescriptor(globalThis,key));Object.defineProperty(globalThis,key,{value,configurable:true,writable:true});}
+ for(const [key,value] of Object.entries({window:dom.window,self:dom.window,document:dom.window.document,navigator:dom.window.navigator,Image:dom.window.Image,IS_REACT_ACT_ENVIRONMENT:true})){previous.set(key,Object.getOwnPropertyDescriptor(globalThis,key));Object.defineProperty(globalThis,key,{value,configurable:true,writable:true});}
  const create=URL.createObjectURL,revoke=URL.revokeObjectURL,active=new Set<string>();let sequence=0,fetches=0;
  const originalFetch=globalThis.fetch;globalThis.fetch=async()=>{fetches++;throw new Error('No API is allowed in clipboard tests');};
  URL.createObjectURL=()=>{const url='blob:memory-'+(++sequence);active.add(url);return url;};URL.revokeObjectURL=url=>{active.delete(url);};

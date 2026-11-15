@@ -10,7 +10,7 @@ import type {Product} from '../src/lib/domain';
 import type {api} from '../src/lib/api';
 test('ordinary-link form imports only on click and preserves the official affiliate URL, photo and product data',async()=>{
  const {JSDOM}=createRequire(import.meta.url)('jsdom'),dom=new JSDOM('<div id="root"></div>',{url:'https://dropou.test/?brand=tenis'}),old=new Map<string,PropertyDescriptor|undefined>();
- for(const [key,value]of Object.entries({window:dom.window,document:dom.window.document,navigator:dom.window.navigator,IS_REACT_ACT_ENVIRONMENT:true})){old.set(key,Object.getOwnPropertyDescriptor(globalThis,key));Object.defineProperty(globalThis,key,{value,configurable:true,writable:true});}
+ for(const [key,value]of Object.entries({window:dom.window,self:dom.window,document:dom.window.document,navigator:dom.window.navigator,IS_REACT_ACT_ENVIRONMENT:true})){old.set(key,Object.getOwnPropertyDescriptor(globalThis,key));Object.defineProperty(globalThis,key,{value,configurable:true,writable:true});}
  const plain='https://shopee.com.br/product/123/456',affiliate='https://s.shopee.com.br/official-fixture';
  const product=shopeeProduct({shopId:'123',itemId:'456',name:'Tênis Olympikus de teste',price:179.9,priceMax:179.9,image:'https://down-br.img.susercontent.com/file/fixture',offerLink:affiliate,productLink:plain,rating:4.8,sales:5000,commission:.1,reportedDiscount:20,checkedAt:new Date().toISOString()},crypto.randomUUID(),'tenis');
  const calls:string[]=[];let saved:Product|undefined;

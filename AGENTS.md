@@ -195,3 +195,21 @@ Este repositório é o Dropou, em `C:\Users\Usuario\Documents\dropou-automation`
 - Usuário recadastrou a conexão após autorizar Client Secret em Production/ambiente local ignorado. Segredo não versionado nem baixado da Vercel. Redeploy somente da versão já publicada 5fe6c14, dpl_FvSrxUhSGrbjY8v3qCowpgmLB4EW READY. OAuth novo ativo às 23h10: chave aceita. Tentativa de grant sem usuário não suportada e não tratada como prova de validade. Não repetir esse grant para esta aplicação.
 - Diagnóstico autenticado do usuário: /users/me 200, /items/MLB3574638387 403 access_denied, bulk com 403 interno, busca geral 403 e catálogo 200. A política exata continua não identificada. Link curto fornecido recusado com 403 no ambiente de execução; não declarar resolução real nem recuperação desse anúncio como funcionando. Sem leitura/exportação de tokens.
 - Validação: 301/301 testes, tipos/build e diff check aprovados; PGlite/JSDOM cobrem cache/isolamento/rascunho/afiliação/preço ausente/variantes/fila/recibo simulado/histórico e compartilhamento entre canais, além da regressão Shopee. Chrome: 16 combinações em quatro larguras, capturas inspecionadas. Páginas HTTP local 200, quatro APIs sem sessão 401; servidor encerrado. Reserva remota em rollback sem itens de teste permanentes; grants/RLS e cron único conferidos, advisors sem novos avisos. Nenhuma mensagem, consulta Shopee ou geração paga como teste. Publicação da nova interface deve registrar o commit/deploy efetivos.
+
+## 2026-11-15 · Redesign compacto e navegação com contexto
+
+- Branch `codex/premium-workspace-navigation` criada da main limpa `2b8caed`. Dashboard com quatro indicadores, cards horizontais e ações compactas; catálogo/salvos com fotos menores, lixeira acessível e confirmação. Histórico/agenda, filtros e sidebar refinados pela camada `refined-workspace.css`, usando somente os temas existentes (laranja/turquesa).
+- `workspace-navigation.ts` e `WorkspaceOfferLink` preservam origem em criar/abrir/editar/salvar, com retorno relativo validado e transições Next. Editar a prévia volta à própria oferta. `WorkspaceState` restaura apenas filtros/modo/página/arquivados por conta/operação/tela, TTL de 12 horas, antes das leituras principais; scroll restaurado após a lista. Skeletons reutilizáveis e intervalo de relógio dos salvos reduzido para uma atualização a cada 15 segundos.
+- Ícones Telegram/agendamento abrem confirmações existentes; cópia WhatsApp relê a oferta e não registra publicação. Marcações manuais ficam recolhidas e identificadas; comprovantes e regras de republicação preservados. Sem mudança de schema, cron, destinos, integrações ou validade das aprovações.
+- Validação: 307/307 testes, typecheck, build e diff check aprovados. Chrome: 108 combinações estáticas em 320/375/768/1440 px, sem overflow/imagens quebradas/erros, cores conferidas e capturas inspecionadas. Aplicação Next real com conta fictícia/APIs interceptadas validou catálogo → oferta → retorno com filtro/página/scroll, prévia → editar → prévia, novo cadastro, Voltar do navegador, publicações e agenda; zero mutações, conexões externas bloqueadas. Isso não comprova sessão produtiva ou envio real.
+- Guia `docs/redesign-workspace.md`; evidências locais ignoradas em `outputs/premium-review`. Ambiente local ligado em 127.0.0.1:3000; chaves públicas configuradas no `.env.local` ignorado. Credenciais privadas locais ainda são necessárias para listas com manutenção administrativa e integrações. Nenhum segredo baixado da produção. Sem mensagem, busca Shopee/ML, geração paga, ativação ou alteração remota do banco como teste.
+
+<!-- BEGIN:nextjs-agent-rules -->
+
+## This is NOT the Next.js you know
+
+This version has breaking changes — APIs, conventions, and file structure may all differ from your training data. Read the relevant guide in `node_modules/next/dist/docs/` (resolved from this file's directory; in monorepos the `next` package may not be visible from the repo root) before writing any code. Heed deprecation notices.
+
+This block is written and re-added by `next dev` — verify at `node_modules/next/dist/server/lib/generate-agent-files.js`. Removing it from a diff only re-creates the uncommitted change; committing it with your work keeps the tree clean.
+
+<!-- END:nextjs-agent-rules -->

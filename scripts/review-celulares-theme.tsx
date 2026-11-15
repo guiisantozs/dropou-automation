@@ -14,7 +14,7 @@ import OfferPreview from '../src/components/offer-preview';
 import AIUsage from '../src/components/ai-usage';
 import {emptyProduct} from '../src/lib/product-draft';
 import type {OperationsData} from '../src/components/product-operations';
-const css=['globals.css','workspace.css','premium.css','publication-workspace.css','operation-theme.css'].map(f=>readFileSync('src/app/'+f,'utf8')).join('\n'),stamp=new Date().toISOString();
+const css=['workspace.css','premium.css','publication-workspace.css','operation-theme.css','refined-workspace.css'].map(f=>readFileSync('src/app/'+f,'utf8')).join('\n'),stamp=new Date().toISOString();
 const product={...emptyProduct(),operation:'celulares' as const,store:'Shopee' as const,name:'Smartphone Samsung Galaxy A55 128 GB',niche:'Smartphones',price:1499.9,inStock:true,checkedAt:stamp,affiliateUrl:'https://shopee.com.br/product/123/456',image:''};
 const rows=[{id:product.id,kind:'product' as const,data:product}];
 const data:OperationsData={rows,total:1,page:0,more:false,recent:[],recentTotal:0,channels:{},summary:{pending:3,approved:1,published:2,recent:0,archived:0}};

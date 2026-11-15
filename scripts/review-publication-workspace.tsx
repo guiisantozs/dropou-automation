@@ -8,7 +8,7 @@ import PublicationSchedule from '../src/components/publication-schedule';
 import PublicationsWorkspace from '../src/components/publications-workspace';
 import {emptyProduct} from '../src/lib/product-draft';
 import type {SchedulePage,ScheduledDestination,RecordsPage,PublishedRecord} from '../src/lib/publication-workspace';
-const css=['globals.css','workspace.css','premium.css','publication-workspace.css'].map(f=>readFileSync('src/app/'+f,'utf8')).join('\n');
+const css=['workspace.css','premium.css','publication-workspace.css','operation-theme.css','refined-workspace.css'].map(f=>readFileSync('src/app/'+f,'utf8')).join('\n');
 const now=Date.now(),stamp=new Date(now).toISOString(),at=(hours:number)=>new Date(now+hours*3600000).toISOString();
 const product={...emptyProduct(),name:'Controle DualSense sem fio para PlayStation 5 e PC',price:349.9,image:''};
 const job:ScheduledDestination={id:crypto.randomUUID(),product_id:product.id,offer_id:crypto.randomUUID(),brand_id:'dropou',channel:'telegram',state:'queued',scheduled_at:at(1),destination_title:'Tech & Games',attempts:0,message_ids:[],name:product.name,data:product};
