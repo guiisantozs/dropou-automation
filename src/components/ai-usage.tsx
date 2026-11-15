@@ -1,6 +1,6 @@
 'use client';
 import {useEffect,useState} from 'react';
-import {api} from '@/lib/api';
+import {apiForOperation} from '@/lib/api';
 import {selectedOperation,type OperationScope} from '@/lib/workspace-brands';
 import {Brand,brands,GenerationResult,generationError,verifiedFacts} from '@/lib/ai';
 import type {Product} from '@/lib/domain';
@@ -9,6 +9,7 @@ type Day={day:string;calls:number;captions:number;input:number;output:number;cos
 type Usage={budget:{enabled:boolean;total_limit:number;daily_limit:number;daily_requests:number};days:Day[];cache:{day:string;captions:number}[];uncertain:number;model:string;configured:boolean;enabled:boolean;visual?:{calls:number;input:number;output:number;cost:number;cache:number}|null};
 const usd=(v:number)=>'$'+Number(v).toFixed(6);
 export default function AIUsage({products,onRefresh,operation='dropou'}:{operation?:OperationScope;products:Product[];onRefresh:()=>Promise<void>}){
+ const api=apiForOperation(operation);
  const [usage,setUsage]=useState<Usage>(),[message,setMessage]=useState(''),[busy,setBusy]=useState(false),[selected,setSelected]=useState<string[]>([]),[results,setResults]=useState<GenerationResult[]>([]),[brand,setBrand]=useState<Brand>(()=>{const op=selectedOperation();return op==='all'?'dropou':op;}),[variants,setVariants]=useState(1);
  const [generatedProducts,setGeneratedProducts]=useState<Product[]>([]);
  async function load(){setUsage(await api<Usage>('/api/ai/usage'));}

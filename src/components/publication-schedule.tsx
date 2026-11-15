@@ -1,7 +1,7 @@
 'use client';
 import {useEffect,useRef,useState} from 'react';
 import {CalendarClock,Check,Clock3,ExternalLink,MessageCircle,Pencil,RefreshCw,Send,X} from 'lucide-react';
-import {api} from '@/lib/api';
+import {api,apiForOperation} from '@/lib/api';
 import {money} from '@/lib/domain';
 import {operationName,selectedOperation,type OperationScope} from '@/lib/workspace-brands';
 import {clockNow,serverClock} from '@/lib/publication-copy';
@@ -11,7 +11,7 @@ import {groupScheduledJobs,scheduleBucket,schedulingStatus,type SchedulePage,typ
 import {usePublicationRefresh} from '@/lib/publication-sync';
 import ProductMedia from './product-media';
 import Dialog from './dialog';
-export default function PublicationSchedule({request=api,operation=selectedOperation(),initialData}:{request?:typeof api;operation?:OperationScope;initialData?:SchedulePage}){
+export default function PublicationSchedule({operation=selectedOperation(),request=apiForOperation(operation),initialData}:{request?:typeof api;operation?:OperationScope;initialData?:SchedulePage}){
  const [data,setData]=useState(initialData),[page,setPage]=useState(0),[message,setMessage]=useState(''),[error,setError]=useState(''),[busy,setBusy]=useState(false),[loading,setLoading]=useState(false),[now,setNow]=useState(Date.now()),[selection,setSelection]=useState<{job:ScheduledDestination;action:'edit'|'cancel'|'whatsapp'}>(),[date,setDate]=useState('');
  const [serverTime,setServerTime]=useState(()=>serverClock(initialData?.serverNow));
  useEffect(()=>setServerTime(serverClock(data?.serverNow)),[data?.serverNow]);

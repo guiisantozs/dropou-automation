@@ -1,10 +1,11 @@
 'use client';
 import {useEffect,useRef,useState} from 'react';
-import {api} from '@/lib/api';
+import {apiForOperation,type api} from '@/lib/api';
 import {isShopeeOperation,type OperationScope} from '@/lib/workspace-brands';
 import {Search,RefreshCw} from 'lucide-react';
 type Data={admin:boolean;credentialsReady:boolean;budget:{manualUsed:number;manualLimit:number;discoveryUsed:number;discoveryLimit:number;imports:number;cacheHits:number;limitErrors:number};requests:{id:string;kind:string;state:string;created_at:string}[]};
-export default function ShopeeTools({operation,onCurated}:{operation:OperationScope;onCurated:()=>void}){
+export default function ShopeeTools({operation,onCurated,request=apiForOperation(operation)}:{operation:OperationScope;onCurated:()=>void;request?:typeof api}){
+ const api=request;
  const [data,setData]=useState<Data>(),[busy,setBusy]=useState(false),[message,setMessage]=useState('');const locked=useRef(false),alive=useRef(true);
  async function load(){const r=await api<Data>('/api/shopee/automation');if(alive.current)setData(r);}
  useEffect(()=>{alive.current=true;if(isShopeeOperation(operation))void load().catch(e=>setMessage(e.message));return()=>{alive.current=false;};},[operation]);
