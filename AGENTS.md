@@ -204,6 +204,15 @@ Este repositório é o Dropou, em `C:\Users\Usuario\Documents\dropou-automation`
 - Validação: 307/307 testes, typecheck, build e diff check aprovados. Chrome: 108 combinações estáticas em 320/375/768/1440 px, sem overflow/imagens quebradas/erros, cores conferidas e capturas inspecionadas. Aplicação Next real com conta fictícia/APIs interceptadas validou catálogo → oferta → retorno com filtro/página/scroll, prévia → editar → prévia, novo cadastro, Voltar do navegador, publicações e agenda; zero mutações, conexões externas bloqueadas. Isso não comprova sessão produtiva ou envio real.
 - Guia `docs/redesign-workspace.md`; evidências locais ignoradas em `outputs/premium-review`. Ambiente local ligado em 127.0.0.1:3000; chaves públicas configuradas no `.env.local` ignorado. Credenciais privadas locais ainda são necessárias para listas com manutenção administrativa e integrações. Nenhum segredo baixado da produção. Sem mensagem, busca Shopee/ML, geração paga, ativação ou alteração remota do banco como teste.
 
+
+## 2026-11-15 · Foto de captura Mercado Livre e falha de busca na curadoria
+
+- Branch `codex/ml-screenshot-crop-curation-fix` criada da main limpa `89dca7d`. OCR local automático usa a captura completa; segmentação conservadora localiza a foto com caixas OCR, margem e exclusão de interface. Prévia original/processada, seleção por arraste/teclado, original explícito e escolha de manter a imagem. Sem imagem gerada ou nova API paga. Casos ambíguos exigem ajuste.
+- Salvamento com autorização usa o Storage privado existente, `imagePath` e snapshot, retirando miniatura antiga somente na nova oferta. Upload explicita a operação, inclusive Celulares; não dependia corretamente dela antes. Metadados explícitos de marca/modelo/variante/condição revisáveis, sem inferência visual. Sem migração/dependência/alteração do transporte ou automações.
+- Leitura remota da tentativa do usuário em 15/11 às 15:41 UTC confirmou `provider`, sem determinar HTTP/código exatos. Busca padrão Tech volta a começar por `gamer` com listType/sortType 2, formato com sucesso histórico, preservando personalizações, outros canais e orçamento. Falha/rodada parcial/resultado vazio separados, diagnóstico seguro e prazo de nova tentativa; atualização da lista não apaga o erro. Não garante disponibilidade externa nem executa retries ocultos.
+- Validação: 320/320 testes, tipos/build e diff check aprovados. Chrome/Next reais com OCR português real, captura sintética e APIs/escritas interceptadas: recorte 474×492, dados completos, quatro larguras sem overflow, consentimento, upload único na operação, caminho salvo e foto na prévia. Capturas desktop/mobile inspecionadas. Storage remoto e postagem não foram exercitados. Guia `docs/mercado-livre-screenshot.md`; evidências ignoradas `outputs/screenshot-review/`.
+- Sem consulta Shopee nova, mensagem, geração paga, mudança remota do banco, limites, credenciais, destinos ou cron. Servidor local mantido. Publicação requer registrar separadamente aprovação e SHA/deploy efetivos.
+
 <!-- BEGIN:nextjs-agent-rules -->
 
 ## This is NOT the Next.js you know

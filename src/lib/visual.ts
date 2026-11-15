@@ -19,6 +19,7 @@ export function monetaryValue(input:unknown):number|null{
 const amount=z.preprocess(v=>v===null?null:monetaryValue(v),z.number().positive().max(1e6).nullable());
 const decimal=(max:number)=>z.preprocess(v=>typeof v==='string'?Number(v.replace('%','').replace(',','.')):v,z.number().min(0).max(max).nullable());
 export const visualSchema=z.object({
+ condition:z.enum(['novo','usado','recondicionado']).optional(),
  productName:nullableText(180),brand:nullableText(80),model:nullableText(100),selectedVariant:nullableText(100),
  currentPrice:amount,previousPrice:amount,pixPrice:amount.optional(),displayedDiscount:decimal(100),paymentCondition:z.enum(['pix','card','general']).nullable(),
  installments:nullableText(100),rating:decimal(5),salesCount:nullableText(60),features:z.array(z.string().trim().min(1).max(80)).max(6).nullable(),
@@ -29,7 +30,7 @@ export const visualSchema=z.object({
 export type VisualExtraction=z.infer<typeof visualSchema>;
 export type VisualResult={extraction?:VisualExtraction;source:'openai'|'cache'|'local';key?:string;model?:string;message?:string;diagnostic?:{status:number;code:string;param?:string;requestId?:string};estimatedUsd:number;usage?:{input:number;output:number;cost:number}};
 export function ocrVisualResult(fields:OcrFields,fallback?:Pick<VisualResult,'message'|'diagnostic'|'model'>):VisualResult{
- const extraction:VisualExtraction={productName:fields.name||null,brand:null,model:null,selectedVariant:null,currentPrice:fields.price,previousPrice:fields.previousPrice,displayedDiscount:null,paymentCondition:fields.paymentCondition||null,installments:fields.installments||null,rating:null,salesCount:null,features:fields.features.length?fields.features:null,sellerName:null,creativeHeadline:null,uncertainFields:['productName','currentPrice',...(fields.uncertain.includes('parcelamento')?['installments' as const]:[])],priceContext:fields.price?'selected_product':'ambiguous',discountContext:'not_visible'};
+ const extraction:VisualExtraction={productName:fields.name||null,brand:fields.brand||null,model:fields.model||null,selectedVariant:fields.selectedVariant||null,...(fields.condition?{condition:fields.condition}:{}),currentPrice:fields.price,previousPrice:fields.previousPrice,displayedDiscount:null,paymentCondition:fields.paymentCondition||null,installments:fields.installments||null,rating:null,salesCount:null,features:fields.features.length?fields.features:null,sellerName:null,creativeHeadline:null,uncertainFields:['productName','currentPrice',...(fields.uncertain.includes('parcelamento')?['installments' as const]:[])],priceContext:fields.price?'selected_product':'ambiguous',discountContext:'not_visible'};
  return {...fallback,source:'local',extraction,estimatedUsd:0};
 }
 export function validateVisual(raw:unknown):VisualExtraction{
@@ -63,7 +64,7 @@ export function visualDraft(base:Product,result:VisualExtraction,brand:Brand):Pr
   installments:safeInstallments(result.installments||''),installmentPlan:parseInstallments(result.installments||'')||undefined,installmentsVerified:false,features:result.features?.slice(0,2)||[],featuresVerified:false,
   dataOrigin:'screenshot',screenshotConfirmed:false,checkedAt:null,inStock:null,source:undefined,status:'encontrado',scheduledAt:null,
   creativeHeadline:safeHeadline(result.creativeHeadline||localHeadline({...base,name},brand),{...base,name},brand),creativeBrand:brand,
-  visualDetails:{brand:result.brand,model:result.model,selectedVariant:result.selectedVariant,rating:result.rating,salesCount:result.salesCount,sellerName:result.sellerName,displayedDiscount:result.displayedDiscount,uncertainFields:result.uncertainFields},socialVerified:false,
+  visualDetails:{...(result.condition||base.visualDetails?.condition?{condition:result.condition||base.visualDetails?.condition}:{}),brand:result.brand,model:result.model,selectedVariant:result.selectedVariant,rating:result.rating,salesCount:result.salesCount,sellerName:result.sellerName,displayedDiscount:result.displayedDiscount,uncertainFields:result.uncertainFields},socialVerified:false,
  };
 }
 export function visualPreview(p:Product,brand:Brand){

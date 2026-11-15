@@ -1,5 +1,5 @@
 import {navigationText,safeInstallments,shortProductName} from './commerce';
-export type OcrFields={name:string;shortName?:string;price:number|null;previousPrice:number|null;installments:string;features:string[];uncertain:string[];paymentCondition?:'pix'|'card'|'general'|null};
+export type OcrFields={brand?:string;model?:string;selectedVariant?:string;condition?:'novo'|'usado'|'recondicionado';name:string;shortName?:string;price:number|null;previousPrice:number|null;installments:string;features:string[];uncertain:string[];paymentCondition?:'pix'|'card'|'general'|null};
 export function parseScreenshot(text:string,confidence:number):OcrFields{
  const all=text.split(/\n/).map(s=>s.trim()).filter(Boolean);
  const related=all.findIndex(l=>/^(produtos? relacionados?|recomenda(dos?|ções)|você também|voce tambem|compre junto|outros vendedores|quem viu)/i.test(l));

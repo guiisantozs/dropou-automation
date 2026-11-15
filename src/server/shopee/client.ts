@@ -2,7 +2,7 @@ import {createHash} from 'node:crypto';
 import {z} from 'zod';
 import type {ShopeeOffer} from '../../lib/shopee-automation';
 export const shopeeEndpoint='https://open-api.affiliate.shopee.com.br/graphql';
-export class ShopeeApiError extends Error{constructor(public code:string,public retrySeconds=0){super(({credentials:'Configure e autorize as credenciais da Shopee no servidor.',auth:'A Shopee recusou a autenticação. Confira App ID, Secret e relógio do servidor.',rate_limit:'Limite da Shopee atingido. A busca aguardará o backoff.',provider:'Shopee indisponível. A tentativa foi contabilizada.',contract:'Resposta incompatível com productOfferV2. Valide o contrato no portal oficial da sua conta.',budget:'Orçamento diário esgotado ou consulta já reservada.'} as Record<string,string>)[code]||'Consulta Shopee não concluída.');}}
+export class ShopeeApiError extends Error{constructor(public code:string,public retrySeconds=0,public diagnostic?:{httpStatus:number;providerCode?:string}){super(({credentials:'Configure e autorize as credenciais da Shopee no servidor.',auth:'A Shopee recusou a autenticação. Confira App ID, Secret e relógio do servidor.',rate_limit:'Limite da Shopee ou pausa temporária. Aguarde antes de buscar novamente.',provider:'Shopee indisponível. A tentativa foi contabilizada.',contract:'Resposta incompatível com productOfferV2. Valide o contrato no portal oficial da sua conta.',budget:'Orçamento diário esgotado ou consulta já reservada.',discovery_budget:'Limite diário de descoberta atingido. A importação por link usa uma cota separada.',manual_budget:'Limite diário de importação atingido.',busy:'Outra consulta está em andamento. Aguarde sua conclusão.',duplicate:'Esta consulta já foi reservada. Atualize a curadoria sem repetir a chamada.'} as Record<string,string>)[code]||'Consulta Shopee não concluída.');}}
 export function shopeeAuthorization(appId:string,secret:string,body:string,timestamp=Math.floor(Date.now()/1000)){
  const signature=createHash('sha256').update(appId+timestamp+body+secret,'utf8').digest('hex');
  return `SHA256 Credential=${appId}, Timestamp=${timestamp}, Signature=${signature}`;
@@ -40,14 +40,15 @@ export async function requestShopeeOperation<T>(query:string,credentials:{appId?
  let outcome='provider',retry=60;
  try{
   const response=await http(shopeeEndpoint,{method:'POST',headers:{'Content-Type':'application/json',Authorization:shopeeAuthorization(credentials.appId,credentials.secret,body)},body,redirect:'error',cache:'no-store',signal:AbortSignal.timeout(8000)});
-  if(!response.ok){outcome=response.status===429?'rate_limit':[401,403].includes(response.status)?'auth':'provider';const after=response.headers.get('retry-after');retry=Math.min(86400,Math.max(60,Number(after)||Math.ceil((Date.parse(after||'')-Date.now())/1000)||60));throw new ShopeeApiError(outcome,retry);}
+  if(!response.ok){outcome=response.status===429?'rate_limit':[401,403].includes(response.status)?'auth':'provider';const after=response.headers.get('retry-after');retry=Math.min(86400,Math.max(60,Number(after)||Math.ceil((Date.parse(after||'')-Date.now())/1000)||60));throw new ShopeeApiError(outcome,retry,{httpStatus:response.status});}
   const raw=await response.json();if(raw.errors?.length){
    if(!Array.isArray(raw.errors))throw new ShopeeApiError('contract');
    // A GraphQL HTTP 200 is not success. Classify the provider's error description;
    // 10000/System Error must not impose a one-day schema-contract suspension.
    const clues=raw.errors.map((e:{message?:unknown;extensions?:{code?:unknown;message?:unknown};code?:unknown})=>[e.extensions?.code,e.code,e.message,e.extensions?.message].map(String).join(' ')).join(' ');
    outcome=/429|rate.?limit|too many requests|quota/i.test(clues)?'rate_limit':/\b10020\b|\b401\b|\b403\b|auth|signature|no api access|permission|credential/i.test(clues)?'auth':/\b10000\b|system error|internal (?:server )?error|service unavailable/i.test(clues)?'provider':'contract';
-   throw new ShopeeApiError(outcome,60);
+   const code=raw.errors.map((e:any)=>String(e.extensions?.code??e.code??'')).find((v:string)=>/^[A-Z0-9_]{1,40}$/i.test(v));
+   throw new ShopeeApiError(outcome,60,{httpStatus:response.status,...(code?{providerCode:code}:{})});
   }
   const result=parse(raw);outcome='ok';retry=0;return result;
  }catch(e){if(e instanceof ShopeeApiError){outcome=e.code;retry=e.retrySeconds||60;throw e;}throw new ShopeeApiError('provider',60);}
