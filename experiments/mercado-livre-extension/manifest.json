@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
   "name": "Dropou — Mercado Livre (experimento)",
-  "version": "0.2.0",
-  "description": "Conversor local de testes com ativação manual e desligamento imediato.",
+  "version": "0.3.0",
+  "description": "Conversor experimental com lote de até cinco ofertas e pausa manual.",
   "permissions": [
     "scripting",
     "storage",
