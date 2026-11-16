@@ -1,0 +1,5 @@
+.browser-profile/
+.results/
+node_modules/
+.env
+.env.*
