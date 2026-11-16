@@ -1,8 +1,8 @@
 'use client';
 import {useEffect,useRef,useState} from 'react';
-import {Check,ChevronDown,Gamepad2,Shirt,Wrench,Smartphone,Footprints,Car} from 'lucide-react';
+import {Check,ChevronDown,Gamepad2,Shirt,Wrench,Smartphone,Footprints,Car,Sparkles,House,TreePine} from 'lucide-react';
 import {workspaceBrands,WorkspaceBrandId} from '@/lib/workspace-brands';
-const icons={gamepad:Gamepad2,wrench:Wrench,shirt:Shirt,phone:Smartphone,shoe:Footprints,car:Car};
+const icons={gamepad:Gamepad2,wrench:Wrench,shirt:Shirt,phone:Smartphone,shoe:Footprints,car:Car,sparkles:Sparkles,house:House,tree:TreePine};
 export default function BrandSelector({value,onChange,variant='menu',names={},allowed}:{allowed?:WorkspaceBrandId[];names?:Partial<Record<WorkspaceBrandId,string>>;value:WorkspaceBrandId;onChange:(value:WorkspaceBrandId)=>void;variant?:'menu'|'list'}){
  const [open,setOpen]=useState(false),root=useRef<HTMLDivElement>(null),trigger=useRef<HTMLButtonElement>(null),brand=workspaceBrands.find(b=>b.id===value)!,Icon=icons[brand.icon];
  useEffect(()=>{if(!open)return;const outside=(e:PointerEvent)=>{if(!root.current?.contains(e.target as Node))setOpen(false);};const escape=(e:KeyboardEvent)=>{if(e.key==='Escape'){e.preventDefault();setOpen(false);trigger.current?.focus();}};document.addEventListener('pointerdown',outside);document.addEventListener('keydown',escape);root.current?.querySelector<HTMLButtonElement>('[aria-selected=true]')?.focus();return()=>{document.removeEventListener('pointerdown',outside);document.removeEventListener('keydown',escape);};},[open]);

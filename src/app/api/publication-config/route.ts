@@ -4,8 +4,10 @@ import {operationSettings} from '@/server/operations';
 import {createHash} from 'node:crypto';
 import {z} from 'zod';
 import {telegramTarget} from '@/server/telegram';
+import {isLocalOperation} from '@/lib/workspace-brands';
 export async function GET(request:Request){try{
  const {user,operation}=await sessionDb(request),{db}=await publicationAdmin(user.id);
+ if(isLocalOperation(operation))return Response.json({enabled:false,telegram:{available:false,reason:'Integrações indisponíveis nesta etapa.'},whatsapp:{name:'',url:''},slots:[],serverNow:new Date().toISOString()},{headers:{'Cache-Control':'no-store'}});
  if(operation==='all')return Response.json({enabled:false,telegram:{available:false,reason:'Selecione uma marca para configurar ou publicar.'}});
  const s=await operationSettings(db,user.id,operation);let id=s.telegram_chat_id||(operation==='dropou'?(process.env.TELEGRAM_CHAT_ID||process.env.TELEGRAM_CHANNEL_ID):null),verificationError='';
  const tokenPresent=!!process.env[s.telegram_bot_env||'TELEGRAM_BOT_TOKEN'];

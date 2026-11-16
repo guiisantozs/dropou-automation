@@ -5,6 +5,9 @@ import {dropouCaption,dropouCalls,dropouCategory} from './dropou-captions';
 
 export const PROMPT_VERSION='dropou-2';
 export const brands={
+ beleza:{name:'Toque de Beleza',tone:'Beleza e autocuidado, sem promessas médicas ou resultados não comprovados',closing:'#publi | Toque de Beleza'},
+ casa:{name:'Cantinho & Charme',tone:'Aconchegante, casa e organização, com informações comprovadas',closing:'#publi | Cantinho & Charme'},
+ natal:{name:'Clima de Natal',tone:'Natal clássico e acolhedor, sem urgência ou descontos inventados',closing:'#publi | Clima de Natal'},
  celulares:{name:'Dropou Celulares & Gadgets',tone:'Prático, celulares e gadgets',closing:'📱 #publi | Dropou Celulares & Gadgets'},
  tenis:{name:'Dropou Tênis & Sneakers',tone:'Casual, esportivo, sem afirmar autenticidade não comprovada',closing:'👟 #publi | Dropou Tênis & Sneakers'},
  automoto:{name:'Dropou Auto & Moto',tone:'Útil, sem presumir compatibilidade',closing:'🚗 #publi | Dropou Auto & Moto'},
@@ -14,7 +17,7 @@ export const brands={
  bruto:{name:'Bruto & Barato',tone:'Prático, direto, ferramentas, oficina e utilidade comprovada',closing:'🛠️ Bruto & Barato — ferramenta certa para o seu dia!'},
  moda:{name:'Moda Masculina',tone:'Moderno, estilo masculino e custo-benefício, sem promessas inventadas',closing:'🖤 Estilo e custo-benefício para o seu dia.'},
 } as const;
-export const brandSchema=z.enum(['dropou','barato','linda','bruto','moda','celulares','tenis','automoto']);
+export const brandSchema=z.enum(['dropou','barato','linda','bruto','moda','celulares','tenis','automoto','beleza','casa','natal']);
 export type Brand=keyof typeof brands;
 export const generationSchema=z.object({productIds:z.array(z.string().uuid()).min(1).max(20),brand:brandSchema.default('dropou'),variants:z.number().int().min(1).max(3).default(1)});
 export type GenerationResult={productId:string;captions:string[];source:'openai'|'cache'|'local';message?:string;model?:string};
@@ -29,6 +32,9 @@ export function generationError(p:Product){
  return null;
 }
 export function localHeadline(p:Product,brand:Brand='dropou',variation=0){
+ if(brand==='beleza')return '✨ UM TOQUE DE AUTOCUIDADO!';
+ if(brand==='casa')return '🏡 UM CHARME PARA SUA CASA!';
+ if(brand==='natal')return '🎄 UM ACHADINHO PARA O SEU NATAL!';
  if(brand==='celulares')return ['📱 UM ACHADO PARA O SEU DIA!','🔌 UM UPGRADE PARA SUA ROTINA!','🎧 CONFIRA ESSE ACHADO TECH!'][variation%3];
  if(brand==='tenis')return ['👟 SEU PRÓXIMO PASSO ESTÁ AQUI!','✨ UM ACHADO PARA O SEU ESTILO!','🏃 CONFIRA ESSE MODELO!'][variation%3];
  if(brand==='automoto')return ['🚗 UM ACHADO PARA O SEU VEÍCULO!','🔧 UTILIDADE PARA SUA ROTINA!','🏍️ CONFIRA ESSE ACESSÓRIO!'][variation%3];

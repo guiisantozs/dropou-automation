@@ -1,5 +1,6 @@
-import {isShopeeOperation} from '@/lib/workspace-brands';
+import {isShopeeOperation,isLocalOperation} from '@/lib/workspace-brands';
 import {formatCaption} from '@/lib/ai';
+import {localProducts} from '@/server/local-products';
 import {operatorAudit} from '@/server/operator-audit';
 import {adminDb} from '@/server/db';
 import {maintainSavedProducts} from '@/server/saved-retention';
@@ -14,7 +15,7 @@ import {historyPeriod} from '@/lib/publication-history';
 import {loadCuratedDiscovery} from '@/server/shopee/curation';
 function checked(r:{data:any;error:any}){if(r.error)throw dbError(r.error);return r.data;}
 export async function GET(request:Request){try{
- const {db,user,operation}=await sessionDb(request);if(!isShopeeOperation(operation))throw new Error('Selecione Dropou | Tech & Games.');
+ const {db,user,operation}=await sessionDb(request);if(isLocalOperation(operation))return localProducts(db,request);if(!isShopeeOperation(operation))throw new Error('Selecione Dropou | Tech & Games.');
  const q=z.object({stage:z.enum(['curation','approved','catalog','recent','archived']).default('approved'),page:z.coerce.number().int().min(0).max(10000).default(0),q:z.string().max(180).default(''),store:z.enum(['Mercado Livre','Shopee']).optional(),channel:z.enum(['telegram','whatsapp']).optional(),from:z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),to:z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),dashboard:z.enum(['true','false']).default('false')}).parse(Object.fromEntries(new URL(request.url).searchParams));
  const {start,end}=historyPeriod(q.from,q.to);
  if(q.stage==='catalog'||q.stage==='approved')await maintainSavedProducts(adminDb(),user.id,operation);
@@ -32,8 +33,8 @@ const bodySchema=z.discriminatedUnion('action',[
  z.object({action:z.literal('decide'),id:z.string().uuid(),kind:z.enum(['cache','product']),decision:z.enum(['approved','rejected'])}),
 ]);
 export async function POST(request:Request){try{
- const {db:session,user,operation,actorId}=await sessionDb(request);if(!isShopeeOperation(operation))throw new Error('Selecione Dropou | Tech & Games.');
- const body=bodySchema.parse(await request.json()),{db}=await publicationAdmin(user.id);
+ const {db:session,user,operation,actorId}=await sessionDb(request);if(!isShopeeOperation(operation)&&!isLocalOperation(operation))throw new Error('Selecione uma operação.');
+ const body=bodySchema.parse(await request.json());if(isLocalOperation(operation)&&(body.action==='mark'||body.action==='decide'&&body.kind==='cache'))throw new Error('FORBIDDEN: Integrações indisponíveis nesta etapa.');const {db}=await publicationAdmin(user.id);
  if(body.action==='delete'){
   const result=checked(await db.rpc('dropou_saved_catalog_remove',{p_owner:user.id,p_brand:operation,p_saved:null,p_product:body.id}));
   if(result.protected)throw new Error(result.message);
