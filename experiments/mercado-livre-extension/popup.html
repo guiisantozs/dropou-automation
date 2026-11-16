@@ -32,6 +32,12 @@
     #jobActions button { flex: 1; }
     #error { color: #ffa5a5; margin: 10px 0 0; min-height: 1em; }
     [hidden] { display: none !important; }
+    .queue { margin: 12px 0 0; padding: 0; list-style: none; display: grid; gap: 7px; }
+    .queue li { border-top: 1px solid #35363b; padding: 9px 0 0; font-size: 11px; }
+    .queue .state { display: block; font-weight: 650; color: #d8d8da; }
+    .queue .source { display: block; color: #929399; overflow-wrap: anywhere; font-size: 10px; }
+    .queue .candidate { color: #ffae70; display: block; overflow-wrap: anywhere; margin: 3px 0; }
+    #summary { font-size: 11px; color: #bcbcbc; margin: 9px 0 0; }
   </style>
 </head>
 <body>
@@ -46,23 +52,26 @@
     </div>
   </section>
   <form id="startForm" hidden>
-    <label for="source">Link normal do produto</label>
-    <textarea id="source" placeholder="https://www.mercadolivre.com.br/..." required spellcheck="false"></textarea>
+    <label for="source">Links normais do Mercado Livre (até 5)</label>
+    <textarea id="source" placeholder="Cole 1 a 5 links, um por linha" required spellcheck="false" rows="5"></textarea>
     <label class="row" style="font-weight:400"><input type="checkbox" id="autoClose" checked /> Fechar a aba de teste quando capturar o resultado</label>
-    <div class="controls"><button type="submit" id="start">Gerar link em segundo plano</button></div>
+    <div class="controls"><button type="submit" id="start">Iniciar conversões em segundo plano</button></div>
   </form>
   <div id="error" role="alert"></div>
   <section id="statusPanel" class="panel" hidden aria-live="polite">
     <div class="status" id="status">Aguardando</div>
     <div class="message" id="message"></div>
     <a id="result" class="link" hidden target="_blank" rel="noopener noreferrer"></a>
+    <div id="summary" hidden></div>
+    <ol id="queue" class="queue" hidden></ol>
     <div id="jobActions">
       <button type="button" id="copy" class="secondary" hidden>Copiar link</button>
       <button type="button" id="show" class="secondary" hidden>Ver aba de teste</button>
+      <button type="button" id="skip" class="secondary" hidden>Pular e continuar</button>
       <button type="button" id="reset" class="secondary">Novo teste</button>
     </div>
   </section>
-  <p class="hint">Desligar interrompe o teste, fecha a aba aberta pelo Dropou e limpa os dados temporários da extensão; não apaga o histórico do Chrome nem registros da rede ou do computador. Uma aba inativa ainda pode deixar registros. Não acessamos cookies ou senhas. Confira a etiqueta e a atribuição no Mercado Livre antes de publicar.</p>
+  <p class="hint">Até 5 links por lote. Se ocorrer uma falha, o lote pausa até você decidir continuar. Desligar interrompe o lote, fecha a aba aberta pelo Dropou e limpa os dados temporários da extensão; não apaga o histórico do Chrome nem registros da rede ou do computador. Uma aba inativa ainda pode deixar registros. Não acessamos cookies ou senhas. Confira a etiqueta e a atribuição no Mercado Livre antes de publicar.</p>
   <script type="module" src="popup.js"></script>
 </body>
 </html>
