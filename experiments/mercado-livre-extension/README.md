@@ -94,3 +94,25 @@ O comando executa testes de validação de URL, deduplicação/limite do lote e 
 ### Ligação futura
 
 Consulte INTEGRACAO-FUTURA.md. O código MTProto está em outra máquina; a fila atual **não consulta Telegram e não publica mensagens**.
+
+
+## Versão 0.4.0 — painel lateral que não fecha ao trocar de aba
+
+O popup de ação do Chrome foi substituído pelo **Side Panel global do Chrome**. O clique no ícone Dropou na barra de extensões deve abrir o painel à direita. O painel não é vinculado a um produto: você pode navegar por outras abas de produtos enquanto ele permanece aberto, a menos que feche o painel lateral manualmente.
+
+Agora o campo de links tem um rascunho gravado temporariamente em chrome.storage.session a cada edição. Mesmo se o painel lateral for fechado por acidente, reabrir o painel durante a mesma sessão do Chrome restaura os links que já foram escritos. **Desligar**, **Novo teste** e reiniciar o Chrome limpam essa área temporária. Não existe sincronização com GitHub, banco ou nuvem.
+
+Há também um botão **Adicionar produto da aba atual**: abra uma página de produto Mercado Livre, volte ao painel ainda aberto e clique no botão; a URL da aba ativa entra na lista, com bloqueio de anúncios duplicados e limite de cinco.
+
+### Atualizar e testar
+
+1. No terminal, dentro do repositório, execute: git pull origin feat/mercado-livre-browser-poc.
+2. No Chrome já autenticado, abra chrome://extensions e **recarregue** Dropou. A versão deve ser **0.4.0**.
+3. Clique no ícone Dropou para abrir o **painel lateral** à direita. Se o ícone não abrir o painel, desative e reative a extensão e clique novamente.
+4. Clique **Ativar** e cole um link normal.
+5. Abra outra aba, copie outro link, volte ao painel e cole-o na linha seguinte. Teste também **Adicionar produto da aba atual** em uma página Mercado Livre.
+6. Feche e reabra somente o painel lateral, sem clicar em Desligar. O rascunho ainda deve estar lá.
+7. Com até cinco links, clique em **Iniciar conversões em segundo plano**. Confira os candidatos um a um; link meli.la capturado não prova comissão.
+8. Clique **Desligar** para limpar os dados da extensão quando encerrar sua sessão. Isso não apaga histórico do Chrome nem registros de rede ou organização.
+
+A alteração foi preparada no código do GitHub e precisa de conferência no Chrome do usuário. Não habilita Telegram, envios nem agendamento.
