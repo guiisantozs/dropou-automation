@@ -38,7 +38,6 @@ export function nextItemIndex(items) {
 export function appendPageToDraft(draft, pageUrl) {
   const next=productUrl(pageUrl);
   const lines=String(draft||'').split(/\r?\n/).map(x=>x.trim()).filter(Boolean);
-  if (lines.length>=MAX_BATCH) throw new Error('A lista está cheia: máximo de '+MAX_BATCH+' links.');
   const newId=itemId(next);
   const duplicate=lines.some(line=>{
     try {
@@ -47,5 +46,6 @@ export function appendPageToDraft(draft, pageUrl) {
     } catch { return false; }
   });
   if(duplicate) return {value:lines.join('\n'),added:false};
+  if (lines.length>=MAX_BATCH) throw new Error('A lista está cheia: máximo de '+MAX_BATCH+' links.');
   return {value:[...lines,next].join('\n'),added:true};
 }
