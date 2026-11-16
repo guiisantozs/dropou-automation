@@ -16,7 +16,7 @@ function render(job) {
   current = job;
   const hasJob = !!job;
   el('statusPanel').hidden = !hasJob;
-  el('startForm').hidden = hasJob && ['opening','working'].includes(job.state);
+  el('startForm').hidden = hasJob;
   if (!hasJob) return;
   const names = {
     opening:'Abrindo o gerador',
