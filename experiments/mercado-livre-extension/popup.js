@@ -53,6 +53,7 @@ el('toggle').addEventListener('click',async () => {
   try {
     const target = !enabled;
     await ask({type:'setEnabled',enabled:target});
+    if (!target) el('source').value = '';
     await refresh();
   } catch(error) {
     setError(error.message);
