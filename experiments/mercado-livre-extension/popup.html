@@ -6,7 +6,7 @@
   <title>Dropou • Mercado Livre</title>
   <style>
     * { box-sizing: border-box; }
-    body { width: 374px; margin: 0; padding: 19px; background: #131417; color: #f4f4f5; font: 13px/1.5 system-ui, sans-serif; }
+    body { width: 100%; min-width: 280px; min-height: 100vh; margin: 0; padding: 19px; background: #131417; color: #f4f4f5; font: 13px/1.5 system-ui, sans-serif; }
     header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 17px; }
     h1 { font-size: 18px; font-weight: 750; margin: 0; }
     .dot { display: inline-block; width: 9px; height: 9px; border-radius: 50%; background: #f97316; margin-right: 9px; }
@@ -42,7 +42,7 @@
 </head>
 <body>
   <header>
-    <div><h1><span class="dot"></span>Dropou <span style="font-weight:450">/ ML</span></h1><p class="subtitle">Conversor experimental • Chrome local</p></div>
+    <div><h1><span class="dot"></span>Dropou <span style="font-weight:450">/ ML</span></h1><p class="subtitle">Painel lateral • Chrome local</p></div>
     <span class="pill">Teste</span>
   </header>
   <section class="panel" style="margin:0 0 14px" aria-label="Controle da extensão">
@@ -53,7 +53,12 @@
   </section>
   <form id="startForm" hidden>
     <label for="source">Links normais do Mercado Livre (até 5)</label>
+    <p class="subtitle" style="margin:0 0 8px">Troque de aba à vontade: seus links ficam no rascunho desta sessão.</p>
     <textarea id="source" placeholder="Cole 1 a 5 links, um por linha" required spellcheck="false" rows="5"></textarea>
+    <div class="controls">
+      <button type="button" id="addCurrent" class="secondary">Adicionar produto da aba atual</button>
+    </div>
+    <p id="draftCount" class="subtitle" style="margin-top:6px" aria-live="polite">0 / 5 links no rascunho</p>
     <label class="row" style="font-weight:400"><input type="checkbox" id="autoClose" checked /> Fechar aba após capturar (em lotes, as abas sempre fecham entre itens)</label>
     <div class="controls"><button type="submit" id="start">Iniciar conversões em segundo plano</button></div>
   </form>
@@ -71,7 +76,7 @@
       <button type="button" id="reset" class="secondary">Novo teste</button>
     </div>
   </section>
-  <p class="hint">Até 5 links por lote. Se ocorrer uma falha, o lote pausa até você decidir continuar. Desligar interrompe o lote, fecha a aba aberta pelo Dropou e limpa os dados temporários da extensão; não apaga o histórico do Chrome nem registros da rede ou do computador. Uma aba inativa ainda pode deixar registros. Não acessamos cookies ou senhas. Confira a etiqueta e a atribuição no Mercado Livre antes de publicar.</p>
+  <p class="hint">O painel lateral fica aberto quando você muda de aba e permite adicionar o produto da página atual. O rascunho fica apenas na sessão do Chrome. Até 5 links por lote. Se ocorrer uma falha, o lote pausa até você decidir continuar. Desligar interrompe o lote, fecha a aba aberta pelo Dropou e limpa os dados temporários da extensão; não apaga o histórico do Chrome nem registros da rede ou do computador. Uma aba inativa ainda pode deixar registros. Não acessamos cookies ou senhas. Confira a etiqueta e a atribuição no Mercado Livre antes de publicar.</p>
   <script type="module" src="popup.js"></script>
 </body>
 </html>
