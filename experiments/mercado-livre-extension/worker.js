@@ -47,7 +47,7 @@ async function launchNext(job) {
   if (!await isEnabled() || (await readJob())?.id !== job.id) {await closeTab(tab.id);return;}
   const active={...opening,tabId:tab.id};
   await saveJob(active);
-  injectIfReady(tab.id);
+  await injectIfReady(tab.id);
 }
 async function injectIfReady(tabId) {
   if (running.has(tabId)) return;
