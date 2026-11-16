@@ -1,6 +1,8 @@
 'use client';
 import {createContext,useContext,useEffect,useRef,useState,type Dispatch,type ReactNode,type SetStateAction} from 'react';
 import Link from 'next/link';
+import type {Product} from '@/lib/domain';
+import {useQuickOffer} from './quick-offer-context';
 import {currentWorkspace,offerLocation,rememberWorkspaceScroll} from '@/lib/workspace-navigation';
 const Account=createContext<string|null>(null);
 export function WorkspaceState({account,children}:{account:string|null;children:ReactNode}){return <Account.Provider value={account}>{children}</Account.Provider>;}
@@ -22,8 +24,9 @@ export function useWorkspaceScroll(ready:boolean){
   window.addEventListener('wheel',stop,{passive:true});window.addEventListener('touchstart',stop,{passive:true});window.addEventListener('keydown',stop);return()=>{cancelled=true;window.cancelAnimationFrame(frame);window.removeEventListener('wheel',stop);window.removeEventListener('touchstart',stop);window.removeEventListener('keydown',stop);};
  },[ready]);
 }
-export function WorkspaceOfferLink({id,brand,view,intent='preview',fragment,children,className,title,'aria-label':ariaLabel}:{id:string;brand:string;view?:string;intent?:'preview'|'schedule'|'telegram'|'edit';fragment?:'publication-history';children:ReactNode;className?:string;title?:string;'aria-label'?:string}){
+export function WorkspaceOfferLink({id,brand,view,intent='preview',fragment,children,className,title,product,'aria-label':ariaLabel}:{product?:Product;id:string;brand:string;view?:string;intent?:'preview'|'schedule'|'telegram'|'edit';fragment?:'publication-history';children:ReactNode;className?:string;title?:string;'aria-label'?:string}){
+ const quick=useQuickOffer();
  const [origin,setOrigin]=useState('/?brand='+brand+(view?'&view='+view:''));
  useEffect(()=>setOrigin(currentWorkspace()||'/?brand='+brand+(view?'&view='+view:'')),[brand,view]);
- return <Link className={className} title={title} aria-label={ariaLabel} href={offerLocation(id,brand,intent,origin)+(fragment?'#'+fragment:'')} onClick={rememberWorkspaceScroll}>{children}</Link>;
+ return <Link prefetch={quick?false:undefined} className={className} title={title} aria-label={ariaLabel} href={offerLocation(id,brand,intent,origin)+(fragment?'#'+fragment:'')} onClick={event=>{if(!event.metaKey&&!event.ctrlKey&&!event.shiftKey&&!event.altKey&&event.button===0&&quick?.open({id,operation:brand,intent,product,history:fragment==='publication-history'})){event.preventDefault();return;}rememberWorkspaceScroll();}}>{children}</Link>;
 }

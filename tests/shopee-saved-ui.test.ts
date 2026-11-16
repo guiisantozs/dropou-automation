@@ -31,7 +31,7 @@ test('confirmed saved card opens Telegram confirmation and copies the final capt
  try{
   await act(async()=>root.render(createElement(ShopeeSavedProducts,{operation:'dropou',initialData:data,request,onOpen:(...args)=>{opened.push(args);}})));
   const button=(name:string)=>[...document.querySelectorAll<HTMLButtonElement>('button')].find(b=>b.textContent?.trim()===name)!;
-  await act(async()=>button('Postar no Telegram').click());assert.deepEqual(opened,[[product.id,'telegram']]);assert.equal(calls.length,0);
+  await act(async()=>button('Postar no Telegram').click());assert.deepEqual(opened,[[product.id,'telegram',product]]);assert.equal(calls.length,0);
   await act(async()=>button('Copiar para WhatsApp').click());assert.deepEqual(copied,[offer.caption]);assert.equal(calls.length,1);
   expired=true;await act(async()=>button('Copiar para WhatsApp').click());assert.equal(copied.length,1);assert.match(document.body.textContent!,/Confira o preço/);assert.ok(calls.every(c=>c.method==='GET'));
  }finally{await act(async()=>root.unmount());dom.window.close();for(const [key,value]of previous){if(value)Object.defineProperty(globalThis,key,value);else Reflect.deleteProperty(globalThis,key);}}

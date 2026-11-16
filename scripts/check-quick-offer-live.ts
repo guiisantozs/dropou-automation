@@ -1,0 +1,110 @@
+// Production Next UI; synthetic session, intercepted API writes, no provider traffic.
+import assert from 'node:assert/strict';
+import {createRequire} from 'node:module';
+import {readFileSync,mkdirSync,writeFileSync} from 'node:fs';
+import {pricedDraftCaption} from '../src/lib/publication-copy';
+import {nextPublicationSlots} from '../src/lib/publication';
+import type {Product} from '../src/lib/domain';
+import type {QuickOfferData} from '../src/lib/quick-publication';
+import type {Offer} from '../src/lib/offers';
+const {chromium}=createRequire(import.meta.url)('C:/Users/Usuario/AppData/Local/npm-cache/_npx/e41f203b7505f1fb/node_modules/playwright');
+const base='http://127.0.0.1:4194',out='outputs/quick-offer-review',brands=['dropou','celulares','tenis','automoto','bruto','moda'];
+const general=JSON.parse(readFileSync('outputs/general-dashboard-review/data.json','utf8'));
+const stamp=new Date().toISOString(),instant=Date.parse(stamp),initial=general.products[0] as Product;
+let product!:Product,offer:Offer|undefined,model!:QuickOfferData,delay=0,configDelay=0,failSave=false,ambiguous=false,wrongScope=false,serverRewrite=false;
+const reads:{path:string;brand:string|null}[]=[],writes:{path:string;brand:string|null;body:any}[]=[],external:string[]=[],errors:string[]=[],latencies:number[]=[];
+function reset(brand='dropou'){product={...initial,operation:brand as Product['operation'],checkedAt:stamp,createdAt:stamp,inStock:true};offer={id:product.id,product_id:product.id,snapshot:product,caption:pricedDraftCaption(product),original_caption:pricedDraftCaption(product),status:'pronto',created_at:stamp,updated_at:stamp};model={product,offer,serverNow:stamp,destinations:{whatsapp:{name:'Grupo '+brand,url:'https://chat.whatsapp.com/fixture'}},channels:{telegram:{published:false,publishedAt:null,state:'ready',scheduledAt:null},whatsapp:{published:false,publishedAt:null,state:'ready',scheduledAt:null}}};delay=0;failSave=false;ambiguous=false;wrongScope=false;serverRewrite=false;}
+reset();mkdirSync(out+'/screenshots',{recursive:true});
+const browser=await chromium.launch({headless:true,executablePath:'C:/Program Files/Google/Chrome/Application/chrome.exe'});
+try{
+ const context=await browser.newContext({viewport:{width:1440,height:1000},serviceWorkers:'block'});await context.routeWebSocket('**/*',()=>{});
+ await context.addInitScript(`const id='00000000-0000-4000-8000-000000000001',exp=Math.floor(Date.now()/1000)+7200;const token=btoa(JSON.stringify({alg:'HS256',typ:'JWT'})).replaceAll('=','')+'.'+btoa(JSON.stringify({sub:id,exp,aud:'authenticated',role:'authenticated'})).replaceAll('=','')+'.Zml4dHVyZQ';localStorage.setItem('sb-dropou-preview-auth-token',JSON.stringify({access_token:token,refresh_token:'fixture-only',expires_at:exp,expires_in:7200,token_type:'bearer',user:{id,aud:'authenticated',role:'authenticated',email:'fixture@example.invalid',app_metadata:{},user_metadata:{},created_at:'2026-11-16T03:00:00Z'}}));Object.defineProperty(navigator,'clipboard',{configurable:true,value:{writeText:async(value)=>{window.fixtureCopied=value;}}});`);
+ await context.route('**/*',async(route:any)=>{
+  const req=route.request(),u=new URL(req.url());if(u.origin!==base){external.push(u.hostname);return route.abort();}if(!u.pathname.startsWith('/api/'))return route.continue();
+  const brand=u.searchParams.get('brand')||req.headers()['x-dropou-brand']||null;let response:unknown={};
+  const fail=(message:string,status=400)=>route.fulfill({status,contentType:'application/json',body:JSON.stringify({error:message})});
+  if(req.method()!=='GET'){
+   const body=req.postDataJSON();writes.push({path:u.pathname,brand,body});assert.equal(brand,product.operation,'mutation scope');
+   if(u.pathname==='/api/offers'){
+    if(failSave)return fail('Falha ao salvar · fixture');assert.equal(body.productId,product.id);assert.deepEqual(body.expected,product);offer={...offer!,id:product.id,product_id:product.id,snapshot:product,caption:(serverRewrite?'Abertura devolvida pelo servidor\n\n':'')+body.caption,original_caption:body.originalCaption,status:'pronto',updated_at:stamp};if(body.review){product={...product,checkedAt:stamp,inStock:true};offer.snapshot=product;}model={...model,product,offer};response={offer,serverNow:stamp};
+   }else if(u.pathname==='/api/offers/'+offer!.id+'/telegram'){
+    assert.equal(body.sourceCaption,offer!.caption);assert.equal(body.caption,offer!.caption);assert.equal(body.targetKey,'a'.repeat(64));assert.equal(body.confirmed,true);
+    await new Promise(r=>setTimeout(r,200));if(ambiguous)return fail('Resposta perdida; confira o canal · fixture',503);
+    model={...model,channels:{...model.channels!,telegram:{published:true,publishedAt:stamp,state:'sent',scheduledAt:null}},delivery:{state:'sent',message_ids:['42'],destination_title:'Canal '+brand,sent_at:stamp}};response={sent:true};
+   }else if(u.pathname==='/api/offers/'+offer!.id+'/schedule'){
+    assert.equal(body.allowSafe,false);assert.equal(body.sourceCaption,offer!.caption);assert.ok(Date.parse(body.scheduledAt)>instant);
+    model={...model,jobs:[{id:'job',channel:body.channel,state:'queued',scheduled_at:body.scheduledAt,destination_title:'Destino '+brand,attempts:0,message_ids:[]}]};response={job:model.jobs![0]};
+   }else if(u.pathname==='/api/offers/'+offer!.id+'/publish'){
+    assert.equal(body.confirmed,true);assert.equal(body.destination,'Grupo '+product.operation);assert.equal(body.caption,offer!.caption);
+    model={...model,channels:{...model.channels!,whatsapp:{published:true,publishedAt:stamp,state:'sent',scheduledAt:null}},whatsapp:{id:'manual',channel:'whatsapp',destination:body.destination,published_at:stamp,confirmed_by:'fixture'}};response={publication:model.whatsapp};
+   }else if(u.pathname==='/api/products'){product=body;offer={...offer!,snapshot:product};model={...model,product,offer};response={product};}
+   else throw Error('Unexpected mutation '+u.pathname);
+  }else{
+   reads.push({path:u.pathname+u.search,brand});
+   if(u.pathname==='/api/operations')response={access:{admin:true,brands},operations:[]};
+   else if(u.pathname==='/api/dashboard/operation'||u.pathname==='/api/dashboard/general')response={...general,serverNow:stamp,stats:{...general.stats,approved:1},products:[product],productTotal:1,page:0,more:false,productChannels:{[product.id]:model.channels},upcoming:[],activity:[]};
+   else if(u.pathname==='/api/products/'+product.id+'/offer'){assert.equal(brand,product.operation);if(delay)await new Promise(r=>setTimeout(r,delay));response=wrongScope?{...model,product:{...product,operation:'celulares'}}:model;}
+   else if(u.pathname==='/api/publication-config'){
+    assert.equal(brand,product.operation);if(delay||configDelay)await new Promise(r=>setTimeout(r,Math.max(delay,configDelay)));const future=new Date(instant+3600000-3*3600000).toISOString().slice(11,16);
+    response={enabled:false,slots:[future],serverNow:stamp,telegram:{available:true,id:'-100000000',title:'Canal '+brand,key:'a'.repeat(64)},whatsapp:{name:'Grupo '+brand,url:'https://chat.whatsapp.com/fixture'}};
+   }else if(u.pathname==='/api/product-operations')response={rows:[{id:product.id,kind:'product',data:product}],total:1,more:false,recent:[],channels:{[product.id]:model.channels},summary:{pending:0,approved:1,published:1,recent:0,archived:0}};
+   else if(u.pathname==='/api/workspace')response={products:[product],offers:[offer],publications:[],logs:[],channelStatus:{[product.id]:model.channels},total:1,more:false,historyMore:false,summary:{products:1,published:0,scheduled:0,waiting:0}};
+   else if(u.pathname==='/api/products/'+product.id+'/lifecycle'){assert.equal(brand,product.operation);response={hasHistory:true,pendingJobs:0,sending:false,archived:false};}
+   else if(u.pathname==='/api/publication-history')response={entries:[],more:false,counts:{}};
+   else if(u.pathname==='/api/offers/'+offer?.id+'/channels')response={options:[]};
+   else throw Error('Unexpected read '+u.pathname);
+  }
+  return route.fulfill({status:200,contentType:'application/json',body:JSON.stringify(response)});
+ });
+ const page=await context.newPage();page.on('pageerror',(e:Error)=>errors.push(e.message));
+ const modal=()=>page.locator('.quick-offer-modal');
+ async function dashboard(brand='dropou'){reset(brand==='all'?'dropou':brand);await page.goto(base+'/?brand='+brand+'&view=dashboard');await page.locator('.general-product').first().waitFor();}
+ async function open(){await page.locator('.general-product').first().getByRole('link',{name:'Abrir oferta',exact:true}).click();await modal().waitFor();await modal().getByRole('button',{name:'Publicar agora',exact:true}).waitFor();}
+ // Cold paint uses the card while the authenticated extra data is deliberately slow.
+ await dashboard();await page.locator('.general-product').first().scrollIntoViewIfNeeded();const url=page.url(),scroll=await page.evaluate(()=>scrollY),r0=reads.length;delay=400;
+ const before=Date.now();await page.locator('.general-product').first().getByRole('link',{name:'Abrir oferta',exact:true}).click();await modal().locator('.quick-offer-product h3').waitFor();latencies.push(Date.now()-before);
+ assert.equal(page.url(),url);assert.equal(await page.locator('.general-dashboard').count(),1);assert.ok(await modal().getByRole('button',{name:'Publicar agora',exact:true}).count()===0||await modal().getByRole('button',{name:'Publicar agora',exact:true}).isDisabled());
+ await modal().getByRole('button',{name:'Publicar agora',exact:true}).waitFor();await page.waitForTimeout(220);
+ assert.equal(reads.slice(r0).filter(r=>r.path.includes('/offer')).length,1);assert.equal(reads.slice(r0).filter(r=>r.path.includes('/publication-config')).length,1);assert.ok(!reads.slice(r0).some(r=>/history|channels|operations/.test(r.path)));assert.equal(await modal().locator('input[type=date]').count(),0);
+ await page.keyboard.press('Escape');await modal().waitFor({state:'hidden'});assert.equal(page.url(),url);assert.ok(Math.abs(await page.evaluate(()=>scrollY)-scroll)<3);assert.equal(writes.length,0);delay=0;
+ // Valid saved offer: a single Telegram POST, no forced save, repeated clicks blocked.
+ await open();const w0=writes.length;await modal().getByRole('button',{name:'Publicar agora',exact:true}).dblclick();await modal().getByText('Telegram confirmou a publicação.',{exact:true}).waitFor();assert.deepEqual(writes.slice(w0).map(w=>w.path),['/api/offers/'+offer!.id+'/telegram']);assert.equal(page.url(),url);assert.equal(await modal().getByRole('button',{name:'Publicar agora',exact:true}).isDisabled(),true);
+ await modal().getByLabel(/WhatsApp · manual/).check();await modal().getByRole('button',{name:'Copiar para WhatsApp',exact:true}).click();await page.waitForFunction(()=>!!(window as any).fixtureCopied);assert.equal(await page.evaluate(()=>(window as any).fixtureCopied),offer!.caption);assert.equal(writes.length,w0+1);assert.equal(model.channels!.whatsapp.published,false);
+ await modal().getByText('Já publiquei no WhatsApp',{exact:true}).click();await modal().getByLabel('Publiquei manualmente a legenda exibida.').check();await modal().getByRole('button',{name:'Confirmar publicação manual',exact:true}).dblclick();await modal().getByText('Publicação manual confirmada somente no WhatsApp.',{exact:true}).waitFor();assert.equal(model.channels!.telegram.published,true);assert.equal(writes.filter(w=>w.path.endsWith('/publish')).length,1);
+ // Draft edits persist through a refused close and save in the publication action.
+ await dashboard();await open();const edited='Uma abertura revisada\n\n'+offer!.caption;await modal().getByLabel('Legenda completa').fill(edited);page.once('dialog',(d:any)=>d.dismiss());await page.keyboard.press('Escape');assert.equal(await modal().count(),1);
+ const w1=writes.length;await modal().getByRole('button',{name:'Publicar agora',exact:true}).click();await modal().getByText('Telegram confirmou a publicação.',{exact:true}).waitFor();assert.deepEqual(writes.slice(w1).map(w=>w.path),['/api/offers','/api/offers/'+offer!.id+'/telegram']);assert.equal(offer!.caption,edited);
+ // A new valid draft saves in the same action; server text changes require a new review.
+ await dashboard();model={...model,offer:null};offer=undefined;await open();const wn=writes.length;await modal().getByRole('button',{name:'Publicar agora',exact:true}).click();await modal().getByText('Telegram confirmou a publicação.',{exact:true}).waitFor();assert.deepEqual(writes.slice(wn).map(w=>w.path),['/api/offers','/api/offers/'+product.id+'/telegram']);
+ await dashboard();model={...model,offer:null};offer=undefined;serverRewrite=true;await open();const wr=writes.length;await modal().getByRole('button',{name:'Publicar agora',exact:true}).click();await modal().getByRole('alert').waitFor();assert.match(await modal().getByRole('alert').innerText(),/Confira a versão exibida/);assert.deepEqual(writes.slice(wr).map(w=>w.path),['/api/offers']);assert.match(await modal().getByLabel('Legenda completa').inputValue(),/Abertura devolvida/);serverRewrite=false;await modal().getByRole('button',{name:'Publicar agora',exact:true}).click();await modal().getByText('Telegram confirmou a publicação.',{exact:true}).waitFor();
+ // Failed save retains text and cannot continue to a send.
+ await dashboard();await open();await modal().getByLabel('Legenda completa').fill(edited);failSave=true;const w2=writes.length;await modal().getByRole('button',{name:'Publicar agora',exact:true}).click();await modal().getByRole('alert').waitFor();assert.equal(await modal().getByLabel('Legenda completa').inputValue(),edited);assert.deepEqual(writes.slice(w2).map(w=>w.path),['/api/offers']);page.once('dialog',(d:any)=>d.accept());await page.keyboard.press('Escape');await modal().waitFor({state:'hidden'});
+ // Unknown response is never retried, including after closing and reopening.
+ await dashboard();await open();ambiguous=true;const w3=writes.length;await modal().getByRole('button',{name:'Publicar agora',exact:true}).click();await modal().getByRole('alert').waitFor();assert.equal(await modal().getByRole('button',{name:'Publicar agora',exact:true}).isDisabled(),true);await page.keyboard.press('Escape');await modal().waitFor({state:'hidden'});await open();assert.equal(await modal().getByRole('button',{name:'Publicar agora',exact:true}).isDisabled(),true);assert.equal(writes.length,w3+1);
+ // Calendar is inline, suggested from existing slots and scoped to the product.
+ await dashboard();await page.locator('.general-product').first().getByRole('link',{name:/Agendar:/}).click();await modal().locator('input[type=date]').waitFor();await page.waitForFunction(()=>!!document.querySelector<HTMLInputElement>('.quick-offer-modal input[type=date]')?.value);const suggested=await modal().locator('input[type=date]').inputValue();assert.ok(suggested);const w4=writes.length;await modal().getByRole('button',{name:'Agendar',exact:true}).click();await modal().getByText(/Agendamento salvo/).waitFor();assert.deepEqual(writes.slice(w4).map(w=>w.path),['/api/offers/'+offer!.id+'/schedule']);assert.equal(writes[w4].body.channel,'telegram');assert.equal(await modal().locator('input[type=date]').count(),0);assert.equal(page.url(),url);
+ // Date/time fields and the three actions remain usable in the narrow viewport.
+ await dashboard();await open();await modal().getByRole('switch',{name:'Ativar agendamento'}).click();assert.equal(await modal().getByLabel('Horário da publicação').inputValue().then(Boolean),true);await page.setViewportSize({width:375,height:850});assert.equal(await modal().evaluate((e:HTMLElement)=>e.scrollWidth>e.clientWidth+1),false);await page.screenshot({path:out+'/screenshots/schedule-375.png'});await page.setViewportSize({width:1440,height:950});await page.screenshot({path:out+'/screenshots/schedule-1440.png'});await page.keyboard.press('Escape');await modal().waitFor({state:'hidden'});
+ // Slow destination verification cannot hold the caption/editor or enable an early send.
+ await dashboard();configDelay=1600;const partialStart=Date.now();await open();assert.ok(Date.now()-partialStart<1200,'canonical editor should not wait for destination response');assert.equal(await modal().getByRole('button',{name:'Salvar',exact:true}).isEnabled(),true);assert.equal(await modal().getByRole('button',{name:'Publicar agora',exact:true}).isDisabled(),true);await modal().getByLabel('Legenda completa').fill(edited);await modal().getByRole('radio',{name:/Telegram/}).waitFor();assert.equal(await modal().getByLabel('Legenda completa').inputValue(),edited);configDelay=0;page.once('dialog',(d:any)=>d.accept());await page.keyboard.press('Escape');await modal().waitFor({state:'hidden'});
+ // Origin theme is inherited, even for a product opened from the all scope.
+ let layouts=0;
+ for(const brand of [...brands,'all']){
+  await dashboard(brand);const origin=page.url(),theme=await page.locator('.app-shell').evaluate((e:HTMLElement)=>({primary:getComputedStyle(e).getPropertyValue('--primary').trim(),surface:getComputedStyle(e).getPropertyValue('--surface').trim()}));await open();
+  assert.equal(page.url(),origin);assert.equal(await page.locator('.app-shell').getAttribute('data-operation'),brand);
+  const modalTheme=await modal().evaluate((e:HTMLElement)=>({primary:getComputedStyle(e).getPropertyValue('--primary').trim(),surface:getComputedStyle(e).getPropertyValue('--surface').trim()}));assert.deepEqual(modalTheme,theme);
+  for(const width of [320,375,768,1440]){await page.setViewportSize({width,height:950});assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth+1),false);assert.equal(await modal().evaluate((e:HTMLElement)=>e.scrollWidth>e.clientWidth+1),false);layouts++;if(['dropou','celulares','all'].includes(brand)&&[375,1440].includes(width))await page.screenshot({path:`${out}/screenshots/${brand}-${width}.png`});}
+  await page.keyboard.press('Tab');assert.equal(await modal().evaluate((e:HTMLElement)=>e.contains(document.activeElement)),true);await page.keyboard.press('Escape');await modal().waitFor({state:'hidden'});
+ }
+ await dashboard();wrongScope=true;await page.locator('.general-product').first().getByRole('link',{name:'Abrir oferta',exact:true}).click();await modal().getByRole('alert').waitFor();assert.match(await modal().getByRole('alert').innerText(),/não pertence/);assert.equal(await modal().getByRole('button',{name:'Publicar agora',exact:true}).count(),0);await page.keyboard.press('Escape');
+ // Advanced actions keep the product scope from All, including nested lifecycle dialogs.
+ await dashboard('all');await open();await modal().getByText('Mais opções',{exact:true}).click();await modal().getByRole('button',{name:'Copiar link de afiliado',exact:true}).click();await page.waitForFunction((url:string)=>(window as any).fixtureCopied===url,product.affiliateUrl);await modal().getByRole('button',{name:'Excluir produto: '+product.name,exact:true}).click();await page.getByRole('heading',{name:'Tem certeza de que deseja excluir este produto do catálogo?',exact:true}).waitFor();await page.getByRole('button',{name:'Confirmar arquivamento',exact:true}).waitFor();assert.equal(await modal().locator('.quick-offer-heading').getAttribute('aria-hidden'),'true');await page.keyboard.press('Escape');assert.equal(await page.getByRole('heading',{name:'Tem certeza de que deseja excluir este produto do catálogo?',exact:true}).count(),0);assert.equal(await modal().locator('.quick-offer-heading').getAttribute('aria-hidden'),null);await page.keyboard.press('Escape');await modal().waitFor({state:'hidden'});
+ // Catalog filters and the editor stay in the origin; editing never unlocks brand switching.
+ reset();await page.goto(base+'/?brand=dropou&view=catalog');await page.getByLabel('Pesquisar',{exact:true}).fill('Headset');await page.getByRole('button',{name:'Aplicar filtros',exact:true}).click();await page.locator('.operation-product').first().getByRole('button',{name:'Abrir oferta',exact:true}).click();await modal().getByRole('button',{name:'Publicar agora',exact:true}).waitFor();await modal().getByText('Mais opções',{exact:true}).click();await modal().getByRole('button',{name:'Editar dados do produto',exact:true}).click();await modal().getByLabel('Marca da oferta').waitFor();assert.equal(await modal().getByLabel('Marca da oferta').isDisabled(),true);assert.ok(page.url().includes('view=catalog'));await modal().getByRole('button',{name:'Voltar à publicação',exact:true}).click();await page.keyboard.press('Escape');await modal().waitFor({state:'hidden'});assert.equal(await page.getByLabel('Pesquisar',{exact:true}).inputValue(),'Headset');
+ // Direct page remains available; measure its complete product preview under the same delay.
+ reset();delay=400;const legacyStart=Date.now();await page.goto(base+'/ofertas/'+product.id+'?brand=dropou');await page.getByRole('heading',{name:'Sua oferta está aqui',exact:true}).waitFor();const legacyFullPreviewMs=Date.now()-legacyStart;assert.equal(await page.getByRole('link',{name:'Voltar à lista',exact:true}).count(),1);
+ assert.deepEqual(errors,[]);assert.deepEqual(external,[]);assert.ok(!writes.some(w=>/dispatch|\/ai\/|shopee|operations/.test(w.path)));
+ writeFileSync(out+'/result.json',JSON.stringify({layouts,coldCardPaintMs:latencies,legacyFullPreviewMs,reads:reads.length,simulatedWrites:writes.map(w=>({path:w.path,brand:w.brand})),errors,external},null,2));
+ console.log(layouts+' modal layouts passed; cold card paint '+latencies.join(',')+'ms under 400ms API delay. Ready send without save, edit+save+send, manual WhatsApp, inline scheduling, unknown-response lock across reopen, data preservation, focus/scroll/URL/themes, wrong-scope rejection and direct page passed. API writes intercepted; no real sends/providers.');
+ await context.close();
+}catch(e){for(const c of browser.contexts())for(const p of c.pages())console.log((await p.locator('body').innerText()).slice(-2000));console.log(JSON.stringify({errors,external,reads:reads.slice(-8),writes:writes.slice(-3).map(w=>({path:w.path,brand:w.brand}))}));throw e;}finally{await browser.close();}
