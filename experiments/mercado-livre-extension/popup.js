@@ -22,7 +22,14 @@ function render(job) {
   el('switchHint').textContent = enabled ? 'Ativo só neste navegador/sessão' : 'Desligado: nenhuma geração será iniciada';
   el('statusPanel').hidden = !hasJob || !enabled;
   el('startForm').hidden = hasJob || !enabled;
-  if (!hasJob || !enabled) return;
+  if (!hasJob || !enabled) {
+    current = null;
+    el('result').removeAttribute('href');
+    el('result').textContent = '';
+    el('message').textContent = '';
+    el('copy').hidden = true;
+    return;
+  }
   const names = {
     opening:'Abrindo o gerador',
     working:'Convertendo produto',
