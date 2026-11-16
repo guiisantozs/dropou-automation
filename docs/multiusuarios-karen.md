@@ -91,3 +91,7 @@ O fixture de Auth só pode ser pré-carregado com `DROPOU_LOCAL_AUTH_FIXTURE=1` 
 Nenhuma mensagem, consulta real de produto, geração paga, criação de conta, aplicação remota de migração, mudança de credenciais, ativação, push ou deploy foi realizada nesta implementação. A main publicada e o experimento Mercado Livre foram preservados.
 
 Prévia local de capturas: http://127.0.0.1:4200, com seleção de marca e celular/desktop. O perfil mostrado é simulado e os botões na imagem não executam ações. A revisão final de banco também manteve uma configuração antiga ativa com seus destinos, além das três novas configurações pausadas.
+
+## Envio ao GitHub sem deploy
+
+Em 16/11/2026, o envio da branch `codex/karen-dashboards` ao GitHub foi autorizado. O arquivo `vercel.json` desativa o deploy Git somente dessa branch com `git.deploymentEnabled`, preservando a main. Os e-mails reais para associar as contas continuam pendentes; nenhuma conta ou migração remota foi criada nesta etapa.
