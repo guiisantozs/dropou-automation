@@ -1,0 +1,86 @@
+/* Shared premium composition, inherited operation identity. No palette per brand. */
+.operation-dashboard{
+ --general-radius:24px;--general-gap:18px;--general-heading:18px;--general-space:23px;
+ --general-accent:var(--primary);
+ --dashboard-highlight:var(--operation-accent,var(--primary));
+ --dashboard-series-1:var(--chart-1);--dashboard-series-2:var(--chart-2);
+ --dashboard-series-3:var(--chart-3);--dashboard-series-4:var(--chart-4);
+ --dashboard-ring-track:var(--border);
+ color:var(--ink);
+}
+.operation-dashboard .general-panel{background:var(--surface);border-color:var(--border)}
+.operation-dashboard .general-overview{color:var(--ink);background:var(--dashboard-overview-bg,var(--surface));border-color:var(--primary-border)}
+.operation-dashboard .general-overview .general-panel-heading>svg{color:var(--dashboard-highlight)}
+.operation-dashboard .general-main-stat>strong{color:var(--dashboard-highlight)}
+.operation-dashboard :is(.general-main-stat>span,.general-panel-heading>span){color:var(--ink-muted)}
+.operation-dashboard .general-overview .general-main-stat>span{color:var(--ink)}
+.operation-dashboard .general-round-link{color:var(--dashboard-highlight);border-color:var(--primary-border)}
+.operation-dashboard .general-round-link:hover{color:var(--primary-hover);border-color:var(--primary-hover)}
+.operation-dashboard .general-stat-rule{background:var(--canvas)}
+.operation-dashboard .general-stat-rule::before{background:var(--dashboard-highlight)}
+.operation-dashboard .general-mini-stats>button{color:var(--ink);background:var(--subtle);border-color:var(--border)}
+.operation-dashboard .general-mini-stats>button:hover{background:var(--primary-soft);border-color:var(--primary-border)}
+.operation-dashboard .general-mini-stats svg{color:var(--dashboard-highlight)}
+.operation-dashboard .general-activity-chart{background:transparent;border-color:var(--border)}
+.operation-dashboard .general-chart-legend button{color:var(--ink-muted)}
+.operation-dashboard .general-chart-legend button[aria-pressed=true]{color:var(--ink)}
+.operation-dashboard .general-chart-legend button[aria-pressed=true]::after{background:var(--primary)}
+.operation-dashboard .general-chart-legend i{background:var(--dashboard-series-1)}
+.operation-dashboard .general-chart-legend .light{background:var(--dashboard-series-2)}
+.operation-dashboard .chart-axis{stroke:var(--ink-muted)}
+.operation-dashboard .chart-gridline{stroke:var(--border)}
+.operation-dashboard .chart-telegram{stroke:var(--dashboard-series-1)}
+.operation-dashboard .chart-whatsapp{stroke:var(--dashboard-series-2)}
+.operation-dashboard .general-line-chart g:last-child circle:first-of-type{fill:var(--primary);stroke:var(--canvas)}
+.operation-dashboard .general-weekdays{color:var(--ink-muted)}
+.operation-dashboard .general-weekdays .today{background:var(--primary);color:var(--primary-ink);box-shadow:0 0 0 3px var(--canvas)}
+.operation-dashboard :is(.general-chart-note,.general-chart-total>span,.general-chart-data summary,.general-distribution>p,.general-ring small){color:var(--ink-muted)}
+.operation-dashboard .general-chart-data :is(th,td){border-color:var(--border)}
+.operation-dashboard .general-distribution>p b{color:var(--ink)}
+.operation-dashboard .general-distribution .general-panel-heading>svg{color:var(--primary)}
+.operation-dashboard .general-outline-button{color:var(--ink);border-color:var(--border);background:transparent}
+.operation-dashboard .general-outline-button:hover{background:var(--subtle);border-color:var(--primary-border)}
+.operation-dashboard .general-upcoming li{border-color:var(--border)}
+.operation-dashboard :is(.general-upcoming li>a,.general-panel-bottom>button,.general-ready-symbol a){color:var(--ink)}
+.operation-dashboard :is(.general-time small,.general-upcoming li>a small,.general-panel-bottom){color:var(--ink-muted)}
+.operation-dashboard .general-upcoming li>a small:last-child{color:var(--ink-muted)}
+.operation-dashboard .general-ready-preview-grid article{background:var(--surface);border:1px solid var(--border)}
+.operation-dashboard .general-ready-preview-grid article>strong{color:var(--dashboard-highlight)}
+.operation-dashboard :is(.general-ready-preview-grid article>small,.general-ready-preview-grid article>a){color:var(--ink-muted)}
+.operation-dashboard .general-ready-symbol{color:var(--primary)}
+.operation-dashboard .general-add-offer{color:var(--ink-muted);border-color:var(--border)}
+.operation-dashboard .general-add-offer:hover{background:var(--surface);border-color:var(--primary)}
+.operation-dashboard .general-preview-empty{color:var(--ink-muted);border-color:var(--border)}
+.operation-dashboard .general-recent{background:transparent;border:1px dashed var(--border)}
+.operation-dashboard .general-event-dot{background:var(--primary)}
+.operation-dashboard .general-event-symbol{background:var(--primary-soft);color:var(--primary)}
+.operation-dashboard :is(.general-recent li small,.general-recent li time,.general-empty){color:var(--ink-muted)}
+.operation-dashboard .general-text-link{color:var(--ink)}
+.operation-dashboard .general-text-link:hover{color:var(--primary-hover)}
+.operation-dashboard :is(.general-channel-strip,.general-strip-icon,.general-channel-summary){border-color:var(--border)}
+.operation-dashboard :is(.general-channel-strip>div:first-child small,.general-channel-summary p>span,.general-channel-summary>small){color:var(--ink-muted)}
+.operation-dashboard .general-channel-name{color:var(--primary)}
+.operation-dashboard :is(.general-section-heading p,.general-refresh){color:var(--ink-muted)}
+.operation-dashboard .general-product{background:var(--surface);color:var(--ink);border:1px solid var(--border)}
+.operation-dashboard .general-product-heading h3{color:var(--ink)}
+.operation-dashboard :is(.general-product-operation,.general-product-category,.general-product-status){color:var(--ink-muted)}
+.operation-dashboard .general-product-price{color:var(--dashboard-highlight)}
+.operation-dashboard .general-product-status i{background:var(--primary)}
+.operation-dashboard .general-channel-pill{background:var(--subtle);color:var(--ink-muted);border-color:var(--border)}
+.operation-dashboard .general-channel-pill.is-published{background:var(--success-soft);color:var(--success);border-color:var(--success-border)}
+.operation-dashboard .general-product-actions{border-color:var(--border)}
+.operation-dashboard .general-small-button{background:var(--primary);color:var(--primary-ink);border-color:var(--primary)}
+.operation-dashboard .general-small-button:hover{background:var(--primary-hover);color:var(--primary-ink)}
+.operation-dashboard .general-icon-button{color:var(--ink-muted);background:var(--subtle);border-color:var(--border)}
+.operation-dashboard .general-icon-button:hover{color:var(--primary);background:var(--primary-soft);border-color:var(--primary-border)}
+.operation-dashboard .general-product-menu>summary{color:var(--ink-muted)}
+.operation-dashboard .general-product-menu>summary:hover{color:var(--primary)}
+.operation-dashboard .general-product-menu>div{background:var(--surface);color:var(--ink);border-color:var(--border)}
+.operation-dashboard .general-product-menu a{color:var(--ink)}
+.operation-dashboard .general-product-menu a:hover{background:var(--primary-soft);color:var(--primary)}
+.operation-dashboard :is(.general-catalog-empty p,.general-pagination){color:var(--ink-muted)}
+.operation-dashboard .general-error{background:var(--danger-soft);color:var(--danger);border-color:var(--danger-border)}
+.operation-dashboard .general-loading>div{background:var(--surface);border-color:var(--border)}
+.operation-dashboard :focus-visible{outline-color:var(--focus)}
+@media(max-width:1250px){.operation-dashboard{--general-gap:15px;--general-space:18px}}
+@media(prefers-reduced-motion:reduce){.operation-dashboard *{scroll-behavior:auto!important}}

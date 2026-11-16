@@ -1,4 +1,18 @@
-/* Celulares has its own identity; the remaining operations keep their tokens. */
+/* Tech & Games palette explicitly supplied by the user. Other themes are independent. */
+:root[data-operation=dropou],[data-operation=dropou]{
+ --canvas:#0A0E27;--surface:#11162F;--subtle:#1B2140;--border:#303653;
+ --sidebar-bg:#0A0E27;--rail-bg:#1B2140;
+ --primary:#00F0FF;--primary-hover:#74F8FF;--primary-ink:#0A0E27;
+ --primary-soft:#0A2F45;--primary-border:#17636C;--secondary-blue:#5B36A6;
+ --operation-accent:#00F0FF;--focus:#00F0FF;--ink:#F5F5FA;--ink-muted:#B0B6CD;
+ --sidebar-ink:#F5F5FA;--sidebar-muted:#B0B6CD;
+ --orange:var(--operation-accent);--orange-soft:var(--primary-soft);
+ --purple:#5B36A6;--purple-soft:var(--primary-soft);--graphite:#B0B6CD;--graphite-soft:var(--subtle);
+ --chart-1:#00F0FF;--chart-2:#A586DE;--chart-3:#5B36A6;--chart-4:#B0B6CD;
+ --hero-start:#5B36A6;--hero-end:#211B42;--hero-ink:#F5F5FA;
+ --dashboard-overview-bg:#5B36A6;
+}
+/* Celulares retains its existing identity, unchanged. */
 :root[data-operation=celulares],[data-operation=celulares]{--primary:#00E5DD;--primary-hover:#5BFFF3;--primary-ink:#031315;--primary-soft:#062B2D;--primary-border:#176065;--focus:#5BFFF3;--canvas:#080E11;--surface:#101B20;--subtle:#15252C;--border:#263A43;--ink:#F4F8FA;--ink-muted:#A9BAC3;--sidebar-bg:#0B1419;--orange:var(--primary);--orange-soft:var(--primary-soft);--chart-1:#00E5DD;--chart-2:#77F7EC;--chart-3:#C9D7DE;--hero-start:#123037;--hero-end:#0C1A20}
 :root[data-operation=celulares] body{background:radial-gradient(ellipse at 85% 0,#063C3D55,transparent 45%),var(--canvas)}
 :root[data-operation=celulares] .sidebar .nav-item.active{background:linear-gradient(110deg,#093B3D,#13262D);border-color:#1D6268;color:#86FFF4}
