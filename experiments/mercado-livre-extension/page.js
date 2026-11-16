@@ -6,12 +6,16 @@
 
   const sleep = ms => new Promise(resolve=>setTimeout(resolve,ms));
   const visible = el => Boolean(el && el.getClientRects().length && getComputedStyle(el).visibility !== 'hidden');
+  let currentJobId = null;
   const send = message => new Promise(resolve => {
     chrome.runtime.sendMessage(message, response => resolve(response || null));
   });
-  const report = (success, message, resultUrl) => send({type:'finished',success,message,resultUrl});
-  const progress = message => send({type:'progress',message});
-  const allowedToContinue = async () => Boolean((await send({type:'getTask'}))?.ok);
+  const report = (success, message, resultUrl) => send({type:'finished',success,message,resultUrl,jobId:currentJobId});
+  const progress = message => send({type:'progress',message,jobId:currentJobId});
+  const allowedToContinue = async () => {
+    const task = await send({type:'getTask'});
+    return Boolean(task?.ok && task.jobId === currentJobId);
+  };
 
   function getCandidates() {
     const values = [];
@@ -85,7 +89,8 @@
 
   async function run() {
     const task = await send({type:'getTask'});
-    if (!task?.ok || !task.productUrl) return;
+    if (!task?.ok || !task.productUrl || !task.jobId) return;
+    currentJobId = task.jobId;
     await progress('Aguardando o formulário do Mercado Livre...');
     let field = null;
     for(let i=0;i<60;i++) {
