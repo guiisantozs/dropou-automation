@@ -1,3 +1,4 @@
+import {celularesConfigSchema} from '../../lib/celulares-curation';
 import type {OperationId} from '../../lib/workspace-brands';
 import type {SupabaseClient} from '@supabase/supabase-js';
 import {curatedDiscovery} from '../../lib/shopee-curation';
@@ -18,9 +19,9 @@ export async function loadCuratedDiscovery(db:SupabaseClient,owner:string,brand:
   allRows((from,to)=>scoped('shopee_offers','id,shop_id,item_id,data,decision,prepared_product_id').order('id').range(from,to)),
   allRows((from,to)=>scoped('products','id,data,canonical_url,curation_state,archived_at').order('id').range(from,to)),
   allRows((from,to)=>scoped('dropou_operation_publications','product_id,id,channel,source').order('id').order('channel').order('source').range(from,to)),
-  allRows((from,to)=>scoped('shopee_observations','shop_id,item_id,observed_at,sales,price,price_max,rating').gte('observed_at',new Date(Date.now()-30*86400000).toISOString()).order('observed_at').order('shop_id').order('item_id').range(from,to)),
-  db.from('operation_settings').select('shopee_config,radar').eq('owner_id',owner).eq('brand_id',brand).single(),
+  allRows((from,to)=>scoped('shopee_observations',brand==='celulares'?'shop_id,item_id,observed_at,sales,price,price_max,rating,variant_key':'shop_id,item_id,observed_at,sales,price,price_max,rating').gte('observed_at',new Date(Date.now()-30*86400000).toISOString()).order('observed_at').order('shop_id').order('item_id').range(from,to)),
+  db.from('operation_settings').select('shopee_config,radar,celulares_curation').eq('owner_id',owner).eq('brand_id',brand).single(),
  ]);
  if(settings.error||!settings.data)throw new Error('Configuração da curadoria indisponível.');
- return curatedDiscovery(cache,products,new Set(proofs.map(p=>p.product_id)),channelShopeeConfig(settings.data),history,brand);
+ return curatedDiscovery(cache,products,new Set(proofs.map(p=>p.product_id)),channelShopeeConfig(settings.data),history,brand,celularesConfigSchema.parse(settings.data.celulares_curation||{}));
 }

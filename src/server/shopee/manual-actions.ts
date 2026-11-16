@@ -1,6 +1,7 @@
 import type {SupabaseClient} from '@supabase/supabase-js';
 import {shopeeAutomation} from './automation';
 import {assessShopeeOffer,shopeeConfigSchema} from '../../lib/shopee-automation';
+import {celularesConfigSchema} from '../../lib/celulares-curation';
 import {shopeeProduct} from '../../lib/shopee-product';
 import {formatCaption} from '../../lib/ai';
 import {reserveDropouHeadline} from '../dropou-captions';
@@ -14,8 +15,8 @@ export async function manualShopeeAction(db:SupabaseClient,owner:string,brand:Op
  const row=await db.from('shopee_offers').select('*').eq('owner_id',owner).eq('brand_id',brand).eq('id',body.id!).single();if(row.error||!row.data)throw new Error('Oferta não encontrada neste canal.');
  const offer=row.data;
  if(body.action==='prepare'||body.action==='decide'&&body.decision==='approved'||body.action==='allow-repeat'){
-  const settings=await db.from('operation_settings').select('shopee_config').eq('owner_id',owner).eq('brand_id',brand).single();if(settings.error)throw new Error('Configuração indisponível.');
-  const assessment=brand==='dropou'?await shopeeAutomation().review(owner,offer.data):assessShopeeOffer(offer.data,shopeeConfigSchema.parse(settings.data.shopee_config),[],brand);
+  const settings=await db.from('operation_settings').select('shopee_config,celulares_curation').eq('owner_id',owner).eq('brand_id',brand).single();if(settings.error)throw new Error('Configuração indisponível.');
+  const assessment=brand==='dropou'?await shopeeAutomation().review(owner,offer.data):assessShopeeOffer(offer.data,shopeeConfigSchema.parse(settings.data.shopee_config),[],brand,celularesConfigSchema.parse(settings.data.celulares_curation||{}));
   if(!assessment.eligible)throw new Error('Aprovação bloqueada: '+assessment.reasons.join(' · '));
   if(body.action==='allow-repeat'){
    if(body.confirmation!=='LIBERAR REPETIÇÃO')throw new Error('Confirme explicitamente a repetição.');

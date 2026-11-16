@@ -1,0 +1,12 @@
+.workspace {display:grid;gap:16px;min-width:0;}
+.toolbar {display:flex;align-items:center;flex-wrap:wrap;gap:10px;margin-block:12px;}
+.toolbar label {display:grid;gap:6px;max-width:100%;}
+.toolbar input,.toolbar select {min-width:0;max-width:100%;}
+.cards {display:grid;gap:12px;}
+.card {display:flex;gap:14px;align-items:flex-start;min-width:0;}
+.image,.placeholder {width:88px;height:88px;flex:0 0 88px;object-fit:contain;border-radius:8px;}
+.placeholder {display:grid;place-items:center;font-size:12px;}
+.body {min-width:0;display:grid;gap:5px;overflow-wrap:anywhere;flex:1;}
+.body h3 {font-size:15px;margin:2px 0;}
+.body small {display:block;}
+@media(max-width:480px){.card {gap:10px;}.image,.placeholder {width:56px;height:56px;flex-basis:56px;}.toolbar {align-items:stretch;}.toolbar button {white-space:normal;}}

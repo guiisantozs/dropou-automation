@@ -1,0 +1,7 @@
+export const mirrorStates=['received','identified','processing','affiliated','pending_review','ready','published','failed','discarded'] as const;
+export type MirrorState=typeof mirrorStates[number];
+export const mirrorLabels:Record<MirrorState,string>={received:'Recebida',identified:'Identificada',processing:'Processando',affiliated:'Afiliação concluída',pending_review:'Pendente de revisão',ready:'Pronta para publicação',published:'Publicada',failed:'Falhou',discarded:'Descartada'};
+export type MirrorOffer={id:string;brand_id:string;source_channel_id:string;message_id:number;message_kind:string;received_at:string;shop_id:string|null;item_id:string|null;canonical_url:string|null;destination_chat_id:string|null;state:MirrorState;product_name:string|null;image_url:string|null;price:number|null;price_max:number|null;checked_at:string|null;affiliate_url:string|null;attempts:number;last_error:string|null;data_source:'api'|'cache'|null;version:number;duplicate_of:string|null};
+export type MirrorEvent={id:string;from_state:MirrorState|null;to_state:MirrorState;attempt:number;detail:string|null;created_at:string};
+export type MirrorResponse={available:boolean;items:MirrorOffer[];total:number;more:boolean;admin:boolean;policy:{repeat_hours:number;mirror_daily_limit:number};error?:string};
+export const mirrorColumns='id,brand_id,source_channel_id,message_id,message_kind,received_at,shop_id,item_id,canonical_url,destination_chat_id,state,product_name,image_url,price,price_max,checked_at,affiliate_url,attempts,last_error,data_source,version,duplicate_of';

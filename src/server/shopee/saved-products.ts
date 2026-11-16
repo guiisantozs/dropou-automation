@@ -1,8 +1,8 @@
-import {reserveShopee} from './on-demand';
+import {requestProductOffers} from './product-offers';
 import type {OperationId} from '../../lib/workspace-brands';
 import {shopeeProduct} from '../../lib/shopee-product';
 import type {SupabaseClient} from '@supabase/supabase-js';
-import {requestShopeeOperation,productBatchQuery,parseShopeeBatch,ShopeeApiError} from './client';
+import {ShopeeApiError} from './client';
 import {resolveShopeeProductLink} from './resolve-link';
 import {shopeeProductLink,type SavedShopeeProduct} from '../../lib/shopee-saved';
 import {priceCurrent,type ShopeeOffer} from '../../lib/shopee-automation';
@@ -37,10 +37,7 @@ export async function resolveSavedShopeeProducts(db:SupabaseClient,owner:string,
  const unique=[...new Map(missing.map(item=>[item.shopId+':'+item.itemId,item])).values()];
  const token=claimed[0].lease_token;
  try{
-  const offers=await requestShopeeOperation(productBatchQuery(unique),{appId:env.SHOPEE_AFFILIATE_APP_ID,secret:env.SHOPEE_AFFILIATE_SECRET,approved:env.SHOPEE_AFFILIATE_APPROVED==='true'},
-   ()=>reserveShopee(db,owner,brand,'saved-products:'+token,'manual',env),
-   async(id,state,retry)=>{await checked(db.rpc('dropou_shopee_finish',{p_request:id,p_state:state,p_retry_seconds:state==='auth'?21600:state==='contract'?86400:retry}));},
-   raw=>parseShopeeBatch(raw,unique),http);
+  const offers=await requestProductOffers(db,owner,brand,unique,'saved-products:'+token,env,http);
   for(const item of missing){const index=unique.findIndex(u=>u.itemId===item.itemId&&u.shopId===item.shopId);const data=offers[index];await finish(item.row,data,data?undefined:'A API de afiliados não retornou dados completos para este produto. O link continua salvo; tente novamente mais tarde.');}
   return {ids:completed,processed:completed.length,stopped:false};
  }catch(e){

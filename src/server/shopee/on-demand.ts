@@ -1,16 +1,13 @@
+import {createHash} from 'node:crypto';
+import {celularesConfigSchema,celularSearchTerms} from '../../lib/celulares-curation';
 import type {SupabaseClient} from '@supabase/supabase-js';
 import {requestShopee,ShopeeApiError} from './client';
 import {bahiaDay,assessShopeeOffer} from '../../lib/shopee-automation';
 import {onDemandKeywords} from '../../lib/shopee-search';
-import {shopeeLimit} from '../../lib/shopee-limits';
+import {reserveShopee} from './budget';
+export {reserveShopee} from './budget';
 import type {OperationId} from '../../lib/workspace-brands';
 import {channelShopeeConfig} from '../../lib/channel-shopee-config';
-export async function reserveShopee(db:SupabaseClient,owner:string,brand:OperationId,key:string,purpose:'manual'|'search',env:Record<string,string|undefined>){
- const r=await db.rpc('dropou_shopee_reserve_v2',{p_owner:owner,p_brand:brand,p_key:key,p_kind:purpose,p_global_limit:shopeeLimit(env,purpose)});
- if(r.error)throw new Error('Controle de consumo Shopee indisponível. Confira a migração incremental.');
- if(!r.data?.id)throw new ShopeeApiError(r.data?.reason||'budget',r.data?.retryAt?Math.max(1,Math.ceil((Date.parse(r.data.retryAt)-Date.now())/1000)):0);
- return r.data.id as string;
-}
 export async function searchChannel(db:SupabaseClient,owner:string,brand:OperationId,env:Record<string,string|undefined>=process.env,http:typeof fetch=fetch){
  const credentials={appId:env.SHOPEE_AFFILIATE_APP_ID,secret:env.SHOPEE_AFFILIATE_SECRET,approved:env.SHOPEE_AFFILIATE_APPROVED==='true'};
  if(!credentials.appId||!credentials.secret||!credentials.approved)throw new ShopeeApiError('credentials');
@@ -20,22 +17,27 @@ export async function searchChannel(db:SupabaseClient,owner:string,brand:Operati
  const token=lease.data as string;
  let found=0,received=0,calls=0,successfulCalls=0;const errors:string[]=[],diagnostics:{code:string;httpStatus?:number;providerCode?:string;keyword:string}[]=[],identities=new Set<string>();let retryAt:string|undefined;
  try{
-  const settings=await db.from('operation_settings').select('radar,shopee_config').eq('owner_id',owner).eq('brand_id',brand).single();
+  const settings=await db.from('operation_settings').select('radar,shopee_config,celulares_curation').eq('owner_id',owner).eq('brand_id',brand).single();
   if(settings.error)throw new Error('Configuração do canal indisponível.');
-  const config=channelShopeeConfig(settings.data);
-  const keywords=onDemandKeywords(brand,config,settings.data.radar||{},settings.data.shopee_config||{},bahiaDay());
+  const config=channelShopeeConfig(settings.data),policy=celularesConfigSchema.parse(settings.data.celulares_curation||{});
+  const policyHash=createHash('sha256').update(JSON.stringify({policy,radar:settings.data.radar,config:settings.data.shopee_config})).digest('hex');
+  let cursor=0;
+  if(brand==='celulares'){const window=await db.rpc('dropou_celulares_search_window',{p_owner:owner,p_token:token,p_steps:policy.requestsPerSearch,p_cache_minutes:policy.cacheMinutes,p_policy_hash:policyHash});if(window.error)throw new Error('Controle de cache da curadoria indisponível.');if(window.data.cached)return {status:'complete' as const,cached:true,calls:0,found:0,received:0,message:'Curadoria atualizada com o cache recente. Nenhuma consulta Shopee consumida.',retryAt:window.data.retryAt};cursor=Number(window.data.cursor);}
+  const custom=Array.isArray(settings.data.radar?.keywords)?settings.data.radar.keywords:Array.isArray(settings.data.shopee_config?.keywords)?settings.data.shopee_config.keywords:[];
+  const keywords=brand==='celulares'?celularSearchTerms(cursor,policy,custom.filter((s:unknown):s is string=>typeof s==='string'&&s.trim().length>=2&&s.trim().length<=80).map((s:string)=>s.trim()).slice(0,50)):onDemandKeywords(brand,config,settings.data.radar||{},settings.data.shopee_config||{},bahiaDay());
   // Bounded explicit search. No planning, approval or publication as a side effect.
-  for(let i=0;i<Math.min(3,keywords.length);i++){
+  for(let i=0;i<Math.min(brand==='celulares'?policy.requestsPerSearch:3,keywords.length);i++){
    const keyword=keywords[i];
    try{
     const offers=await requestShopee({keyword,listType:2,sortType:2,limit:50},credentials,
      async()=>{const id=await reserveShopee(db,owner,brand,'on-demand:'+token+':'+i,'search',env);calls++;return id;},
      async(id,state,retry)=>{const r=await db.rpc('dropou_shopee_finish',{p_request:id,p_state:state,p_retry_seconds:state==='auth'?21600:state==='contract'?86400:retry});if(r.error)throw new Error('Falha ao registrar a consulta.');},http);
     received+=offers.length;
-    const rows=offers.map(o=>{const assessment=assessShopeeOffer(o,config,[],brand);return {shop_id:o.shopId,item_id:o.itemId,data:o,score:assessment.score,eligible:assessment.eligible,reasons:assessment.reasons,checked_at:o.checkedAt,assessment};}).filter(r=>r.assessment.relevant);
-    const save=await db.rpc('dropou_shopee_cache_channel',{p_brand:brand,p_owner:owner,p_rows:rows});if(save.error)throw new Error('Falha ao salvar os resultados da busca.');for(const row of rows)identities.add(row.shop_id+':'+row.item_id);found=identities.size;successfulCalls++;
+    const rows=offers.map(o=>{const assessment=assessShopeeOffer(o,config,[],brand,policy);return {shop_id:o.shopId,item_id:o.itemId,data:o,score:assessment.score,eligible:assessment.eligible,reasons:assessment.reasons,checked_at:o.checkedAt,assessment};}).filter(r=>r.assessment.relevant);
+    const save=brand==='celulares'?await db.rpc('dropou_celulares_cache',{p_owner:owner,p_token:token,p_rows:rows}):await db.rpc('dropou_shopee_cache_channel',{p_brand:brand,p_owner:owner,p_rows:rows});if(save.error)throw new Error('Falha ao salvar os resultados da busca.');for(const row of rows)identities.add(row.shop_id+':'+row.item_id);found=identities.size;successfulCalls++;
    }catch(e){const error=e as Error,detail=e instanceof ShopeeApiError?e.diagnostic:undefined;errors.push(error.message+(detail?' (HTTP '+detail.httpStatus+(detail.providerCode?', código '+detail.providerCode:'')+').':''));diagnostics.push({code:e instanceof ShopeeApiError?e.code:'storage',...detail,keyword});if(e instanceof ShopeeApiError&&e.retrySeconds)retryAt=new Date(Date.now()+(e.code==='auth'?21600:e.code==='contract'?86400:e.retrySeconds)*1000).toISOString();break;}
   }
+  if(brand==='celulares'&&!errors.length){const complete=await db.rpc('dropou_celulares_search_complete',{p_owner:owner,p_token:token,p_policy_hash:policyHash});if(complete.error)throw new Error('A busca foi concluída, mas o cache não pôde ser registrado. Atualize a lista antes de tentar novamente.');}
   const status:'partial'|'failed'|'complete'=errors.length?(successfulCalls?'partial':'failed'):'complete';
   return {found,received,calls,successfulCalls,errors,diagnostics,status,retryAt,message:status==='failed'?'A busca não foi concluída. Os produtos que já estavam na curadoria foram preservados.':(status==='partial'?'Busca parcial. ':'')+received+' produto(s) recebido(s), '+found+' relacionado(s) ao canal. A curadoria remove duplicados e decisões anteriores.'};
  }finally{

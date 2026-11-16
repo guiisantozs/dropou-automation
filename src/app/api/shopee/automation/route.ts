@@ -1,3 +1,4 @@
+import {celularesConfigSchema} from '@/lib/celulares-curation';
 import {channelShopeeConfig} from '@/lib/channel-shopee-config';
 import {z} from 'zod';
 import {sessionDb,apiError,dbError} from '@/server/session';
@@ -13,7 +14,7 @@ async function context(request:Request){const session=await sessionDb(request);i
 export async function GET(request:Request){try{
  const {db,user,operation,enabled,access}=await context(request),day=bahiaDay();
  const [settings,offers,requests,events,runs,jobs,global]=await Promise.all([
-  db.from('operation_settings').select('shopee_config,radar,automation_enabled,telegram_title,telegram_chat_id,telegram_verified_at,manual_daily_limit,discovery_daily_limit').eq('owner_id',user.id).eq('brand_id',operation).single(),
+  db.from('operation_settings').select('celulares_curation,shopee_config,radar,automation_enabled,telegram_title,telegram_chat_id,telegram_verified_at,manual_daily_limit,discovery_daily_limit').eq('owner_id',user.id).eq('brand_id',operation).single(),
   db.from('shopee_offers').select('*').eq('owner_id',user.id).eq('brand_id',operation).order('checked_at',{ascending:false}).limit(200),
   db.from('shopee_requests').select('id,kind,state,created_at,blocked_until').eq('owner_id',user.id).eq('brand_id',operation).eq('day',day).order('created_at',{ascending:false}).limit(1000),
   db.from('shopee_usage_events').select('kind').eq('owner_id',user.id).eq('brand_id',operation).gte('created_at',day+'T00:00:00-03:00').limit(10000),
@@ -21,7 +22,7 @@ export async function GET(request:Request){try{
   db.from('telegram_jobs').select('id,state,caption,scheduled_at,sent_at,destination_title,message_ids,error,shopee_offer_id').eq('owner_id',user.id).eq('brand_id',operation).not('shopee_offer_id','is',null).order('scheduled_at',{ascending:false}).limit(100),
   db.from('shopee_requests').select('id',{count:'exact',head:true}).eq('day',day).eq('kind','search'),
  ]);for(const r of [settings,offers,requests,events,runs,jobs,global])if(r.error)throw dbError(r.error);
- const s=settings.data!,config=channelShopeeConfig(s),rows=offers.data!.map(row=>({...row,assessment:assessShopeeOffer(row.data,config,[],operation)}));
+ const s=settings.data!,config=channelShopeeConfig(s),rows=offers.data!.map(row=>({...row,assessment:assessShopeeOffer(row.data,config,[],operation,celularesConfigSchema.parse(s.celulares_curation||{}))}));
  return Response.json({config,admin:access.admin,offers:rows.filter(o=>o.assessment.relevant),discardedOtherNiches:rows.filter(o=>!o.assessment.relevant).length,requests:requests.data,runs:runs.data,jobs:jobs.data,globalUsed:global.count||0,globalLimit:shopeeLimit(process.env,'search'),day,
   budget:{manualUsed:requests.data!.filter(r=>r.kind==='manual').length,manualLimit:s.manual_daily_limit,discoveryUsed:requests.data!.filter(r=>r.kind==='search').length,discoveryLimit:s.discovery_daily_limit,imports:events.data!.filter(r=>r.kind==='manual_import').length,cacheHits:events.data!.filter(r=>r.kind==='cache_hit').length,limitErrors:requests.data!.filter(r=>r.state==='rate_limit').length},
   dispatcherEnabled:enabled,operationEnabled:s.automation_enabled,destination:s.telegram_title||s.telegram_chat_id,verified:!!s.telegram_verified_at,

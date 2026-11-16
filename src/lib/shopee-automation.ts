@@ -37,7 +37,7 @@ export function dailyKeywords(c:ShopeeConfig,day:string){
  return Array.from({length:Math.min(c.keywords.length,budget)},(_,i)=>c.keywords[(index+i)%c.keywords.length]);
 }
 export function futureSlots(c:ShopeeConfig,now=new Date()){const day=bahiaDay(now);return [...c.times].sort().map(t=>new Date(day+'T'+t+':00-03:00')).filter(d=>d.getTime()>now.getTime());}
-export function priceCurrent(o:ShopeeOffer,now=Date.now()){const t=Date.parse(o.checkedAt);return Number.isFinite(t)&&t<=now+1000&&now-t<=15*60000;}
+export {priceCurrent} from './shopee-freshness';
 const brl=(n:number)=>new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL'}).format(n);
 export function shopeeCaption(o:ShopeeOffer,now=Date.now(),headline?:string){
  // Shopee's reported percentage is NOT evidence of an old price. Never derive one.

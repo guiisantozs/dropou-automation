@@ -9,7 +9,9 @@
     "build": "next build",
     "start": "next start --hostname 0.0.0.0",
     "typecheck": "tsc --noEmit",
-    "test": "tsx --test tests/*.test.ts"
+    "test": "tsx --test tests/*.test.ts",
+    "worker:telegram": "node --env-file-if-exists=.env.local --import tsx scripts/telegram-mtproto-worker.ts",
+    "worker:telegram:check": "node --env-file-if-exists=.env.local --import tsx scripts/check-telegram-mtproto-worker.ts"
   },
   "keywords": [],
   "author": "",
@@ -23,6 +25,7 @@
     "react": "19.3.1",
     "react-dom": "19.3.1",
     "server-only": "0.0.1",
+    "telegram": "2.26.22",
     "tesseract.js": "6.0.1",
     "zod": "4.6.7"
   },
