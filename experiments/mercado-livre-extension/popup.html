@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Dropou • Mercado Livre</title>
+  <style>
+    * { box-sizing: border-box; }
+    body { width: 374px; margin: 0; padding: 19px; background: #131417; color: #f4f4f5; font: 13px/1.5 system-ui, sans-serif; }
+    header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 17px; }
+    h1 { font-size: 18px; font-weight: 750; margin: 0; }
+    .dot { display: inline-block; width: 9px; height: 9px; border-radius: 50%; background: #f97316; margin-right: 9px; }
+    .subtitle { margin: 3px 0 0; font-size: 11px; color: #a3a3a3; }
+    .pill { font-size: 10px; border-radius: 100px; background: #29221c; color: #ffae70; padding: 4px 9px; }
+    label { display: block; font-size: 12px; font-weight: 600; margin: 14px 0 7px; }
+    textarea { width: 100%; min-height: 84px; resize: vertical; border: 1px solid #34363c; border-radius: 10px; padding: 11px; background: #1e2024; color: #fff; font: 12px/1.4 system-ui,sans-serif; outline: none; }
+    textarea:focus { border-color: #f97316; }
+    button { font: 600 12px/1 system-ui,sans-serif; border: none; border-radius: 9px; padding: 12px; cursor: pointer; color: white; background: #f97316; }
+    button:hover { filter: brightness(1.07); }
+    button:disabled { opacity: 0.45; cursor: not-allowed; }
+    .controls { display: flex; gap: 8px; margin-top: 12px; }
+    .controls > button { flex: 1; }
+    .secondary { background: #303239; }
+    .row { display: flex; align-items: center; gap: 8px; margin-top: 12px; color: #c0c0c0; font-size: 11px; }
+    .row input { accent-color: #f97316; }
+    .panel { background: #1e2024; border: 1px solid #303239; border-radius: 11px; margin-top: 15px; padding: 12px; }
+    .status { color: #f8fafc; font-weight: 700; }
+    .message { color: #b7b7b9; margin-top: 6px; font-size: 12px; overflow-wrap: anywhere; }
+    .link { display: block; color: #ffae70; margin: 10px 0; overflow-wrap: anywhere; }
+    .hint { font-size: 10px; line-height: 1.5; color: #9fa0a3; margin-top: 15px; }
+    #jobActions { display: flex; gap: 8px; margin-top: 10px; }
+    #jobActions button { flex: 1; }
+    #error { color: #ffa5a5; margin: 10px 0 0; min-height: 1em; }
+    [hidden] { display: none !important; }
+  </style>
+</head>
+<body>
+  <header>
+    <div><h1><span class="dot"></span>Dropou <span style="font-weight:450">/ ML</span></h1><p class="subtitle">Conversor experimental • Chrome local</p></div>
+    <span class="pill">Teste</span>
+  </header>
+  <form id="startForm">
+    <label for="source">Link normal do produto</label>
+    <textarea id="source" placeholder="https://www.mercadolivre.com.br/..." required spellcheck="false"></textarea>
+    <label class="row" style="font-weight:400"><input type="checkbox" id="autoClose" checked /> Fechar a aba de teste quando capturar o resultado</label>
+    <div class="controls"><button type="submit" id="start">Gerar link em segundo plano</button></div>
+  </form>
+  <div id="error" role="alert"></div>
+  <section id="statusPanel" class="panel" hidden aria-live="polite">
+    <div class="status" id="status">Aguardando</div>
+    <div class="message" id="message"></div>
+    <a id="result" class="link" hidden target="_blank" rel="noopener noreferrer"></a>
+    <div id="jobActions">
+      <button type="button" id="copy" class="secondary" hidden>Copiar link</button>
+      <button type="button" id="show" class="secondary" hidden>Ver aba de teste</button>
+      <button type="button" id="reset" class="secondary">Novo teste</button>
+    </div>
+  </section>
+  <p class="hint">A aba abre inativa, mas pode constar no histórico do Chrome e em registros da rede. Não acessa cookies, senhas ou APIs privadas. O link capturado é apenas candidato: confira sua etiqueta e a atribuição no painel do Mercado Livre antes de publicar.</p>
+  <script type="module" src="popup.js"></script>
+</body>
+</html>
