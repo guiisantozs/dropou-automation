@@ -11,7 +11,7 @@ Abra o terminal na raiz do projeto e rode:
     cd experiments/mercado-livre-browser
     npm install
     npm test
-    npm start -- "COLE_AQUI_A_URL_COMPLETA_DE_UM_PRODUTO_MERCADO_LIVRE"
+    npm.cmd start -- "COLE_AQUI_A_URL_COMPLETA_DE_UM_PRODUTO_MERCADO_LIVRE"
 
 Necessário: Node.js 20+ e Google Chrome instalado. A URL de produto precisa começar com https:// e pertencer ao Mercado Livre.
 
@@ -35,3 +35,11 @@ O link validado é apenas um candidato; URL com aparência correta não comprova
 - Não una esta branch à main até comparar com o trabalho não enviado do computador original.
 
 O próximo passo, após um teste real, será capturar de forma robusta o resultado da UI com seletores observados, substituir o paste manual e testar a confirmação de link no programa.
+
+## Validação pelo Chrome habitual (recomendada quando o perfil separado falha)
+
+Entre em `experiments/mercado-livre-browser`, atualize a branch e execute **sem colocar o link na linha de comando**:
+
+    npm.cmd run manual
+
+O script perguntará primeiro pelo link normal do produto e depois pelo link gerado no Chrome normal, em sua conta de afiliado. Cole cada URL quando o terminal pedir. Isso evita que o Windows interprete o `&` dos parâmetros da URL como outro comando. É apenas uma validação de formato/compatibilidade, não uma prova de atribuição ou comissão.
