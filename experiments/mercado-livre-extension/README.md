@@ -47,3 +47,14 @@ Esses testes verificam domínio HTTPS, URLs falsas e anúncios incompatíveis. N
 Depois de um primeiro link capturado na interface real, revisar os seletores, conferir a identidade do produto, e só então avaliar integração com as filas do Dropou. **Nunca tratar o status not_confirmed como comissão ou conversão comprovada**, nem habilitar postagem automática enquanto houver dúvida sobre a atribuição ao afiliado.
 
 Não faça merge desta branch na main antes de conciliar as alterações não enviadas do outro computador.
+
+## Atualização 0.2 — botão Ativar / Desligar (16/11/2026)
+
+- A extensão **começa desligada** em uma nova sessão do navegador. Para testar, abra o ícone Dropou e clique **Ativar**; depois cole o link e clique Gerar.
+- Ao clicar **Desligar**, o worker bloqueia novos testes, fecha a aba que a extensão abriu para o gerador e apaga o trabalho temporário do `chrome.storage.session`. O campo do produto no popup também é limpo. O script da página confere o estado antes de preencher/clicar e durante a espera do resultado.
+- O botão é um interruptor **local**, e não ativa/desativa o captador Telegram ou qualquer serviço do Dropou. Não há ponte com o backend nesta versão.
+- Para atualizar uma instalação existente: execute `git pull origin feat/mercado-livre-browser-poc` no repositório (pode ser de qualquer subpasta dele); abra `chrome://extensions` no Chrome e clique no ícone **Atualizar/Recarregar** da extensão Dropou. Confirme que o cartão mostra a versão **0.2.0**.
+- Se apenas clicar no interruptor geral de extensões do Chrome durante um teste, o navegador pode deixar a aba aberta. Prefira clicar em **Desligar** dentro do painel Dropou antes de sair.
+- O botão **não apaga o histórico**, downloads, cache do Chrome ou registros da rede/empresa, e não garante invisibilidade. Para não usar o computador do trabalho, mantenha a extensão desligada nele e utilize seu dispositivo pessoal autorizado.
+- Validação disponível até agora: teste manual da versão anterior 0.1.0 capturou um link candidato. A versão 0.2.0 com interruptor precisa ser testada no Chrome real; não considerar o desligamento validado até verificar.
+- Contrato proposto para o espelhamento futuro: consulte `INTEGRACAO-FUTURA.md`. Ainda não existe integração com filas, Telegram ou postagem.
