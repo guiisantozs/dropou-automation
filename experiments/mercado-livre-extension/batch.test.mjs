@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {MAX_BATCH,parseBatchInput,progressSummary,nextItemIndex} from './batch.mjs';
+import {MAX_BATCH,parseBatchInput,progressSummary,nextItemIndex,appendPageToDraft} from './batch.mjs';
 
 const a='https://produto.mercadolivre.com.br/MLB-1234567890-gpu-_JM';
 const b='https://produto.mercadolivre.com.br/MLB-1234567891-monitor-_JM';
@@ -26,4 +26,20 @@ test('estatísticas e próximo item são determinísticos',()=>{
   items[0].state='candidate';items[1].state='needs_attention';
   assert.equal(nextItemIndex(items),2);
   assert.deepEqual(progressSummary(items),{total:3,pending:1,candidates:1,failed:1});
+});
+
+test('adiciona produto da aba atual e evita repetir o anúncio',()=>{
+  const first=appendPageToDraft('',a);
+  assert.deepEqual(first,{value:a,added:true});
+  const duplicate=appendPageToDraft(first.value,a+'?utm_source=teste');
+  assert.equal(duplicate.added,false);
+  assert.equal(duplicate.value,a);
+  const second=appendPageToDraft(first.value,b);
+  assert.equal(second.added,true);
+  assert.equal(second.value,a+'\n'+b);
+});
+test('não adiciona uma sexta URL nem uma página fora do Mercado Livre',()=>{
+  const full=Array.from({length:MAX_BATCH},(_,i)=>c+'?variant='+i).join('\n');
+  assert.throws(()=>appendPageToDraft(full,a),/máximo/);
+  assert.throws(()=>appendPageToDraft('', 'https://example.com/'),/Mercado Livre/);
 });
