@@ -3,8 +3,18 @@ import {parseBatchInput, nextItemIndex} from './batch.mjs';
 
 const STORAGE_KEY = 'dropouMercadoLivreJob';
 const ENABLED_KEY = 'dropouMercadoLivreEnabled';
+const DRAFT_KEY = 'dropouMercadoLivreDraft';
 const GENERATOR_URL = 'https://www.mercadolivre.com.br/afiliados/linkbuilder#hub';
 const running = new Set();
+
+// O clique no ícone abre o painel lateral global, que permanece disponível
+// durante a navegação do usuário entre abas. Nenhuma aba de produto é controlada.
+if (chrome.sidePanel?.setPanelBehavior) {
+  chrome.sidePanel.setPanelBehavior({openPanelOnActionClick:true}).catch(() => {});
+}
+chrome.runtime.onInstalled?.addListener(() => {
+  chrome.sidePanel?.setPanelBehavior?.({openPanelOnActionClick:true}).catch(() => {});
+});
 
 async function readJob() {
   const data = await chrome.storage.session.get(STORAGE_KEY);
@@ -85,7 +95,7 @@ chrome.runtime.onMessage.addListener((request,sender,sendResponse)=>{
       await chrome.storage.session.set({[ENABLED_KEY]:false});
       const old=await readJob();
       await closeTab(old?.tabId);
-      await chrome.storage.session.remove(STORAGE_KEY);
+      await chrome.storage.session.remove([STORAGE_KEY,DRAFT_KEY]);
       if(request.enabled === true) await chrome.storage.session.set({[ENABLED_KEY]:true});
       sendResponse({ok:true,enabled:request.enabled===true});
       return;
@@ -173,7 +183,7 @@ chrome.runtime.onMessage.addListener((request,sender,sendResponse)=>{
     }
     if(request?.type==='reset') {
       const job=await readJob();
-      await chrome.storage.session.remove(STORAGE_KEY);
+      await chrome.storage.session.remove([STORAGE_KEY,DRAFT_KEY]);
       await closeTab(job?.tabId);
       sendResponse({ok:true});return;
     }
