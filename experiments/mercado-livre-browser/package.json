@@ -1,0 +1,16 @@
+{
+  "name": "dropou-mercado-livre-browser-poc",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "start": "node poc.mjs",
+    "test": "node --test links.test.mjs"
+  },
+  "dependencies": {
+    "playwright": "^1.56.0"
+  }
+}
