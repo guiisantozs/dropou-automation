@@ -4,10 +4,13 @@
   "version": "0.1.0",
   "description": "Teste local e explícito de geração de links pelo Gerador oficial do Mercado Livre.",
   "permissions": [
-    "scripting"
+    "scripting",
+    "storage",
+    "tabs"
   ],
   "host_permissions": [
-    "https://www.mercadolivre.com.br/*"
+    "https://www.mercadolivre.com.br/*",
+    "https://mercadolivre.com.br/*"
   ],
   "background": {
     "service_worker": "worker.js",
