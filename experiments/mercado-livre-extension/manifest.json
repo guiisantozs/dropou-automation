@@ -1,0 +1,26 @@
+{
+  "manifest_version": 3,
+  "name": "Dropou — Mercado Livre (experimento)",
+  "version": "0.4.0",
+  "description": "Conversor em lote no painel lateral persistente do Chrome, com rascunho temporário.",
+  "permissions": [
+    "scripting",
+    "storage",
+    "tabs",
+    "sidePanel"
+  ],
+  "host_permissions": [
+    "https://www.mercadolivre.com.br/*",
+    "https://mercadolivre.com.br/*"
+  ],
+  "background": {
+    "service_worker": "worker.js",
+    "type": "module"
+  },
+  "action": {
+    "default_title": "Dropou — abrir painel lateral"
+  },
+  "side_panel": {
+    "default_path": "popup.html"
+  }
+}
