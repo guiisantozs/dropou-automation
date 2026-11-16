@@ -1,6 +1,9 @@
 import {productUrl, checkCandidate} from './core.mjs';
 
 const STORAGE_KEY = 'dropouMercadoLivreJob';
+const ENABLED_KEY = 'dropouMercadoLivreEnabled';
+const isEnabled = async () => (await chrome.storage.session.get(ENABLED_KEY))[ENABLED_KEY] === true;
+
 const GENERATOR_URL = 'https://www.mercadolivre.com.br/afiliados/linkbuilder#hub';
 const running = new Set();
 
@@ -9,6 +12,7 @@ async function readJob() {
   return stored[STORAGE_KEY] || null;
 }
 async function updateJob(tabId, changes) {
+  if (!await isEnabled()) return;
   const current = await readJob();
   if (!current || current.tabId !== tabId) return;
   await chrome.storage.session.set({[STORAGE_KEY]: {...current, ...changes}});
@@ -17,6 +21,7 @@ async function injectIfReady(tabId) {
   if (running.has(tabId)) return;
   running.add(tabId);
   try {
+    if (!await isEnabled()) return;
     const job = await readJob();
     if (!job || job.tabId !== tabId || job.state !== 'opening') return;
     const tab = await chrome.tabs.get(tabId);
@@ -41,13 +46,32 @@ chrome.tabs.onRemoved.addListener(async tabId => {
 
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   (async () => {
+    if (request?.type === 'setEnabled') {
+      if (request.enabled === true) {
+        await chrome.storage.session.set({[ENABLED_KEY]:true});
+        sendResponse({ok:true,enabled:true});
+        return;
+      }
+      // Interrupção explícita: bloqueia novas operações antes de encerrar a aba.
+      await chrome.storage.session.set({[ENABLED_KEY]:false});
+      const old = await readJob();
+      if (old?.tabId) await chrome.tabs.remove(old.tabId).catch(()=>{});
+      await chrome.storage.session.remove(STORAGE_KEY);
+      sendResponse({ok:true,enabled:false});
+      return;
+    }
     if (request?.type === 'start') {
+      if (!await isEnabled()) throw new Error('Ative a extensão antes de iniciar um teste.');
       const url = productUrl(request.productUrl);
       const current = await readJob();
       if (current && ['opening','working'].includes(current.state)) {
         throw new Error('Já existe um teste em andamento. Conclua-o antes de iniciar outro.');
       }
       const tab = await chrome.tabs.create({url:GENERATOR_URL,active:false});
+      if (!await isEnabled()) {
+        await chrome.tabs.remove(tab.id).catch(()=>{});
+        throw new Error('A extensão foi desligada antes do início do teste.');
+      }
       const job = {tabId:tab.id,productUrl:url,state:'opening',message:'Abrindo o gerador em uma aba inativa...',closeOnSuccess:request.closeOnSuccess !== false,result:null,identity:null,startedAt:Date.now()};
       await chrome.storage.session.set({[STORAGE_KEY]:job});
       sendResponse({ok:true,tabId:tab.id});
@@ -55,6 +79,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
       return;
     }
     if (request?.type === 'getTask') {
+      if (!await isEnabled()) { sendResponse({ok:false}); return; }
       const job = await readJob();
       if (!sender.tab?.id || job?.tabId !== sender.tab.id || job.state !== 'working') {
         sendResponse({ok:false});
@@ -64,6 +89,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
       return;
     }
     if (request?.type === 'progress' || request?.type === 'finished') {
+      if (!await isEnabled()) { sendResponse({ok:false}); return; }
       const tabId = sender.tab?.id;
       const job = await readJob();
       if (!tabId || job?.tabId !== tabId || job.state !== 'working') {
@@ -91,6 +117,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
       return;
     }
     if (request?.type === 'showTab') {
+      if (!await isEnabled()) throw new Error('Extensão desligada.');
       const job = await readJob();
       if (!job?.tabId) throw new Error('Não há aba de teste aberta.');
       const tab = await chrome.tabs.update(job.tabId,{active:true});
