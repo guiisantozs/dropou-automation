@@ -1,7 +1,22 @@
+import {appendPageToDraft, MAX_BATCH} from './batch.mjs';
+
 const KEY='dropouMercadoLivreJob';
+const DRAFT_KEY='dropouMercadoLivreDraft';
 const ENABLED_KEY='dropouMercadoLivreEnabled';
 const el=id=>document.getElementById(id);
-let current=null,enabled=false;
+let current=null,enabled=false,draftLoaded=false;
+let draftQueue=Promise.resolve();
+
+function countDraft() {
+  const count=el('source').value.split(/\r?\n/).filter(line=>line.trim()).length;
+  el('draftCount').textContent=count+' / '+MAX_BATCH+' links no rascunho';
+}
+function saveDraft() {
+  const value=el('source').value.slice(0,30000);
+  draftQueue=draftQueue.catch(()=>{}).then(()=>chrome.storage.session.set({[DRAFT_KEY]:value}));
+  return draftQueue;
+}
+
 const stateNames={
   queued:'Aguardando',
   opening:'Abrindo gerador',
@@ -102,7 +117,12 @@ function render(job) {
   el('queue').hidden=false;
 }
 async function refresh() {
-  const stored=await chrome.storage.session.get([KEY,ENABLED_KEY]);
+  const stored=await chrome.storage.session.get([KEY,ENABLED_KEY,DRAFT_KEY]);
+  if(!draftLoaded) {
+    el('source').value=typeof stored[DRAFT_KEY]==='string'?stored[DRAFT_KEY]:'';
+    draftLoaded=true;
+    countDraft();
+  }
   enabled=stored[ENABLED_KEY]===true;
   render(stored[KEY]||null);
 }
@@ -111,11 +131,31 @@ el('toggle').addEventListener('click',async()=>{
   el('toggle').disabled=true;
   try {
     const target=!enabled;
+    await draftQueue;
     await ask({type:'setEnabled',enabled:target});
-    if(!target) el('source').value='';
+    if(!target) {el('source').value='';countDraft();}
     await refresh();
   }catch(error){setError(error.message);await refresh();}
   finally{el('toggle').disabled=false;}
+});
+el('source').addEventListener('input',()=>{
+  countDraft();
+  saveDraft().catch(error=>setError('Rascunho não salvo: '+error.message));
+});
+el('addCurrent').addEventListener('click',async()=>{
+  setError();
+  el('addCurrent').disabled=true;
+  try {
+    const tabs=await chrome.tabs.query({active:true,currentWindow:true});
+    const url=tabs[0]?.url;
+    if(!url) throw new Error('Não foi possível ler o endereço da aba atual.');
+    const next=appendPageToDraft(el('source').value,url);
+    if(!next.added) {setError('Esse anúncio já está no rascunho.');return;}
+    el('source').value=next.value;
+    countDraft();
+    await saveDraft();
+  }catch(error){setError(error.message);}
+  finally{el('addCurrent').disabled=false;}
 });
 el('startForm').addEventListener('submit',async event=>{
   event.preventDefault();
@@ -123,13 +163,14 @@ el('startForm').addEventListener('submit',async event=>{
   if(!enabled){setError('Ative a extensão primeiro.');return;}
   el('start').disabled=true;
   try{
+    await draftQueue;
     await ask({type:'start',productUrl:el('source').value,closeOnSuccess:el('autoClose').checked});
     await refresh();
   }catch(error){setError(error.message);}
   finally{el('start').disabled=false;}
 });
 el('show').addEventListener('click',async()=>{
-  try{await ask({type:'showTab'});window.close();}catch(error){setError(error.message);}
+  try{await ask({type:'showTab'});}catch(error){setError(error.message);}
 });
 el('skip').addEventListener('click',async()=>{
   el('skip').disabled=true;
@@ -138,7 +179,7 @@ el('skip').addEventListener('click',async()=>{
   finally{el('skip').disabled=false;}
 });
 el('reset').addEventListener('click',async()=>{
-  try{await ask({type:'reset'});el('source').value='';setError();await refresh();}
+  try{await draftQueue;await ask({type:'reset'});el('source').value='';countDraft();setError();await refresh();}
   catch(error){setError(error.message);}
 });
 el('copy').addEventListener('click',async()=>{
