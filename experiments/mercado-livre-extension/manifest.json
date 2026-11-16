@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
   "name": "Dropou — Mercado Livre (experimento)",
-  "version": "0.1.0",
-  "description": "Teste local e explícito de geração de links pelo Gerador oficial do Mercado Livre.",
+  "version": "0.2.0",
+  "description": "Conversor local de testes com ativação manual e desligamento imediato.",
   "permissions": [
     "scripting",
     "storage",
