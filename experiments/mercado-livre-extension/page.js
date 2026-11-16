@@ -11,6 +11,7 @@
   });
   const report = (success, message, resultUrl) => send({type:'finished',success,message,resultUrl});
   const progress = message => send({type:'progress',message});
+  const allowedToContinue = async () => Boolean((await send({type:'getTask'}))?.ok);
 
   function getCandidates() {
     const values = [];
@@ -97,6 +98,7 @@
       return;
     }
     const baseline=getCandidates();
+    if (!await allowedToContinue()) return;
     setField(field,task.productUrl);
     await progress('URL preenchida. Aguardando o botão Gerar ficar disponível...');
     let button=null;
@@ -109,9 +111,11 @@
       await report(false,'O botão Gerar não ficou disponível. Confira o campo do produto e a etiqueta selecionada na aba de teste.');
       return;
     }
+    if (!await allowedToContinue()) return;
     button.click();
     await progress('Geração solicitada. Procurando o link no resultado visível...');
     for(let i=0;i<100;i++) {
+      if (!await allowedToContinue()) return;
       const urls=Array.from(getCandidates()).filter(value=>!baseline.has(value) && value !== task.productUrl);
       if (urls.length===1) {
         await report(true,'Link localizado na página.',urls[0]);
