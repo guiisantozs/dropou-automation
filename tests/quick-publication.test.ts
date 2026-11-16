@@ -2,10 +2,26 @@ import {test} from 'node:test';
 import assert from 'node:assert/strict';
 import {emptyProduct} from '../src/lib/product-draft';
 import {pricedDraftCaption} from '../src/lib/publication-copy';
-import {quickPublicationReason,quickOfferNeedsSave,assertQuickOfferScope,storeQuickOffer,type QuickOfferData} from '../src/lib/quick-publication';
+import {beginQuickOfferRead,quickPublicationReason,quickOfferNeedsSave,assertQuickOfferScope,storeQuickOffer,type QuickOfferData} from '../src/lib/quick-publication';
 import type {api} from '../src/lib/api';
 const now=Date.parse('2026-11-16T16:00:00Z'),id='00000000-0000-4000-8000-000000000001',media={mediaMode:'photo' as const,photoConfirmed:true};
 function fixture():QuickOfferData{const product={...emptyProduct(),id,operation:'dropou' as const,store:'Shopee' as const,name:'Teclado gamer mecânico',price:100,originalUrl:'https://shopee.com.br/product/1/2',affiliateUrl:'https://shopee.com.br/product/1/2',image:'https://example.invalid/photo.jpg',checkedAt:new Date(now).toISOString(),inStock:true,status:'pronto' as const},caption=pricedDraftCaption(product);return {product,serverNow:new Date(now).toISOString(),offer:{id,product_id:id,caption,snapshot:product,status:'pronto',created_at:product.createdAt,updated_at:product.createdAt}};}
+
+test('explicit modal opening starts exactly two independent reads before the UI consumes them',async()=>{
+ const d=fixture(),calls:string[]=[];let destinations!:(value:any)=>void;
+ const request=(async(path:string,method='GET')=>{assert.equal(method,'GET');calls.push(path);return path.includes('/offer')?d:new Promise(resolve=>{destinations=resolve;});}) as typeof api;
+ const reads=beginQuickOfferRead(request,id,'dropou');assert.equal(await reads.model,d);
+ assert.deepEqual(calls,['/api/products/'+id+'/offer','/api/publication-config']);
+ destinations({telegram:{available:false},slots:[]});assert.deepEqual(await reads.destinations,{telegram:{available:false},slots:[]});
+ const next=beginQuickOfferRead(request,id,'dropou');await next.model;assert.equal(calls.length,4,'reopening must read fresh state');destinations({});await next.destinations;
+});
+
+test('early modal reads preserve separate errors and refuse product/operation mismatches',async()=>{
+ const d=fixture();
+ const request=(async(path:string)=>{if(path.includes('/offer'))return {...d,product:{...d.product,operation:'celulares'}};throw new Error('destinations unavailable');}) as typeof api;
+ const reads=beginQuickOfferRead(request,id,'dropou');
+ await assert.rejects(reads.model,/não pertence/);await assert.rejects(reads.destinations,/destinations unavailable/);
+});
 test('ready offers publish without another save; edited/new offers are saved by the action',()=>{
  const d=fixture();assert.equal(quickOfferNeedsSave(d,d.offer!.caption),false);assert.equal(quickPublicationReason(d,d.offer!.caption,'telegram',now,media),null);
  assert.equal(quickOfferNeedsSave(d,'Nova abertura\n\n'+d.offer!.caption),true);assert.equal(quickPublicationReason(d,'Nova abertura\n\n'+d.offer!.caption,'telegram',now,media),null);

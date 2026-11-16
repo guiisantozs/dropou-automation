@@ -2,7 +2,7 @@
 import {createContext,useContext,useEffect,useRef,useState,type Dispatch,type ReactNode,type SetStateAction} from 'react';
 import Link from 'next/link';
 import type {Product} from '@/lib/domain';
-import {useQuickOffer} from './quick-offer-context';
+import {useQuickOffer,preloadQuickOffer} from './quick-offer-context';
 import {currentWorkspace,offerLocation,rememberWorkspaceScroll} from '@/lib/workspace-navigation';
 const Account=createContext<string|null>(null);
 export function WorkspaceState({account,children}:{account:string|null;children:ReactNode}){return <Account.Provider value={account}>{children}</Account.Provider>;}
@@ -28,5 +28,5 @@ export function WorkspaceOfferLink({id,brand,view,intent='preview',fragment,chil
  const quick=useQuickOffer();
  const [origin,setOrigin]=useState('/?brand='+brand+(view?'&view='+view:''));
  useEffect(()=>setOrigin(currentWorkspace()||'/?brand='+brand+(view?'&view='+view:'')),[brand,view]);
- return <Link prefetch={quick?false:undefined} className={className} title={title} aria-label={ariaLabel} href={offerLocation(id,brand,intent,origin)+(fragment?'#'+fragment:'')} onClick={event=>{if(!event.metaKey&&!event.ctrlKey&&!event.shiftKey&&!event.altKey&&event.button===0&&quick?.open({id,operation:brand,intent,product,history:fragment==='publication-history'})){event.preventDefault();return;}rememberWorkspaceScroll();}}>{children}</Link>;
+ return <Link onPointerEnter={quick?preloadQuickOffer:undefined} onFocus={quick?preloadQuickOffer:undefined} prefetch={quick?false:undefined} className={className} title={title} aria-label={ariaLabel} href={offerLocation(id,brand,intent,origin)+(fragment?'#'+fragment:'')} onClick={event=>{if(!event.metaKey&&!event.ctrlKey&&!event.shiftKey&&!event.altKey&&event.button===0&&quick?.open({id,operation:brand,intent,product,history:fragment==='publication-history'})){event.preventDefault();return;}rememberWorkspaceScroll();}}>{children}</Link>;
 }

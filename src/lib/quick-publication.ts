@@ -1,10 +1,21 @@
 import type {Product} from './domain';
 import type {Offer} from './offers';
 import type {PublicationContext} from './publication';
+import type {PublicationConfig} from './publication';
 import {channelState,type Channel} from './channel-state';
 import {publicationPlan,savedCaptionError} from './publication-copy';
 import {telegramPresentationError,type TelegramPresentation} from './telegram-presentation';
 import type {api} from './api';
+export type QuickOfferReads={model:Promise<QuickOfferData>;destinations:Promise<PublicationConfig>};
+/** Ephemeral reads for one explicit opening; no background cache or mutation. */
+export function beginQuickOfferRead(request:typeof api,id:string,operation:string):QuickOfferReads{
+ const model=Promise.resolve().then(()=>request<QuickOfferData>('/api/products/'+id+'/offer')).then(value=>assertQuickOfferScope(value,id,operation));
+ const destinations=Promise.resolve().then(()=>request<PublicationConfig>('/api/publication-config'));
+ // The modal chunk may arrive later than a failed request. Preserve the rejection
+ // for its UI while preventing an unhandled promise before that UI mounts.
+ void model.catch(()=>{});void destinations.catch(()=>{});
+ return {model,destinations};
+}
 export type QuickOfferData=PublicationContext&{product:Product;offer?:Offer|null};
 
 /** Missing/edited offers are saved by the same action; safety guards still apply. */

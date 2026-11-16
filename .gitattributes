@@ -1,0 +1,2 @@
+# Reviewed migration hashes are byte-specific; Windows checkouts must preserve LF.
+supabase/migrations/*.sql text eol=lf

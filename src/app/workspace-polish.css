@@ -1,0 +1,106 @@
+/* Density and scrolling only: existing operation tokens remain the source of color. */
+:root,[data-operation]{--scroll-thumb:color-mix(in srgb,var(--primary) 34%,var(--border));--scroll-thumb-hover:color-mix(in srgb,var(--primary) 65%,var(--ink-muted))}
+:root[data-operation=all],[data-operation=all]{--scroll-thumb:#b0b0b0;--scroll-thumb-hover:#777}
+:root[data-operation=all]{color-scheme:light}
+*{scrollbar-width:thin;scrollbar-color:var(--scroll-thumb) transparent}
+*::-webkit-scrollbar{width:6px;height:6px}
+*::-webkit-scrollbar-track{background:transparent}
+*::-webkit-scrollbar-thumb{background:var(--scroll-thumb);border-radius:10px}
+*::-webkit-scrollbar-thumb:hover{background:var(--scroll-thumb-hover)}
+.app-shell .sidebar.general-sidebar,.app-shell .brand-menu,.app-shell .quick-offer-modal{scrollbar-color:var(--scroll-thumb) transparent}
+
+/* Each avatar inherits its own existing theme, independently of the active page. */
+.brand-avatar[data-operation]{--brand-accent:var(--primary);--brand-fill:var(--primary-soft)}
+.app-shell :is(.brand-selector,.operation-list) .brand-avatar[data-operation]{color:var(--brand-accent);background:var(--brand-fill);border:1px solid color-mix(in srgb,var(--brand-accent) 28%,transparent);border-radius:9px}
+.app-shell .brand-avatar:is([data-operation=bruto],[data-operation=tenis],[data-operation=automoto]){--brand-accent:#FF6A1A;--brand-fill:#2B1C15}
+.app-shell .brand-avatar[data-operation=moda]{--brand-accent:#C0C4CC;--brand-fill:#25292F}
+.app-shell .brand-avatar[data-operation=natal]{--brand-accent:var(--operation-accent)}
+.app-shell .brand-avatar[data-operation=all]{--brand-accent:#202020;--brand-fill:#eee}
+.app-shell .brand-menu button{min-height:48px;line-height:1.4}
+.app-shell .brand-menu button b{line-height:1.45}
+.app-shell .brand-menu button small{line-height:1.4;margin-top:2px}
+.app-shell .brand-menu button>.brand-avatar{width:32px;height:34px;flex:0 0 32px}
+.app-shell .operation-item>.brand-avatar{width:34px;height:34px;flex:0 0 34px}
+
+@media(min-width:761px){
+ .app-shell.general-workspace{--sidebar-width:204px;width:calc(100% - 32px);max-width:1880px;margin:12px auto;padding:16px;gap:24px;border-radius:28px}
+ .app-shell.operational-workspace{--sidebar-width:204px;width:100%;max-width:1960px;margin:0 auto;padding:12px 20px 24px 12px;gap:24px}
+ .app-shell .sidebar.general-sidebar{top:16px;height:calc(100dvh - 44px);min-height:0;overflow:visible}
+ .app-shell .sidebar.general-sidebar .sidebar-panel{height:100%;min-height:0;padding:20px 12px 12px}
+ .app-shell .sidebar-panel>.brand{font-size:28px}
+ .app-shell .brand-sub{margin-bottom:18px}
+ .app-shell .general-nav{flex:1;min-height:0;overflow-y:auto;overscroll-behavior:contain;gap:10px;padding-right:3px}
+ .app-shell .sidebar .nav-item{min-height:35px;padding-block:8px}
+ .app-shell .general-sidebar-create{margin-top:8px}
+ .app-shell .general-operation-select{flex-shrink:0;padding:4px 0 9px}
+ .app-shell .general-sidebar-bottom{flex-shrink:0;margin-top:0;padding-top:8px}
+ .app-shell .brand-selector{margin-top:0}
+ .app-shell .general-header,.app-shell .workspace-page-header{padding-top:16px;padding-bottom:22px;min-height:96px}
+ .general-primary-grid{grid-template-columns:1.08fr 1fr 1fr;gap:20px}
+ .general-secondary-grid{grid-template-columns:minmax(0,1fr) minmax(0,1.55fr) minmax(0,1fr);gap:20px}
+}
+@media(min-width:761px) and (max-width:1150px){
+ .app-shell.general-workspace,.app-shell.operational-workspace{--sidebar-width:184px;gap:18px;padding-inline:12px}
+ .app-shell .sidebar.general-sidebar .sidebar-panel{padding-inline:9px}
+ .app-shell .sidebar .nav-item{font-size:10px;padding-inline:9px}
+ .general-primary-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}
+ .general-primary-grid>.general-overview{grid-column:1/-1}
+ .general-secondary-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}
+ .general-secondary-grid>.general-recent{grid-column:1/-1}
+}
+
+/* Compact publication: readable caption grows within one bounded editor. */
+.modal.quick-offer-modal{width:min(600px,calc(100vw - 32px));max-height:calc(100dvh - 32px);padding:24px 28px 16px;border-radius:24px;display:flex;flex-direction:column;overflow:hidden}
+.quick-offer-body{min-height:0;overflow-y:auto;overscroll-behavior:contain;scrollbar-gutter:stable;padding:0 5px 2px 0}
+.quick-offer-heading,.quick-offer-actions,.quick-offer-consent,.quick-offer-feedback{flex-shrink:0}
+.quick-offer-heading{gap:13px;margin-bottom:18px;padding-right:22px}
+.quick-offer-heading-icon{width:44px;height:44px;flex-basis:44px;border-radius:14px}
+.quick-offer-heading-icon svg{width:25px;height:25px}
+.quick-offer-heading h2{font-size:24px;letter-spacing:-.65px;margin-bottom:4px}
+.quick-offer-heading p{font-size:12px}
+.quick-offer-heading>button{top:-9px;right:-15px;width:32px;height:32px}
+.quick-offer-product{gap:16px;padding-bottom:14px;margin-bottom:14px}
+.quick-offer-product .product-media{width:104px;height:112px;flex-basis:104px;border-radius:13px}
+.quick-offer-product h3{font-size:16px;line-height:1.4;margin-bottom:7px;letter-spacing:-.2px}
+.quick-offer-product strong{font-size:25px}
+.quick-offer-price-label{font-size:11px;margin:7px 0 3px}
+.quick-offer-product .general-marketplace-badge{font-size:10px;padding:3px 8px}
+.quick-offer-product .brand-shopee{--mark-size:18px}
+.quick-offer-product p{margin-top:5px}
+.quick-offer-modal section h3,.quick-offer-destinations legend{font-size:14px;gap:8px}
+.quick-offer-modal section h3>svg,.quick-offer-destinations legend>svg{width:17px;height:17px}
+.quick-offer-caption>div:first-child,.quick-offer-schedule>div:first-child{margin-bottom:8px}
+.quick-offer-caption textarea,.quick-offer-caption .message-preview{font-size:14px;line-height:1.5;padding:10px 12px;border-radius:11px;min-height:96px;max-height:clamp(112px,23dvh,192px);height:auto;overflow-y:auto;overscroll-behavior:contain}
+.quick-offer-caption textarea{resize:vertical}
+.quick-offer-counter{font-size:10px;margin:3px 0 10px}
+.quick-offer-destinations legend{margin-bottom:8px}
+.quick-offer-destinations>label{padding:8px 10px;border-radius:11px;gap:8px;min-height:48px}
+.quick-offer-destinations b{font-size:12px}
+.quick-offer-destinations .general-brand-mark{--mark-size:25px!important}
+.quick-offer-channel-status{font-size:9px;gap:8px;margin:8px 0 10px}
+.quick-offer-schedule{margin:12px 0 10px}
+.quick-offer-extras{margin-top:10px;padding-top:2px}
+.quick-offer-extras>summary{padding-block:8px}
+.quick-offer-actions{position:static;gap:9px;padding:12px 0 0;margin-top:6px;border-top:1px solid var(--border)}
+.quick-offer-modal .quick-offer-actions>button{min-height:44px;font-size:13px;padding:9px 10px;gap:6px;border-radius:11px}
+.quick-offer-actions svg{width:17px;height:17px}
+.quick-offer-consent{margin-top:7px;line-height:1.5}
+.quick-offer-modal :is(.quick-offer-notice,.quick-offer-error,.quick-offer-feedback){padding:8px 10px;margin:8px 0;line-height:1.5}
+.quick-offer-skeleton{min-height:120px;padding:20px 12px}
+@media(max-width:600px){
+ .modal.quick-offer-modal{width:calc(100vw - 16px);max-height:calc(100dvh - 16px);padding:20px 16px 14px;border-radius:20px}
+ .quick-offer-heading{margin-bottom:16px;gap:10px}
+ .quick-offer-heading h2{font-size:21px}
+ .quick-offer-heading p{font-size:11px}
+ .quick-offer-heading>button{right:-8px;top:-9px}
+ .quick-offer-product{gap:12px}
+ .quick-offer-product .product-media{width:84px;height:100px;flex-basis:84px}
+ .quick-offer-product h3{font-size:13px}
+ .quick-offer-product strong{font-size:23px}
+ .quick-offer-caption textarea,.quick-offer-caption .message-preview{font-size:16px;max-height:clamp(120px,24dvh,192px)}
+ .quick-offer-actions{gap:6px}
+ .quick-offer-modal .quick-offer-actions>button{font-size:11px;padding:9px 5px}
+ .quick-offer-destinations>label{padding:8px 7px;gap:6px}
+ .quick-offer-destinations b{font-size:11px}
+}
+@media(forced-colors:active){*{scrollbar-color:auto!important}.app-shell .brand-avatar[data-operation]{border:1px solid CanvasText}}

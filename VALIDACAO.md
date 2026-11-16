@@ -1,5 +1,14 @@
 # Verificação do fluxo manual — 05/11/2026
 
+## 2026-11-16 · Refinamento local de UI/UX e carregamento
+
+- Branch `codex/ui-polish-publication-2026-11-16`, base main limpa `a3f356f`. Layout mais amplo, sidebar com navegação rolável e seletor visível no notebook, scrollbars temáticas finas, cores próprias nos avatares e modal de 600 px com corpo rolável separado das ações. Legenda adapta altura sem alterar texto/limites. Tokens das dez operações preservados.
+- Leituras autenticadas da oferta/configuração começam no clique, antes de esperar o componente; código antecipado por ponteiro/foco, sem prefetch de dados por card. Sem cache persistente. Retorno de foco deixou de disparar uma leitura duplicada; solicitações simultâneas do modal são agrupadas e respostas antigas invalidadas em mutações. Confirmação e atualização têm feedback distinto, sem repetir envio incerto.
+- 444/444 testes completos, tipos, build e diff aprovados. Duas novas regressões de leitura/escopo. Seis falhas iniciais eram do hash da migração MTProto após checkout CRLF: blob LF original restaurado e `.gitattributes` adicionado. Nenhum conteúdo SQL/hash aprovado alterado; diff das migrações vazio, sem banco remoto.
+- Chrome/Next final com Auth/APIs sintéticos e rede externa bloqueada: 60 layouts de dashboard + 50 de modal, dez escopos, celular/notebook/desktop. Sem overflow horizontal ou erros; cores computadas, seletor visível, teclado/foco/Escape e capturas conferidos. Salvar/publicar/agendar/WhatsApp simulados, destino lento, save antes dos destinos, legenda divergente do servidor, falhas e incerteza, escopo all/produto, filtros/URL/scroll e editor preservados. Ações finais dentro do viewport.
+- Card visível em cerca de 100 ms sob atraso artificial de 400 ms; medição da interface local, sem promessa de latência do Telegram real. Retorno de foco com uma leitura e confirmação visível durante releitura posterior atrasada conferidos. Evidências ignoradas em `outputs/ui-polish-review/` e logs `ui-polish-*.log`.
+- Nenhuma publicação real, provedor de produto, geração paga, ativação, migração, alteração de credenciais, push ou deploy. Guia e inventário em `docs/refinamento-ui-2026-11-16.md`. Revisão local separada da produção publicada.
+
 ## O que foi executado
 
 - 20 testes passaram, incluindo execução do schema e das funções transacionais em PostgreSQL embarcado/PGlite (não é um mock de tabelas) e regressão da falha de rede na autenticação.
