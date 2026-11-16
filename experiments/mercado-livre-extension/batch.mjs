@@ -34,3 +34,18 @@ export function progressSummary(items) {
 export function nextItemIndex(items) {
   return items.findIndex(item=>item.state==='queued');
 }
+
+export function appendPageToDraft(draft, pageUrl) {
+  const next=productUrl(pageUrl);
+  const lines=String(draft||'').split(/\r?\n/).map(x=>x.trim()).filter(Boolean);
+  if (lines.length>=MAX_BATCH) throw new Error('A lista está cheia: máximo de '+MAX_BATCH+' links.');
+  const newId=itemId(next);
+  const duplicate=lines.some(line=>{
+    try {
+      const existing=productUrl(line), oldId=itemId(existing);
+      return (newId && oldId && newId===oldId) || existing===next;
+    } catch { return false; }
+  });
+  if(duplicate) return {value:lines.join('\n'),added:false};
+  return {value:[...lines,next].join('\n'),added:true};
+}
