@@ -1,8 +1,8 @@
 # Meus links Shopee · redesign da biblioteca
 
-Implementação em `codex/shopee-saved-premium`, a partir do dashboard geral `2f91f44`. O worktree é `outputs/general-dashboard-worktree`; a branch experimental Mercado Livre e seu lockfile local permanecem no diretório principal. Sem merge, push ou deploy.
+Implementação em `codex/shopee-saved-premium`, a partir do dashboard geral `2f91f44`. O worktree é `outputs/general-dashboard-worktree`; a branch experimental Mercado Livre e seu lockfile local são preservados. A rodada inicial não publicou; a autorização posterior para integrar na main e enviar ao GitHub está descrita em `workspace-operational-premium.md`.
 
-A referência fornecida orienta a composição: sidebar clara existente, header com logo Shopee/busca/perfil, banner preto com controle e headset, quatro indicadores, linhas horizontais compactas e coluna com destinos, horários e atividade. Manrope e logos locais são reutilizados. Somente **Dropou → Meus links Shopee** recebe a nova composição. As bibliotecas das demais operações usam o componente anterior, preservado em `shopee-saved-products-legacy.tsx`.
+A referência fornecida orienta a composição: sidebar clara existente, header com logo Shopee/busca/perfil, banner preto com controle e headset, quatro indicadores, linhas horizontais compactas e coluna com destinos, horários e atividade. Manrope e logos locais são reutilizados. **Dropou → Meus links Shopee** conserva essa composição clara. Na extensão autorizada, a biblioteca compacta também atende Celulares, Tênis e Auto & Moto com as respectivas paletas/contexto. O componente anterior permanece para escopos sem integração Shopee.
 
 ## Dados e ações
 

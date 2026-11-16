@@ -1,6 +1,6 @@
 # Dashboard geral premium
 
-Implementação e refinamento de 16/11/2026, na branch exclusiva `codex/general-dashboard-premium`, baseada na `main` limpa `ec04a14`. Trabalho isolado em `outputs/general-dashboard-worktree`: a branch experimental do Mercado Livre e seu arquivo local foram preservados. Sem merge, push ou deploy.
+Implementação e refinamento de 16/11/2026, na branch exclusiva `codex/general-dashboard-premium`, baseada na `main` limpa `ec04a14`. Trabalho isolado em `outputs/general-dashboard-worktree`: a branch experimental do Mercado Livre e seu arquivo local foram preservados. A rodada inicial não integrou/publicou; a autorização posterior para main/GitHub e a extensão às demais abas estão em `workspace-operational-premium.md`.
 
 ## Apresentação
 

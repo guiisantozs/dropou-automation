@@ -10,7 +10,7 @@ const base='http://127.0.0.1:4194',reads:string[]=[],writes:string[]=[],external
 const browser=await chromium.launch({headless:true,executablePath:'C:/Program Files/Google/Chrome/Application/chrome.exe'});
 try{
  const context=await browser.newContext({viewport:{width:1440,height:1000},serviceWorkers:'block'});
- await context.addInitScript(`
+ await context.routeWebSocket('**/*',()=>{});await context.addInitScript(`
   const id='00000000-0000-4000-8000-000000000001',exp=Math.floor(Date.now()/1000)+7200;
   const token=btoa(JSON.stringify({alg:'HS256',typ:'JWT'})).replaceAll('=','')+'.'+btoa(JSON.stringify({sub:id,exp,aud:'authenticated',role:'authenticated'})).replaceAll('=','')+'.Zml4dHVyZQ';
   localStorage.setItem('sb-dropou-preview-auth-token',JSON.stringify({access_token:token,refresh_token:'fixture-only',expires_at:exp,expires_in:7200,token_type:'bearer',user:{id,aud:'authenticated',role:'authenticated',email:'fixture@example.invalid',app_metadata:{},user_metadata:{},created_at:'2026-11-16T03:00:00Z'}}));
