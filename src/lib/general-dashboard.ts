@@ -10,6 +10,7 @@ export type DashboardActivity={id:string;title:string;brand:string;at:string;kin
 export type DistributionKey='published'|'waiting'|'scheduled'|'curation';
 export type GeneralDashboardData={
  serverNow:string;
+ operationSummary?:{recent:number;catalog:number};
  stats:{approved:number;curation:number;publications:number;scheduled:number};
  distribution:{key:DistributionKey;label:string;value:number}[];
  weekly:{day:string;telegram:number;whatsapp:number}[];
