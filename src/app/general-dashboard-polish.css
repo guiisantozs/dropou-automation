@@ -1,0 +1,136 @@
+/* Second visual pass: Manrope, quiet brand accents and a single icon scale. */
+.app-shell.general-workspace{--general-accent:#ff6a1a;--general-heading:18px;--general-space:23px;font-family:DropouManrope,Inter,'Segoe UI',sans-serif;font-feature-settings:'ss01' on;--control-radius:10px}
+.general-workspace .sidebar-panel>.brand{font-family:DropouManrope,'Segoe UI',sans-serif;font-weight:750;font-size:27px;letter-spacing:-1.3px}
+.general-workspace .sidebar.general-sidebar{border-radius:27px}
+.general-workspace .general-nav{gap:13px}
+.general-workspace .sidebar .nav-item{font-size:11px;font-weight:500;min-height:35px;gap:10px;padding:9px 11px;letter-spacing:-.18px}
+.general-workspace .sidebar .nav-item.active{font-weight:600;background:#202020}
+.general-workspace .sidebar .nav-item.active::after{content:'';width:4px;height:4px;border-radius:50%;margin-left:auto;background:var(--general-accent);flex-shrink:0}
+.general-workspace .sidebar .nav-item:hover:not(.active){background:#f5f5f5;color:#111}
+.general-workspace .nav-label{font-size:8px;letter-spacing:1.05px;font-weight:600;color:#858585}
+.general-workspace .brand-sub{font-size:7px;letter-spacing:1.45px}
+.general-workspace .brand-selector-trigger{border-radius:12px;background:#f8f8f8;border-color:#e8e8e8}
+.general-workspace .brand-selector-trigger b{font-size:10px;font-weight:550}
+.general-workspace .brand-selector-trigger small{font-size:9px}
+.general-workspace .brand-selector-trigger:hover{border-color:#d6b49e}
+.general-header h1{font-size:29px;letter-spacing:-1.2px;line-height:1.22;font-weight:650}
+.general-header p{font-size:11px;color:#777;line-height:1.65;margin-top:8px;letter-spacing:-.05px}
+.general-header-actions{gap:9px}
+.general-header-actions .general-create-button{font-size:11px;min-height:34px;padding:8px 15px;letter-spacing:-.1px;border:1px solid #202020;transition:border-color 150ms ease,background 150ms ease}
+.general-header-actions .general-create-button>svg{color:#ff9456;width:14px;height:14px}
+.general-header-actions .general-create-button:hover{background:#111;border-color:#8c4c26}
+.general-header-icon{border:1px solid #fff;box-shadow:0 1px 1px #00000003;transition:border-color 150ms ease,background 150ms ease}
+.general-header-icon svg{stroke-width:1.6}
+.general-header-icon:hover{background:white;border-color:#e8baa0}
+.general-profile-menu>summary{background:#dededb;border:2px solid #fff;color:#333;font-size:10px;letter-spacing:.2px;font-weight:650}
+.general-panel-heading h2{font-size:18px;letter-spacing:-.55px;font-weight:650;line-height:1.35}
+.general-panel-heading>svg{stroke-width:1.5;width:17px;height:17px}
+.general-overview .general-panel-heading>svg{color:#ccc}
+.general-main-stat>strong{font-size:49px;font-weight:550;letter-spacing:-2.3px;line-height:1.05}
+.general-main-stat>span{font-size:11px;line-height:1.45;color:#aaa}
+.general-overview .general-round-link{width:29px;height:29px;border:1px solid #494949;border-radius:50%;color:#bbb}
+.general-overview .general-round-link:hover{border-color:#9b5b36;color:#ff9456}
+.general-stat-rule{height:4px;position:relative;overflow:hidden;background:#111}
+.general-stat-rule::before{content:'';position:absolute;inset:0 auto 0 0;width:17px;background:#ed7d3b;border-radius:4px}
+.general-mini-stats{gap:11px}
+.general-mini-stats>button{border:1px solid #e7e7e7;border-radius:13px;background:#ebebeb;padding:12px 4px 11px;gap:5px}
+.general-mini-stats>button:hover{border-color:#edc2a8;background:#fff}
+.general-mini-stats svg{width:19px;height:19px;stroke-width:1.4}
+.general-mini-stats b{font-size:28px;letter-spacing:-1.25px;font-weight:550}
+.general-mini-stats span{font-size:10px;line-height:1.35;font-weight:450;letter-spacing:-.1px}
+.general-chart-legend{font-size:10px;gap:11px}
+.general-chart-legend button{gap:6px;padding:2px 0;font-weight:500;min-height:24px}
+.general-chart-legend button[aria-pressed=true]::after{content:'';width:3px;height:3px;background:#e5793a;border-radius:50%}
+.general-chart-total{margin-top:9px;gap:7px}
+.general-chart-total>b{font-size:24px;font-weight:600;letter-spacing:-.9px}
+.general-chart-total>span{font-size:10px;color:#777}
+.general-line-chart{max-height:114px;min-height:96px;margin-top:3px}
+.chart-telegram{stroke-width:1.6}.chart-whatsapp{stroke:#a5a5a5;stroke-width:1.25}
+.general-line-chart g:last-child circle:first-of-type{fill:#ee8447;stroke:#f1f1f1;stroke-width:1.8;r:3.8px}
+.chart-axis{stroke:#777;stroke-width:.7}.chart-gridline{stroke:#dedede;stroke-width:.5;stroke-dasharray:2 4}
+.general-weekdays{font-size:10px}.general-weekdays span{min-width:25px;height:25px}.general-weekdays .today{background:#202020;color:#fff;box-shadow:0 0 0 3px #f1f1f1}
+.general-chart-note{font-size:9px;line-height:1.6;margin-top:9px;color:#777}
+.general-chart-data summary{font-size:9px;padding-top:4px}.general-chart-data table{font-size:10px}
+.general-distribution>p{font-size:11px;line-height:1.5}
+.general-distribution .general-panel-heading>svg{color:#bb6c3d}
+.general-distribution-body{margin-top:12px;gap:13px}
+.general-distribution li{font-size:10px;gap:7px;line-height:1.4;margin:11px 0}
+.general-distribution li i{width:5px;height:5px}
+.general-distribution li b{font-weight:600;font-size:11px}
+.general-ring{height:111px;width:111px}.general-ring b{font-size:24px;letter-spacing:-.8px;font-weight:600}.general-ring small{font-size:9px}
+.general-distribution .general-distribution-note{font-size:9px;line-height:1.6;margin-top:9px}
+.general-outline-button{border-color:#333;border-radius:24px;min-height:33px;padding:7px 14px;font-size:10px;font-weight:550;letter-spacing:-.1px}
+.general-outline-button:hover{background:#f8f8f8;border-color:#c79170}
+.general-outline-button>svg{stroke-width:1.6}
+.general-secondary-grid .general-panel-heading h2{font-size:17px;font-weight:650}
+.general-upcoming .general-time b{font-size:14px;font-weight:600;letter-spacing:-.65px}
+.general-upcoming .general-time small{font-size:9px;font-weight:450;color:#888}
+.general-upcoming li{padding:9px 0;gap:12px;border-color:#f1f1f1}
+.general-upcoming li>a b{font-size:11px;font-weight:550;letter-spacing:-.1px;line-height:1.4}
+.general-upcoming li>a small{font-size:9px;line-height:1.45;display:flex;align-items:center;gap:4px}
+.general-upcoming li>a small:last-child{color:#999;font-size:8px}
+.general-panel-bottom{font-size:9px;line-height:1.5;padding-top:12px}
+.general-ready-preview{position:relative;padding-top:3px}
+.general-ready-preview>.general-panel-heading{margin-bottom:17px}
+.general-ready-preview>.general-panel-heading>span{padding-right:29px;font-size:10px}
+.general-ready-preview-grid article{padding:18px;min-height:206px;border:1px solid #fff;transition:border-color 150ms ease}
+.general-ready-preview-grid article:hover{border-color:#e2c2ad}
+.general-ready-preview-grid h3{font-size:13px;line-height:1.5;font-weight:550;letter-spacing:-.25px;min-height:39px}
+.general-ready-preview-grid article>strong{font-size:17px;font-weight:600;letter-spacing:-.6px;margin-top:11px}
+.general-ready-preview-grid article>small{font-size:9px}
+.general-ready-preview-grid article>a{font-size:10px;color:#777;padding-top:16px}
+.general-ready-preview-grid article>a:hover{color:#b45a27}
+.general-ready-symbol{margin-bottom:14px}.general-ready-symbol>svg{stroke-width:1.5;width:22px;height:22px}
+.general-add-offer{position:absolute;top:-1px;right:0;min-height:26px;height:26px;width:26px;border:1px solid #d0d0d0;border-radius:50%;color:#555;padding:0;background:transparent}
+.general-add-offer>span{display:none}.general-add-offer:hover{background:#fff;border-color:#d99b74;color:#b45a27}
+.general-recent{background:transparent;border:1px dashed #b9b9b9;min-height:247px}
+.general-recent li{padding:7px 0;gap:9px}.general-recent li b{font-size:10px;font-weight:550;letter-spacing:-.1px;line-height:1.4}.general-recent li small,.general-recent li time{font-size:9px;line-height:1.4}
+.general-event-dot{background:#d57d4b;width:4px;height:4px;margin-top:6px}.general-event-symbol{width:15px;margin-top:2px;color:#777;display:flex;justify-content:center;flex-shrink:0}
+.general-recent>.general-text-link{font-size:10px}
+.general-channel-strip{padding:14px 2px;gap:20px}.general-channel-name{font-size:11px;gap:7px}.general-channel-name b{font-weight:600}.general-channel-summary strong{font-size:24px;letter-spacing:-.9px;font-weight:600}.general-channel-summary p>span{font-size:10px}.general-channel-summary>small{font-size:9px}.general-channel-strip>div:first-child b{font-size:13px;font-weight:600}.general-channel-strip>div:first-child small{font-size:10px}.general-strip-icon{border-color:#d9d9d9;width:35px;height:35px}
+.general-section-heading h2{font-size:20px;font-weight:650;letter-spacing:-.7px}.general-section-heading p{font-size:11px;line-height:1.6}.general-section-heading .general-text-link,.general-refresh{font-size:11px}
+.general-products-grid{gap:14px}
+.general-product{border-radius:22px;border:1px solid #202020;padding:18px;transition:border-color 150ms ease,background 150ms ease}
+.general-product:hover{border-color:#976544;background:#222}
+.general-product:focus-within{border-color:#c17a4c}
+.general-product-top{gap:11px;margin-bottom:13px;align-items:flex-start}
+.general-product .product-media{height:54px;width:46px;border-radius:11px;padding:5px;background:#fafafa}
+.general-product .product-media img{max-height:44px;border-radius:5px}
+.general-product-heading{padding-top:0}
+.general-product-heading h3{font-size:12px;font-weight:550;line-height:1.5;letter-spacing:-.2px;min-height:36px;margin:6px 0 0}
+.general-product-eyebrow{display:flex;align-items:center;gap:7px;min-height:18px;min-width:0}
+.general-marketplace-badge{display:inline-flex;align-items:center;justify-content:center;gap:4px;padding:3px 5px;border:1px solid #515151;border-radius:5px;color:#ddd;font-size:8px;font-weight:500;line-height:1;white-space:nowrap;flex-shrink:0}
+.general-marketplace-badge .general-brand-mark{--mark-size:10px}
+.general-marketplace-badge.market-meli{padding:3px 5px;background:#f1f1ee;border-color:#f1f1ee}
+.general-marketplace-logo{display:block;width:51px;height:13px;object-fit:contain;filter:grayscale(1);opacity:.92}
+.general-product-operation{font-size:8px;line-height:1.5;color:#aaa;display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}
+.general-product-price-row{display:flex;align-items:baseline;justify-content:space-between;gap:8px;min-width:0;margin:0 0 8px}
+.general-product-price{font-size:23px;font-weight:600;letter-spacing:-1px;margin:0;line-height:1.25;white-space:nowrap}
+.general-product-category{font-size:9px;color:#999;max-width:40%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.general-product-status{font-size:10px;line-height:1.5;color:#c6c6c6;gap:6px;letter-spacing:-.1px}
+.general-product-status i{background:#dc884e;width:3px;height:3px}
+.general-product-destinations{margin:9px 0 13px;gap:6px;align-items:center}
+.general-channel-pill{display:inline-flex;align-items:center;gap:5px;border:1px solid #444;padding:4px 6px;border-radius:6px;color:#a8a8a8;font-size:9px;line-height:1.2;letter-spacing:-.1px}
+.general-channel-pill.is-published{color:#e5e5e5;border-color:#666;background:#2b2b2b}
+.general-product-actions{gap:5px;border-top:1px solid #393939;padding-top:12px}
+.general-product-actions .general-small-button{min-height:30px;font-size:9px;font-weight:600;gap:7px;padding:7px 10px;border-radius:9px;letter-spacing:-.15px}
+.general-product-actions .general-small-button>svg{width:12px;height:12px;stroke-width:1.5}
+.general-product-actions .general-small-button:hover{background:#fff8f3;color:#8d4e29}
+.general-product-actions .general-icon-button{width:29px;height:30px;border:1px solid #474747;background:#292929;border-radius:9px;color:#bebebe}
+.general-product-actions .general-icon-button:hover{border-color:#9d6d4c;background:#333;color:#f2b68d}
+.general-product-menu>summary{color:#aaa;width:21px;height:23px}.general-product-menu>summary:hover{color:#f2b68d}
+.general-product-menu>div{border-radius:13px;padding:6px;box-shadow:0 8px 25px #0002}
+.general-product-menu a{font-size:11px;padding:9px 10px;border-radius:8px}
+.general-workspace .general-product :focus-visible{outline-width:2px;outline-color:#f3bb96;outline-offset:3px}
+.general-workspace .general-product-menu>div :focus-visible{outline-color:#202020}
+.general-brand-mark{display:inline-block;flex-shrink:0;width:var(--mark-size,15px);height:var(--mark-size,15px);background:currentColor;mask-position:center;mask-repeat:no-repeat;mask-size:contain;vertical-align:middle}
+.brand-telegram{mask-image:url('/brand-marks/telegram.svg')}.brand-whatsapp{mask-image:url('/brand-marks/whatsapp.svg')}.brand-shopee{mask-image:url('/brand-marks/shopee.svg')}
+.general-pagination{font-size:10px}.general-workspace .page-footer{font-size:9px}.general-workspace .page-footer>span:first-child{color:#666}
+.general-create-dialog{font-family:DropouManrope,'Segoe UI',sans-serif}
+@media(min-width:1200px){.general-secondary-grid{align-items:stretch}.general-upcoming,.general-recent{min-height:247px}.general-ready-preview-grid article{min-height:205px}.general-recent{padding:20px}.general-products-section{margin-top:1px}}
+@media(min-width:1350px) and (max-width:1599px){.general-products-grid{grid-template-columns:repeat(3,minmax(0,1fr))}.general-product{padding:18px}.general-product-heading h3{font-size:13px;min-height:39px;line-height:1.5}.general-product .product-media{width:46px;height:54px}.general-product-price{font-size:24px}.general-product-category{font-size:9px}.general-product-operation{font-size:9px}.general-marketplace-badge{font-size:8px}.general-product-status{font-size:10px}.general-channel-pill{font-size:9px}.general-product-actions{gap:6px}.general-product-actions .general-icon-button{width:31px;height:31px}.general-product-actions .general-small-button{font-size:10px;padding:7px 11px;gap:7px}}
+@media(min-width:1350px){.general-product{padding:16px 14px}.general-product-heading h3{font-size:11px;min-height:33px;line-height:1.5}.general-product-top{gap:9px}.general-product .product-media{width:40px;height:50px}.general-product-price{font-size:22px}.general-product-category{font-size:8px}.general-product-eyebrow{gap:6px}.general-marketplace-badge{font-size:7px;padding:3px 4px}.general-product-operation{font-size:7px}.general-product-actions{gap:4px}.general-product-actions .general-icon-button{width:26px}.general-product-actions .general-small-button{padding:7px 8px;font-size:8px;gap:5px}.general-product-status{font-size:9px}.general-channel-pill{font-size:8px;padding:4px 5px;gap:4px}}
+@media(max-width:1250px){.general-panel-heading h2{font-size:16px}.general-main-stat>span{font-size:10px}.general-mini-stats{gap:8px}.general-mini-stats span{font-size:9px}.general-chart-legend{font-size:9px}.general-chart-note{font-size:8px}.general-distribution li{font-size:9px;gap:5px}.general-distribution-body{gap:8px}.general-ring{width:93px;height:93px}.general-ring b{font-size:21px}.general-ring small{font-size:8px}.general-distribution>p{font-size:10px}.general-chart-total>span{font-size:9px}.general-secondary-grid .general-panel-heading h2{font-size:15px}.general-upcoming li>a b{font-size:10px}.general-upcoming li>a small{font-size:8px}.general-recent li b{font-size:9px}.general-recent li small,.general-recent li time{font-size:8px}.general-ready-preview-grid article{padding:16px 14px}.general-ready-preview-grid h3{font-size:12px}.general-channel-strip{gap:12px}.general-channel-summary p{flex-wrap:wrap;gap:3px 6px}.general-channel-summary p>span{font-size:9px}.general-channel-summary>small{font-size:8px}.general-channel-strip>div:first-child b{font-size:12px}.general-channel-strip>div:first-child small{font-size:9px}.general-header h1{font-size:27px}}
+@media(max-width:1050px){.general-workspace .sidebar .nav-item{font-size:10px;min-height:34px}.general-main-stat>strong{font-size:45px}.general-mini-stats b{font-size:25px}.general-mini-stats>button{padding:11px 4px}.general-recent{min-height:0}.general-recent li b{font-size:11px}.general-recent li small,.general-recent li time{font-size:9px}.general-secondary-grid .general-panel-heading h2{font-size:16px}.general-channel-strip>div:first-child b{font-size:13px}.general-product{padding:18px 15px}.general-product-heading h3{font-size:12px}.general-product-actions .general-icon-button{width:28px}.general-product-actions .general-small-button{font-size:9px;padding:7px 9px}.general-product-status{font-size:9px}.general-product-category{font-size:8px}}
+@media(max-width:760px){.general-workspace .sidebar-panel>.brand{font-size:24px}.general-workspace .general-nav{gap:4px}.general-workspace .general-nav .nav-item{min-height:31px;font-size:10px;padding:7px 10px;gap:6px}.general-workspace .general-nav .nav-item.active::after{width:3px;height:3px;margin-left:0}.general-workspace .brand-selector-trigger b{font-size:9px}.general-workspace .brand-selector-trigger small{display:none}.general-header h1{font-size:26px}.general-header p{font-size:11px}.general-header-actions .general-create-button{font-size:10px}.general-header-icon,.general-profile-menu>summary{width:32px;height:32px}.general-recent{padding:20px}.general-channel-summary p>span{font-size:10px}}
+@media(max-width:520px){.general-header h1{font-size:28px;letter-spacing:-1px}.general-header p{font-size:11px;max-width:280px}.general-workspace .general-header{padding-bottom:22px}.general-panel-heading h2{font-size:18px}.general-mini-stats b{font-size:29px}.general-mini-stats span{font-size:10px}.general-main-stat>span{font-size:11px}.general-main-stat>strong{font-size:49px}.general-chart-legend{font-size:10px}.general-chart-total>span{font-size:10px}.general-line-chart{max-height:130px}.general-chart-note{font-size:9px}.general-distribution li{font-size:11px;margin:12px 0}.general-distribution li b{font-size:11px}.general-ring{width:112px;height:112px}.general-ring b{font-size:24px}.general-ring small{font-size:9px}.general-distribution>p{font-size:11px}.general-distribution .general-distribution-note{font-size:9px}.general-secondary-grid .general-panel-heading h2{font-size:18px}.general-upcoming li{padding:10px 0}.general-upcoming li>a b{font-size:11px}.general-upcoming li>a small{font-size:9px}.general-upcoming li>a small:last-child{font-size:8px}.general-upcoming .general-time b{font-size:14px}.general-panel-bottom{font-size:9px}.general-ready-preview-grid h3{font-size:12px;min-height:36px}.general-ready-preview-grid article{padding:18px 15px;min-height:206px}.general-recent li b{font-size:11px}.general-recent li small,.general-recent li time{font-size:9px}.general-product{padding:18px}.general-product .product-media{width:48px;height:56px}.general-product .product-media img{max-height:46px}.general-product-heading h3{font-size:13px;min-height:39px;line-height:1.5}.general-product-price{font-size:24px}.general-product-category{font-size:9px}.general-product-status{font-size:10px}.general-product-operation{font-size:8px}.general-marketplace-badge{font-size:8px}.general-product-actions .general-icon-button{width:33px;height:33px;border-radius:10px}.general-product-actions .general-small-button{min-height:33px;font-size:10px;padding:7px 11px}.general-channel-pill{font-size:9px}.general-section-heading p{font-size:10px}.general-pagination{font-size:9px}.general-workspace .page-footer{font-size:8px}}

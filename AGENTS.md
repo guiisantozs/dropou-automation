@@ -222,3 +222,12 @@ This version has breaking changes — APIs, conventions, and file structure may 
 This block is written and re-added by `next dev` — verify at `node_modules/next/dist/server/lib/generate-agent-files.js`. Removing it from a diff only re-creates the uncommitted change; committing it with your work keeps the tree clean.
 
 <!-- END:nextjs-agent-rules -->
+
+## 2026-11-16 · Dashboard geral e refinamento visual
+
+- Branch exclusiva `codex/general-dashboard-premium`, worktree isolado baseado na main limpa `ec04a14`. Branch experimental Mercado Livre em `abe1b85` e arquivo local preservados. Não mesclar automaticamente, publicar ou fazer deploy desta revisão.
+- Somente Todas as operações recebe composição clara inspirada na referência: sidebar branca, visão geral preta, gráfico semanal, anéis por etapa, agenda, cards compactos e atividade. Segunda rodada de polish: Manrope equivalente local, logos locais dos marketplaces/canais, estados legíveis e laranja pontual. Temas das marcas individuais preservados.
+- A primeira rodada acrescentou `GET /api/dashboard/general`, exclusivamente de leitura com `sessionDb`, RLS e administração no escopo all. Reutiliza estruturas/RPCs existentes; sem service role, manutenção de salvos ou provedor externo. O polish posterior não altera backend. Sem schema/políticas/rotinas/Telegram/MTProto/extensões alterados.
+- Telegram exige recibo; WhatsApp exige confirmação manual. Copiar não registra envio. Distribuição conta produtos cadastrados uma vez; curadoria sem cadastro fica fora do denominador. Atalhos abrem fluxos existentes; página/retorno por conta e operação preservados.
+- Validação: 323/323 testes, tipos e build aprovados; Chrome com fixtures preenchido/vazio em seis larguras (12 verificações), capturas inspecionadas. Next real com conta/APIs fictícias validou gráficos, fonte/logos, cópia após releitura, deep links, paginação/restauração, erros, seletor/Escape e tema de Celulares. Zero escritas de API/conexões externas na execução final; GET real local sem sessão 401.
+- Guia e limites em `docs/dashboard-geral-premium.md`; evidências ignoradas em `outputs/general-dashboard-review/`. Prévia local com dados demonstrativos. Dependências do worktree reutilizadas por junction; configuração temporária de raiz do Turbopack removida antes da entrega. Sem sessão produtiva ou totais remotos verificados, mensagem real, consulta de produtos, geração paga, ativação, merge, push ou deploy.

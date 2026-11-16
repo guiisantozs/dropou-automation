@@ -22,8 +22,8 @@ export function useWorkspaceScroll(ready:boolean){
   window.addEventListener('wheel',stop,{passive:true});window.addEventListener('touchstart',stop,{passive:true});window.addEventListener('keydown',stop);return()=>{cancelled=true;window.cancelAnimationFrame(frame);window.removeEventListener('wheel',stop);window.removeEventListener('touchstart',stop);window.removeEventListener('keydown',stop);};
  },[ready]);
 }
-export function WorkspaceOfferLink({id,brand,view,intent='preview',fragment,children,className}:{id:string;brand:string;view?:string;intent?:'preview'|'schedule'|'telegram'|'edit';fragment?:'publication-history';children:ReactNode;className?:string}){
+export function WorkspaceOfferLink({id,brand,view,intent='preview',fragment,children,className,title,'aria-label':ariaLabel}:{id:string;brand:string;view?:string;intent?:'preview'|'schedule'|'telegram'|'edit';fragment?:'publication-history';children:ReactNode;className?:string;title?:string;'aria-label'?:string}){
  const [origin,setOrigin]=useState('/?brand='+brand+(view?'&view='+view:''));
  useEffect(()=>setOrigin(currentWorkspace()||'/?brand='+brand+(view?'&view='+view:'')),[brand,view]);
- return <Link className={className} href={offerLocation(id,brand,intent,origin)+(fragment?'#'+fragment:'')} onClick={rememberWorkspaceScroll}>{children}</Link>;
+ return <Link className={className} title={title} aria-label={ariaLabel} href={offerLocation(id,brand,intent,origin)+(fragment?'#'+fragment:'')} onClick={rememberWorkspaceScroll}>{children}</Link>;
 }
