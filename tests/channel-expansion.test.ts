@@ -50,7 +50,7 @@ test('incremental channel/team migrations: existing data, RLS, budgets and publi
    }
   }
   await role();
-  assert.equal((await one('select count(*) n from operation_settings where owner_id=$1',[owner])).n,6);
+  assert.equal((await one('select count(*) n from operation_settings where owner_id=$1',[owner])).n,9);
   assert.equal((await one('select count(*) n from operation_settings where automation_enabled')).n,0);
   const offers:any[]=[];
   for(const brand of ['celulares','tenis','automoto'] as const)offers.push(await product(brand));

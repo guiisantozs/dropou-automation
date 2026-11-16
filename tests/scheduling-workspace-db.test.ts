@@ -33,7 +33,7 @@ test('scheduling/history database: independent platforms, receipt proof, correct
    await db.exec(readFileSync('supabase/migrations/'+f,'utf8'));
    if(f.includes('publication_dispatch_and_review')){await db.query('insert into telegram_dispatch_config(id,secret,owner_ids,destination_key) values(true,$1,$2,$3)',['local-scheduling-test',[owner],'a'.repeat(64)]);await db.exec(readFileSync('supabase/optional-price-publication.sql','utf8'));}
   }
-  await role();await db.query("update operation_settings set telegram_chat_id=$1,whatsapp_name='WhatsApp de teste' where owner_id=$2",[target.id,owner]);
+  await role();await db.query("update operation_settings set telegram_chat_id=$1,whatsapp_name='WhatsApp de teste' where owner_id=$2 and brand_id in ('dropou','bruto','moda','celulares','tenis','automoto')",[target.id,owner]);
   await t.test('Telegram cannot be marked as sent without an API receipt',async()=>{
    const o=await offer();await assert.rejects(db.query("select dropou_publication_mark_actor($1,'dropou',$2,$1,'telegram',$3,null,false,false)",[owner,o.product_id,crypto.randomUUID()]),/confirmação da API/);
    assert.equal((await one('select count(*) n from dropou_confirmed_publications where product_id=$1',[o.product_id])).n,0);

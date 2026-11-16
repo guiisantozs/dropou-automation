@@ -11,6 +11,8 @@ import './shopee-library.css';
 import './operational-workspace.css';
 import './operation-dashboard.css';
 import './quick-offer.css';
+import './member-workspaces.css';
+import './catalog.css';
 import OperationTheme from '@/components/operation-theme';
 import PublicationSync from '@/components/publication-sync';
 export const metadata: Metadata = {title:'Dropou Automação · Central de ofertas',description:'Sua operação de afiliados de tecnologia e games em um só lugar.'};

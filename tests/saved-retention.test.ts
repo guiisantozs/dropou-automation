@@ -6,7 +6,7 @@ import {emptyProduct} from '../src/lib/product-draft';
 import {productKey} from '../src/lib/domain';
 import {formatCaption} from '../src/lib/ai';
 const owner='20000000-0000-4000-8000-000000000001',operator='20000000-0000-4000-8000-000000000002';
-test('saved retention: seven days plus fourteen catalog days, deletion, isolation and scheduled/history safeguards',async t=>{
+test('saved retention: visual expiration after seven plus fourteen days, explicit deletion and history safeguards',async t=>{
  const db=new PGlite();let seq=100;
  async function one(sql:string,args:any[]=[]){return (await db.query<any>(sql,args)).rows[0];}
  async function role(name='service_role',uid=owner,brand='dropou'){
@@ -29,14 +29,14 @@ test('saved retention: seven days plus fourteen catalog days, deletion, isolatio
     await db.exec(readFileSync('supabase/optional-price-publication.sql','utf8'));
    }
   }
-  await t.test('failed and pending links move at seven days and disappear after a total of twenty-one',async()=>{
+  await t.test('failed and pending links move at seven days; expiry hides without deleting',async()=>{
    const fresh=await saved(6.99),boundary=await saved(7),catalog=await saved(20.99),expired=await saved(21);
    await one('select dropou_saved_retention($1,null)',[owner]);
    assert.equal((await one('select catalog_at from shopee_saved_products where id=$1',[fresh])).catalog_at,null);
    assert.ok((await one('select catalog_at from shopee_saved_products where id=$1',[boundary])).catalog_at);
    assert.ok((await one('select id from shopee_saved_products where id=$1',[catalog])).id);
-   assert.equal(await one('select id from shopee_saved_products where id=$1',[expired]),undefined);
-   await role('authenticated');const rows=(await one("select dropou_operational_products('catalog') r")).r.rows;
+   assert.ok(await one('select id from shopee_saved_products where id=$1',[expired]));
+   await role('authenticated');const rows=(await one("select dropou_catalog_page('{}') r")).r.rows;
    assert.ok(rows.some((r:any)=>r.id===boundary&&r.kind==='saved'&&r.saved_state==='error'));
    assert.ok(!rows.some((r:any)=>r.id===fresh));
    await role();await one('select dropou_saved_retention($1,null)',[owner]);assert.ok(await one('select id from shopee_saved_products where id=$1',[catalog]));
@@ -65,28 +65,28 @@ test('saved retention: seven days plus fourteen catalog days, deletion, isolatio
    await one('select dropou_saved_retention($1,null)',[owner]);assert.ok(await one('select id from shopee_saved_products where id=$1',[id]));
    assert.equal((await one('select dropou_saved_catalog_remove($1,$2,$3,null) r',[owner,'dropou',id])).r.protected,true);
    await db.query("update shopee_saved_products set state='error',lease_until=null where id=$1",[id]);await one('select dropou_saved_retention($1,null)',[owner]);
-   assert.equal(await one('select id from shopee_saved_products where id=$1',[id]),undefined);
+   assert.ok(await one('select id from shopee_saved_products where id=$1',[id]));
   });
   await t.test('automatic expiry preserves scheduled products, snapshot and job; manual deletion requires cancellation',async()=>{
    const o=await product(),s=await saved(22,'dropou',o.product_id),target={id:'-1001234',title:'Teste',key:'b'.repeat(64),mediaMode:'text',photoConfirmed:false};
    await db.query("update operation_settings set telegram_chat_id=$1 where owner_id=$2 and brand_id='dropou'",[target.id,owner]);
    const j=(await one('select dropou_publication_queue_v2($1,$2,$3,$4,$5,$6,$7,$8,false) j',[owner,o.id,'telegram',new Date(Date.now()+86400000).toISOString(),JSON.stringify(target),o.caption,o.caption,'verified'])).j;
    const before=await one('select state,snapshot,caption,scheduled_at from telegram_jobs where id=$1',[j.id]);
-   const result=(await one('select dropou_saved_retention($1,null) r',[owner])).r;assert.ok(result.protected>=1);
+   const result=(await one('select dropou_saved_retention($1,null) r',[owner])).r;assert.equal(result.visualOnly,true);assert.equal(result.removed,0);
    assert.ok(await one('select id from shopee_saved_products where id=$1',[s]));assert.deepEqual(await one('select state,snapshot,caption,scheduled_at from telegram_jobs where id=$1',[j.id]),before);
    assert.equal((await one('select dropou_saved_catalog_remove($1,$2,$3,null) r',[owner,'dropou',s])).r.protected,true);
    await db.query("update telegram_jobs set state='cancelled' where id=$1",[j.id]);
-   await one('select dropou_saved_retention($1,null)',[owner]);assert.equal(await one('select id from shopee_saved_products where id=$1',[s]),undefined);
+   await one('select dropou_saved_retention($1,null)',[owner]);assert.ok(await one('select id from shopee_saved_products where id=$1',[s]));
   });
-  await t.test('expiry archives published products and preserves manual marks and historical snapshots',async()=>{
+  await t.test('expiry hides published products and preserves live rows, marks and snapshots',async()=>{
    const o=await product(),s=await saved(22,'dropou',o.product_id),mark=crypto.randomUUID();
    await one("select dropou_channel_mark_channel('dropou',$1,$2,'whatsapp',$3,null,false)",[owner,o.product_id,mark]);
    const before=await one('select snapshot,published_at from product_channel_marks where id=$1',[mark]);
    await one('select dropou_saved_retention($1,null)',[owner]);
-   assert.equal(await one('select id from shopee_saved_products where id=$1',[s]),undefined);assert.ok((await one('select archived_at from products where id=$1',[o.product_id])).archived_at);
+   assert.ok(await one('select id from shopee_saved_products where id=$1',[s]));assert.equal((await one('select archived_at from products where id=$1',[o.product_id])).archived_at,null);
    assert.deepEqual(await one('select snapshot,published_at from product_channel_marks where id=$1',[mark]),before);
-   await role('authenticated');assert.ok(!(await one("select dropou_operational_products('catalog') r")).r.rows.some((r:any)=>r.id===o.product_id));
-   assert.ok((await one("select dropou_operational_products('archived') r")).r.rows.some((r:any)=>r.id===o.product_id));
+   await role('authenticated');assert.ok(!(await one("select dropou_catalog_page('{}') r")).r.rows.some((r:any)=>r.id===o.product_id));
+   assert.ok((await one("select dropou_catalog_page('{\"retention\":\"expired\"}') r")).r.rows.some((r:any)=>r.id===o.product_id));
   });
  }finally{await db.close();}
 });
