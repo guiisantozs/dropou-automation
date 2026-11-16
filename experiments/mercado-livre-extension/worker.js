@@ -48,6 +48,10 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   (async () => {
     if (request?.type === 'setEnabled') {
       if (request.enabled === true) {
+        // Sessão nova não reutiliza links ou abas de testes anteriores.
+        const old = await readJob();
+        if (old?.tabId) await chrome.tabs.remove(old.tabId).catch(()=>{});
+        await chrome.storage.session.remove(STORAGE_KEY);
         await chrome.storage.session.set({[ENABLED_KEY]:true});
         sendResponse({ok:true,enabled:true});
         return;
