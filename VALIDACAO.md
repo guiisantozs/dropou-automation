@@ -295,3 +295,9 @@ Fila/Telegram/historico/multicanal foram exercitados com fixtures automatizadas 
 - GETs locais sem sessão em /api/publication-config e /api/products/{id}/offer retornaram 401. Nenhuma sessão autenticada real, postagem, consulta de produto, geração paga, rotina, migration, integração, merge ou deploy validado/executado nesta rodada.
 - Evidências locais ignoradas em outputs/quick-offer-review/; prévia visual http://127.0.0.1:4197. As capturas têm dados sintéticos e botões inativos. O vídeo citado no primeiro briefing não estava disponível; a comparação visual usa a imagem posterior.
 - Finalização local: índice com 411 arquivos auditado, sem valores privados conhecidos, padrões de chave privada ou artefatos privados/gerados. Configuração temporária do Turbopack removida e next-env.d.ts restaurado. Main segue em 693f63e, experimento Mercado Livre em abe1b85 e hash do lockfile local preservado (conferência antes/depois). A prévia visual respondeu HTTP 200; servidor Next de QA encerrado.
+
+## 2026-11-16 · Main e publicação das novas versões autorizadas
+
+- Usuário autorizou explicitamente commit/push/deploy após a entrega do popup. Fast-forward da main 693f63e → 22a45b7, reunindo o dashboard por operação/paleta Tech e popup. O experimento Mercado Livre não foi integrado; seu lockfile não versionado conservou o hash anterior.
+- npm.cmd run typecheck e npm.cmd run build aprovados novamente no repositório principal. Log outputs/deploy-new-versions-build.log. next-env.d.ts gerado restaurado. Sem mudanças de fonte desde os 334 testes completos e 28 layouts já registrados; esses testes não foram repetidos nesta integração.
+- Conferência de publicação deve comparar o SHA remoto e a versão ativa na Vercel e executar apenas GETs públicos/sem sessão. Não fazer postagem, consulta de produto, geração paga, migration ou ativação para testar produção. Metadados de entrega em outputs/deploy-new-versions-*.json, ignorados pelo Git.
