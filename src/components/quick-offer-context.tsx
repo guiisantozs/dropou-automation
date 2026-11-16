@@ -6,7 +6,7 @@ import type {Product} from '@/lib/domain';
 import {operationSchema,type OperationId,type OperationScope} from '@/lib/workspace-brands';
 import Dialog from './dialog';
 import ProductMedia from './product-media';
-export type QuickOfferTarget={id:string;operation:OperationId;intent?:'preview'|'telegram'|'schedule'|'edit';product?:Product;history?:boolean};
+export type QuickOfferTarget={id:string;operation:OperationId;intent?:'preview'|'telegram'|'schedule'|'edit';product?:Product;history?:boolean;repost?:boolean};
 type State={open:(target:Omit<QuickOfferTarget,'operation'>&{operation:string})=>boolean;target?:QuickOfferTarget;close:()=>void;attempts:Set<string>};
 const Context=createContext<State|null>(null);
 export const useQuickOffer=()=>useContext(Context);

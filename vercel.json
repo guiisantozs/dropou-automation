@@ -5,7 +5,8 @@
   "installCommand": "npm ci",
   "git": {
     "deploymentEnabled": {
-      "codex/karen-dashboards": false
+      "codex/karen-dashboards": false,
+      "codex/catalog-premium": false
     }
   }
 }

@@ -13,8 +13,10 @@ import {TelegramMediaOptions,PublicationPhoto} from './telegram-preview';
 import PublicationPhotoEditor from './publication-photo-editor';
 import PublicationHistory from './publication-history';
 import DeleteProduct from './delete-product';
+import MultichannelPublication from './multichannel-publication';
+import {isLocalOperation} from '@/lib/workspace-brands';
 
-export default function QuickOfferExtras({data,text,request,busy,media,onMedia,onCaption,onEdit,onUpdate,onError,onClose,initiallyOpenHistory=false}:{data:QuickOfferData;text:string;request:typeof api;busy:boolean;media:TelegramPresentation;onMedia:(value:TelegramPresentation)=>void;onCaption:(value:string)=>void;onEdit:()=>void;onUpdate:()=>Promise<void>;onError:(value:string)=>void;onClose:()=>void;initiallyOpenHistory?:boolean}){
+export default function QuickOfferExtras({data,text,request,busy,publicationDisabled=false,media,onMedia,onCaption,onEdit,onUpdate,onError,onClose,initiallyOpenHistory=false}:{data:QuickOfferData;text:string;request:typeof api;busy:boolean;publicationDisabled?:boolean;media:TelegramPresentation;onMedia:(value:TelegramPresentation)=>void;onCaption:(value:string)=>void;onEdit:()=>void;onUpdate:()=>Promise<void>;onError:(value:string)=>void;onClose:()=>void;initiallyOpenHistory?:boolean}){
  const [working,setWorking]=useState(false),[aiConsent,setAiConsent]=useState(false),[repost,setRepost]=useState<Channel>(),[confirmed,setConfirmed]=useState(false),[history,setHistory]=useState(initiallyOpenHistory),lock=useRef(false),repostRequest=useRef('');
  const product=data.product,brand=product.operation||'dropou';
  async function run(fn:()=>Promise<void>){if(lock.current||busy)return;lock.current=true;setWorking(true);onError('');try{await fn();}catch(e){onError((e as Error).message);}finally{lock.current=false;setWorking(false);}}
@@ -26,6 +28,7 @@ export default function QuickOfferExtras({data,text,request,busy,media,onMedia,o
   {(['telegram','whatsapp'] as Channel[]).filter(c=>channelState(c,data,!!data.offer,product)==='sent'&&!data.republications?.some(i=>i.channel===c)).map(c=><button className="secondary" disabled={working||busy} key={c} onClick={()=>{repostRequest.current=crypto.randomUUID();setRepost(c);setConfirmed(false);}}>Republicar intencionalmente no {c==='telegram'?'Telegram':'WhatsApp'}</button>)}
   {repost&&<div className="quick-offer-notice"><p>Autorizar uma nova publicação no {repost==='telegram'?'Telegram':'WhatsApp'} preserva o histórico e não envia nada agora.</p><label><input type="checkbox" checked={confirmed} onChange={e=>setConfirmed(e.target.checked)}/>Quero autorizar uma nova publicação neste canal.</label><button className="secondary" disabled={!confirmed||busy||working} onClick={()=>void run(async()=>{await request('/api/offers/'+data.offer!.id+'/republication','POST',{channel:repost,requestKey:repostRequest.current,confirmed:true});await onUpdate();setRepost(undefined);})}>Autorizar nova publicação</button><button disabled={busy||working} onClick={()=>setRepost(undefined)}>Cancelar</button></div>}
   <details open={history} onToggle={e=>setHistory(e.currentTarget.open)}><summary>Histórico e registros</summary>{history&&<PublicationHistory productId={product.id} request={request} operation={brand} initiallyOpen/>}</details>
+  {!isLocalOperation(brand)&&<MultichannelPublication product={product} offer={data.offer||undefined} text={text} presentation={media} disabled={busy||working||publicationDisabled||!!data.archived||text!==data.offer?.caption} request={request} onUpdate={onUpdate}/>}
   <div className="quick-offer-extra-links"><a href={offerLocation(product.id,brand,'preview',currentWorkspace())} target="_blank" rel="noopener noreferrer">Abrir página completa em outra aba</a><DeleteProduct request={request} product={product} archived={data.archived} onDone={async()=>{onClose();}}/></div>
  </div>;
 }
