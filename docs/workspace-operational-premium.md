@@ -26,3 +26,5 @@ Telegram ainda exige confirmação e recibo real. WhatsApp continua manual. Copi
 - Evidências locais ignoradas: `outputs/operational-workspace-review`, `outputs/shopee-library-review` e `outputs/general-dashboard-review`. Sessões/dados usados são fictícios; isso não comprova sessão produtiva ou todos os serviços externos funcionando. Leituras públicas após a publicação são registradas separadamente.
 
 O worktree reutiliza dependências por junction Windows; a raiz Turbopack temporária de QA não é entregue. A integração deve ser fast-forward sobre a main conferida, seguida de comparação do SHA remoto. O arquivo local não versionado e a branch experimental devem permanecer preservados.
+
+Integração local concluída em `d08a0e1`: main avançada de `ec04a14` sem conflito. Tipos e build foram repetidos no diretório principal e aprovados. Branch experimental e conteúdo do lockfile local preservados; índice principal auditado sem credenciais conhecidas ou artefatos privados. A confirmação do envio/deploy é uma etapa distinta dos testes locais acima.
