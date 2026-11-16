@@ -14,3 +14,7 @@ supabase/.temp/
 *.pem
 *.p12
 *.pfx
+*.session
+*.session-journal
+*.key
+cookies.json

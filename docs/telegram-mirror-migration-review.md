@@ -1,4 +1,14 @@
-# Fila persistente MTProto — aplicação interrompida no preflight
+# Fila persistente MTProto — histórico da revisão
+
+## Consolidação de 16/11/2026: correção aplicada e verificada
+
+A versão local corrigida já revogava também os privilégios iniciais de `service_role` antes dos grants específicos. Essa versão foi preservada na consolidação, testada com os padrões reais de privilégios tanto de `postgres` quanto de `supabase_admin`, e aplicada uma única vez ao projeto Dropou. SHA-256 da fonte: `64c99d8bf8f1665538e529582d999373bd825016a6776db844c6b62f6168f099`.
+
+Histórico remoto confirmou `20261116025405 / mtproto_persistent_mirror_queue`. Postcheck agregado confirmou as quatro tabelas com RLS, matriz exata do servidor, ausência de acesso anônimo e de escrita dos integrantes. Funções invoker e grants conferidos. Fila e eventos permaneceram vazios; a conexão/sessão existente manteve a mesma impressão digital antes/depois. Worker não iniciado, sem autenticação ou mensagem como teste. O INFO de RLS sem políticas em `mirror_budget_limits` é esperado: somente o servidor tem SELECT.
+
+**Não reaplicar esta migração.** O texto abaixo registra o impedimento anterior, já resolvido; não descreve o estado atual. Detalhes da consolidação em [consolidacao-2026-11-16.md](consolidacao-2026-11-16.md).
+
+## Preflight anterior, antes da correção
 
 Em 16/11/2026, a aplicação autorizada foi interrompida **antes de executar a migração**, por divergência de permissões. Projeto `wqpdyfipjsnyzxktacqh`; versão `20261116025405`. Arquivo original preservado com SHA-256 `8707d45cc9fddd928d9e75ac4d69ee6f4e74b3b0d562706a03a34884ed3dfc98`.
 

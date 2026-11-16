@@ -6,6 +6,6 @@ export function workspaceAdminRequired(path:string,method:string){
 }
 import {isLocalOperation} from './workspace-brands';
 export function operationIntegrationUnavailable(operation:string,path:string,method:string){return isLocalOperation(operation)&&(
- /^\/api\/(shopee|integrations|discovery)(\/|$)/.test(path)||/^\/api\/products\/(lookup|mercado-livre)(\/|$)/.test(path)||
+ /^\/api\/(shopee|integrations|discovery|mirrored-offers|telegram\/connections)(\/|$)/.test(path)||/^\/api\/products\/(lookup|mercado-livre)(\/|$)/.test(path)||
  method!=='GET'&&(/\/offers\/[0-9a-f-]+\/(telegram|schedule|channels|publish)$/.test(path)||path==='/api/publication-config')
 );}
