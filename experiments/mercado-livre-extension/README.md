@@ -58,3 +58,39 @@ Não faça merge desta branch na main antes de conciliar as alterações não en
 - O botão **não apaga o histórico**, downloads, cache do Chrome ou registros da rede/empresa, e não garante invisibilidade. Para não usar o computador do trabalho, mantenha a extensão desligada nele e utilize seu dispositivo pessoal autorizado.
 - Validação disponível até agora: teste manual da versão anterior 0.1.0 capturou um link candidato. A versão 0.2.0 com interruptor precisa ser testada no Chrome real; não considerar o desligamento validado até verificar.
 - Contrato proposto para o espelhamento futuro: consulte `INTEGRACAO-FUTURA.md`. Ainda não existe integração com filas, Telegram ou postagem.
+
+
+## Versão 0.3.0 — testes em lote isolados (16/11/2026)
+
+A versão 0.3.0 foi acrescentada **somente nesta branch**, sem modificar o projeto Next.js nem qualquer configuração Telegram/Supabase.
+
+### Testar a fila
+
+1. Atualize com git pull origin feat/mercado-livre-browser-poc e recarregue a extensão em chrome://extensions. Confira a versão 0.3.0.
+2. Clique **Ativar** no popup.
+3. Cole de 1 a 5 **links normais** de produtos Mercado Livre, **um por linha**. Os links precisam ser HTTPS válidos; duplicatas do mesmo anúncio serão ignoradas.
+4. Clique **Iniciar conversões em segundo plano**.
+5. A extensão tenta gerar **um link por vez** em uma aba inativa do Chrome. Após capturar um link candidato, registra-o apenas na sessão temporária e passa ao próximo, fechando a aba do item anterior. A opção de manter aba aberta só se aplica ao teste individual.
+6. Clique no ícone Dropou para ver cada item em **aguardando / convertendo / candidato / revisão necessária**.
+7. Se algum item falhar, a fila **pausa**. Confira a aba do gerador e use **Pular e continuar** se quiser seguir sem convertê-lo. Não há tentativas automáticas para erros incertos.
+8. Clique **Desligar** para abortar o restante, fechar a aba criada pelo Dropou e apagar os dados temporários da fila. Ao reativar, não deve haver resultado anterior.
+
+### Limites
+
+- No máximo cinco URLs por lote; não trunca automaticamente acima de cinco. Não há agendamento automático ou integração remota.
+- Um link meli.la capturado é um **candidato**, não um link cuja atribuição/comissão foi comprovada. **Não publicar automaticamente.**
+- Links, estados e mensagens da fila ficam em chrome.storage.session até clicar Desligar, clicar Novo teste ou reiniciar o navegador. Não existe arquivo de histórico próprio nem envio desses dados ao Dropou remoto.
+- Essa limpeza não impede que o Chrome, o sistema operacional, a rede ou a empresa registrem as páginas visitadas. A extensão não esconde a atividade nem apaga histórico de navegação.
+- O teste da versão anterior foi observado no Chrome, mas a **versão 0.3.0 não foi testada em um navegador real nesta entrega**. Rodar testes e conferir resultados no Chrome antes de considerar concluído.
+
+### Testes locais
+
+Na pasta experiments/mercado-livre-extension:
+
+    npm.cmd test
+
+O comando executa testes de validação de URL, deduplicação/limite do lote e um Chrome simulado para verificar fila, pausa e desligamento. Não exige instalar dependências nem testar a conta real.
+
+### Ligação futura
+
+Consulte INTEGRACAO-FUTURA.md. O código MTProto está em outra máquina; a fila atual **não consulta Telegram e não publica mensagens**.
