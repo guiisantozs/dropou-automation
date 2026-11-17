@@ -3,10 +3,13 @@ import {affiliateStore} from './affiliate';
 import {captionError} from './caption-editor';
 import {freshPrice,money,Product} from './domain';
 import {dropouCaption} from './dropou-captions';
+import {isLocalOperation} from './workspace-brands';
+import {validShopeeAffiliateLink} from './shopee-affiliate';
 export type PublicationMode='verified'|'safe';
 export type PublicationPreference='auto'|'safe'|'priced';
 export function publicationIdentityError(p:Product){
  if(p.demo)return 'Dados demonstrativos não podem ser publicados de verdade.';
+ if(isLocalOperation(p.operation||'')&&p.store==='Shopee'&&(!validShopeeAffiliateLink(p.affiliateUrl)||p.source?.provider!=='shopee'))return 'Importe ou atualize o link pela integração Shopee antes de preparar a publicação.';
  try{if(affiliateStore(p.affiliateUrl)!==p.store||/[\s<>]/.test(p.affiliateUrl)||!/^https:\/\/([a-zA-Z0-9-]+\.)*(meli\.la|mercadolivre\.com\.br|mercadolivre\.com|mercadolibre\.com|shopee\.com\.br|shope\.ee)(?::443)?([/?#]|$)/i.test(p.affiliateUrl))return 'Adicione um link oficial de afiliado do Mercado Livre ou Shopee.';}catch{return 'Adicione um link oficial de afiliado do Mercado Livre ou Shopee.';}
  if(!p.name.trim())return 'Salve o nome do produto antes de publicar.';
  return null;

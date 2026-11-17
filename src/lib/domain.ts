@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import {safeInstallments} from './commerce';
-import {operationSchema,operationCopy} from './workspace-brands';
+import {isLocalOperation,operationSchema,operationCopy} from './workspace-brands';
+import {validShopeeAffiliateLink} from './shopee-affiliate';
 import {mercadoLivreIdentityKey} from './mercado-livre-link';
 
 export const statuses = ['encontrado', 'aguardando link', 'pronto', 'agendado', 'publicado'] as const;
@@ -59,6 +60,7 @@ export function publicationError(p: Product, now = Date.now()): string | null {
   if (p.demo) return 'Dados demonstrativos não podem ser publicados de verdade.';
   if(p.dataOrigin==='screenshot'&&!p.screenshotConfirmed)return 'Confirme os dados extraídos do print antes de publicar.';
   if (!p.affiliateUrl) return 'Adicione um link oficial de afiliado.';
+  if(isLocalOperation(p.operation||'')&&p.store==='Shopee'&&(!validShopeeAffiliateLink(p.affiliateUrl)||p.source?.provider!=='shopee'))return 'Importe ou atualize o link pela integração Shopee antes de preparar a publicação.';
   if (p.inStock!==true) return 'Confirme que o produto está em estoque.';
   if (!freshPrice(p,now)) return 'Confira e salve o preço e a disponibilidade antes de publicar.';
   if(p.paymentMethod==='pix'&&!p.pixVerified)return 'Confirme que o preço é válido no Pix.';

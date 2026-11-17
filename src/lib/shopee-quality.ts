@@ -3,6 +3,7 @@ import type {OperationId} from './workspace-brands';
 import {channelClassification} from './channel-profiles';
 import {assessCelular,type CelularAssessment} from './celulares-quality';
 import {celularFacts,type CelularesConfig} from './celulares-curation';
+import {memberCurationProfile,memberFingerprint} from './member-curation';
 
 const norm=(s:string)=>s.normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();
 const clamp=(n:number)=>Number.isFinite(n)?Math.max(0,Math.min(1,n)):0;
@@ -57,6 +58,7 @@ function safeUrl(raw:string,domains:string[]){try{const u=new URL(raw);return u.
 export function assessOffer(o:ShopeeOffer,c:ShopeeConfig,history:OfferObservation[]=[],operation:OperationId='dropou',mobilePolicy?:CelularesConfig):OfferAssessment{
  if(operation==='celulares'){const key=celularFacts(o.name,mobilePolicy).variantKey;return assessCelular(o,c,history,salesTrend(o,key?history.filter(h=>h.variant_key===key):[]),mobilePolicy);}
  const title=norm(o.name),{category,relevant}=channelClassification(o.name,operation)||classifyGamingTech(o.name);
+ const member=memberCurationProfile(operation);
  const reasons:string[]=[],warnings:string[]=[];
  if(!relevant)reasons.push('Sem relação clara com '+(operation==='dropou'?'Tech & Games':'este canal'));
  if(c.avoid.some(w=>title.includes(norm(w)))||/\b(gratis|frete|cupom|pix|estoque|desconto|imperdivel|original garantido|reais|replica|falsificado|somente caixa|apenas caixa)\b|por\s+\d|https?:|www\.|R\$|[%<>\n\r]/i.test(title))reasons.push('Título suspeito ou alegações não verificadas');
@@ -64,8 +66,8 @@ export function assessOffer(o:ShopeeOffer,c:ShopeeConfig,history:OfferObservatio
  const commission=o.commission!==null&&o.commission>=0&&o.commission<=1?o.commission:null;
  const reported=o.reportedDiscount!==null&&o.reportedDiscount>=0&&o.reportedDiscount<=100?o.reportedDiscount:null;
  const validPrice=Number.isFinite(o.price)&&Number.isFinite(o.priceMax)&&o.price>0&&o.priceMax>=o.price;
- if(rating===null||rating<c.minRating)reasons.push('Avaliação insuficiente ou ausente');
- if(sales===null||sales<c.minSales)reasons.push('Histórico de vendas insuficiente ou ausente');
+ if(rating===null&&member)warnings.push('Avaliação não disponibilizada; não pontua');else if(rating===null||rating<c.minRating)reasons.push('Avaliação insuficiente ou ausente');
+ if(sales===null&&member)warnings.push('Vendas não disponibilizadas; não pontuam');else if(sales===null||sales<c.minSales)reasons.push('Histórico de vendas insuficiente ou ausente');
  if(!validPrice||o.price<c.minPrice||o.price>c.maxPrice)reasons.push('Preço inválido ou fora da faixa');
  if(!o.name.trim()||!safeUrl(o.image,['shopee.com.br','shopee.com','susercontent.com','shopeemobile.com'])||!safeUrl(o.offerLink,['shopee.com.br','shope.ee']))reasons.push('Nome, foto ou link de afiliado inválido');
  if(o.priceMax>o.price)reasons.push(o.priceMax/o.price>=2?'Variações com preço potencialmente artificial; confirmar produto e preço':'Preço da variante apresentada não confirmado pela API');
@@ -83,7 +85,9 @@ export function assessOffer(o:ShopeeOffer,c:ShopeeConfig,history:OfferObservatio
  const ratingCount=Number.isSafeInteger(o.ratingCount)&&o.ratingCount!>=0?o.ratingCount!:null;
  const nicheFit=relevant?(category==='Tecnologia'||category==='Smartwatches'?0.85:category==='Acessórios gamer'?0.8:1):0;
  const metrics={sales:sales===null?null:clamp(Math.log10(sales+1)/Math.log10(c.salesScale+1)),rating:rating===null?null:clamp((rating-3)/2)*(ratingCount===null?1:0.7+0.3*clamp(Math.log10(ratingCount+1)/3)),relevance:nicheFit,price:discount===null?null:increased?0:clamp(discount/60)*(discountSource==='reported'?0.6:1),trend:trend.perDay===null?null:clamp(Math.log10(trend.perDay+1)/3)};
- const baseWeights={sales:30,rating:25,relevance:25,price:10,trend:10};
+ // For the new niches, a provider's discount percentage alone is not price evidence.
+ if(member&&discountSource!=='observed')metrics.price=null;
+ const baseWeights=member?{sales:25,rating:25,relevance:35,price:10,trend:5}:{sales:30,rating:25,relevance:25,price:10,trend:10};
  const available=Object.entries(metrics).reduce((sum,[key,value])=>sum+(value===null?0:baseWeights[key as keyof typeof baseWeights]),0);
  const weights=Object.fromEntries(Object.entries(metrics).map(([key,value])=>[key,value===null?0:baseWeights[key as keyof typeof baseWeights]*100/available])) as OfferAssessment['weights'];
  const components=Object.fromEntries(Object.entries(metrics).map(([key,value])=>[key,value===null?null:Math.round(value*weights[key as keyof typeof weights]*10)/10])) as OfferAssessment['components'];
@@ -97,7 +101,7 @@ export function assessOffer(o:ShopeeOffer,c:ShopeeConfig,history:OfferObservatio
  const established=(sales!==null&&sales>=Math.min(c.minSales,1000)&&rating!==null&&rating>=Math.min(c.minRating,4.6))||(sales!==null&&sales>=20&&rating!==null&&rating>=4.6);
  const exploration=modelIdentified&&brand!=='Não identificada'&&(sales!==null||rating!==null)&&(rating===null||rating>=4.6);
  const structuralBlock=reasons.some(r=>/suspeito|inválido|fora da faixa|Sem relação/.test(r));
- const recommended=relevant&&!structuralBlock&&(established||exploration)&&score>=(established?c.minScore:Math.min(c.minScore,40))&&confidence>=40;
+ const recommended=member?relevant&&!reasons.length&&(sales!==null||rating!==null):relevant&&!structuralBlock&&(established||exploration)&&score>=(established?c.minScore:Math.min(c.minScore,40))&&confidence>=40;
  const recommendationReasons:string[]=[];
  if(sales!==null&&sales>=1000)recommendationReasons.push('Muitas vendas');
  if(rating!==null&&rating>=4.6)recommendationReasons.push('Bem avaliado');
@@ -107,7 +111,7 @@ export function assessOffer(o:ShopeeOffer,c:ShopeeConfig,history:OfferObservatio
  if(brand!=='Não identificada')recommendationReasons.push('Marca reconhecida no nicho');
  if(!established&&exploration)warnings.push('Candidato para descoberta; poucos dados, sem comprovação de lançamento ou alta recente');
  if(ratingCount===null)warnings.push('Quantidade de avaliações não disponibilizada pelo contrato atual');
- return {relevant,recommended,eligible:!reasons.length,score,reasons,recommendationReasons,warnings,category,brand,priceBand:o.price<100?'Até R$ 100':o.price<300?'R$ 100–300':o.price<1000?'R$ 300–1.000':'Acima de R$ 1.000',confidence,components,weights,trend,discountSource,observedDiscount:observed===null?null:Math.round(observed*10)/10,fingerprint:offerFingerprint(o.name),version:3};
+ return {relevant,recommended,eligible:!reasons.length&&(!member||sales!==null||rating!==null),score,reasons,recommendationReasons,warnings,category,brand,priceBand:o.price<100?'Até R$ 100':o.price<300?'R$ 100–300':o.price<1000?'R$ 300–1.000':'Acima de R$ 1.000',confidence,components,weights,trend,discountSource,observedDiscount:observed===null?null:Math.round(observed*10)/10,fingerprint:member?memberFingerprint(o.name):offerFingerprint(o.name),version:3};
 }
 export function diversifyOffers<T extends {id:string;data:ShopeeOffer;assessment:OfferAssessment}>(rows:T[],limit:number,excluded=new Set<string>(),manual=false){
  const pool=rows.filter(r=>(manual?r.assessment.recommended:r.assessment.eligible)&&!excluded.has(r.assessment.fingerprint)).sort((a,b)=>b.assessment.score-a.assessment.score||b.assessment.confidence-a.assessment.confidence||a.id.localeCompare(b.id)),selected:T[]=[],seen=new Set<string>(),counts=new Map<string,number>();

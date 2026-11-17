@@ -10,9 +10,9 @@ export const workspaceBrands=[
  {id:'celulares',name:'Dropou | Celulares & Gadgets',category:'Celulares e acessórios',status:'A configurar',tone:'orange',icon:'phone'},
  {id:'tenis',name:'Dropou | Tênis & Sneakers',category:'Tênis e sneakers',status:'A configurar',tone:'orange',icon:'shoe'},
  {id:'automoto',name:'Dropou | Auto & Moto',category:'Acessórios automotivos',status:'A configurar',tone:'orange',icon:'car'},
- {id:'beleza',name:'Toque de Beleza',category:'Beleza e autocuidado',status:'Sem integrações',tone:'berry',icon:'sparkles'},
- {id:'casa',name:'Cantinho & Charme',category:'Casa e decoração',status:'Sem integrações',tone:'lilac',icon:'house'},
- {id:'natal',name:'Clima de Natal',category:'Decoração natalina',status:'Sem integrações',tone:'green',icon:'tree'},
+ {id:'beleza',name:'Toque de Beleza',category:'Beleza e autocuidado',status:'Shopee · envios desativados',tone:'berry',icon:'sparkles'},
+ {id:'casa',name:'Cantinho & Charme',category:'Casa e decoração',status:'Shopee · envios desativados',tone:'lilac',icon:'house'},
+ {id:'natal',name:'Clima de Natal',category:'Decoração natalina',status:'Shopee · envios desativados',tone:'green',icon:'tree'},
  {id:'all',name:'Todas as operações',category:'Visão administrativa',status:'Consolidado',tone:'blue',icon:'gamepad'},
 ] as const;
 export type WorkspaceBrandId=typeof workspaceBrands[number]['id'];
@@ -26,4 +26,4 @@ export function selectedOperation():OperationScope{if(typeof window==='undefined
 export function selectOperation(id:OperationScope){if(typeof window==='undefined')return;window.sessionStorage.setItem('dropou.operation',id);const url=new URL(window.location.href);url.searchParams.set('brand',id);window.history.replaceState(null,'',url.pathname+url.search+url.hash);document.documentElement.dataset.operation=id;window.dispatchEvent(new window.Event('dropou:operation-change'));}
 export function operationForRequest(request:Request):OperationScope{return operationScopeSchema.parse(new URL(request.url).searchParams.get('brand')||request.headers.get('x-dropou-brand')||'dropou');}
 
-export function isShopeeOperation(value:string):value is 'dropou'|'celulares'|'tenis'|'automoto'{return ['dropou','celulares','tenis','automoto'].includes(value);}
+export function isShopeeOperation(value:string):value is 'dropou'|'celulares'|'tenis'|'automoto'|'beleza'|'casa'|'natal'{return ['dropou','celulares','tenis','automoto','beleza','casa','natal'].includes(value);}

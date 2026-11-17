@@ -51,7 +51,7 @@ export async function POST(request:Request){try{
  if(!row.data.data||row.data.state!=='ready')throw new Error('Busque os dados do produto antes de preparar a oferta.');
  const o=row.data.data as ShopeeOffer,product=shopeeProduct(o,crypto.randomUUID(),operation),headline=operation==='dropou'?await reserveDropouHeadline(db,user.id,body.id,product.name):undefined;
  const result=await db.rpc('dropou_shopee_saved_prepare_channel',{p_brand:operation,p_owner:user.id,p_id:body.id,p_product:product,p_caption:formatCaption(product,operation,headline)});if(result.error)throw dbError(result.error);
- await operatorAudit(user.id,actorId,operation,'Importa??o preparada',result.data.productId);return Response.json(result.data);
+ await operatorAudit(user.id,actorId,operation,'Importação preparada',result.data.productId);return Response.json(result.data);
  }catch(e){return apiError(e);}}
 export async function DELETE(request:Request){try{
  const {db,user,operation,actorId}=await context(request),{id}=z.object({id:z.string().uuid()}).parse(await request.json());

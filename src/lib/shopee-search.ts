@@ -1,13 +1,14 @@
 import {dailyKeywords,type ShopeeConfig} from './shopee-automation';
 import {channelProfiles} from './channel-profiles';
 import type {OperationId} from './workspace-brands';
+import {memberCurationProfile} from './member-curation';
 
 /** Keep the previously verified Tech query first; explicit custom terms remain explicit. */
 export function onDemandKeywords(brand:OperationId,config:ShopeeConfig,radar:Record<string,unknown>,raw:Record<string,unknown>,day:string){
  const terms=(value:unknown)=>Array.isArray(value)?[...new Set(value.filter((v):v is string=>typeof v==='string'&&v.trim().length>=2&&v.trim().length<=80).map(v=>v.trim()))].slice(0,50):[];
  const custom=terms(radar.keywords).length?terms(radar.keywords):terms(raw.keywords);
  if(brand==='dropou'&&!custom.length)return [...new Set(['gamer',...dailyKeywords(config,day)])].slice(0,3);
- const keywords=custom.length?custom:channelProfiles[brand as keyof typeof channelProfiles]?.keywords||[];
+ const keywords=custom.length?custom:memberCurationProfile(brand)?.keywords||channelProfiles[brand as keyof typeof channelProfiles]?.keywords||[];
  const offset=Math.floor(Date.parse(day+'T00:00:00Z')/86400000);
  return Array.from({length:Math.min(3,keywords.length)},(_,i)=>keywords[(offset+i)%keywords.length]);
 }

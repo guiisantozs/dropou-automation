@@ -4,7 +4,7 @@ import {affiliateStore} from '@/lib/affiliate';
 import {importMercadoLivre} from '@/server/mercado-livre/import';
 import {publicationAdmin} from '@/server/telegram-offer';
 import {lookupSavedShopeeProduct} from '@/server/shopee/saved-products';
-import {isShopeeOperation} from '@/lib/workspace-brands';
+import {isLocalOperation,isShopeeOperation} from '@/lib/workspace-brands';
 export async function POST(request:Request){try{
  const {db:session,user,operation}=await sessionDb(request);
  if(operation==='all')throw new Error('Selecione uma marca para consultar.');
@@ -15,6 +15,7 @@ export async function POST(request:Request){try{
   const {db}=await publicationAdmin(user.id),product=await lookupSavedShopeeProduct(db,user.id,url,operation);
   return Response.json({store,product,needsScreenshot:false,message:'Dados oficiais recebidos. Confira os dados da variante antes de salvar.'});
  }
+ if(isLocalOperation(operation))throw new Error('FORBIDDEN: Esta marca utiliza a integração Shopee. Mercado Livre permanece indisponível.');
  const {db}=await publicationAdmin(user.id);
  return Response.json(await importMercadoLivre(session,db,user.id,operation,url),{headers:{'Cache-Control':'no-store'}});
 }catch(e){return apiError(e);}}

@@ -1,5 +1,6 @@
 import {celularFacts,celularLabels} from './celulares-curation';
 import type {OperationId} from './workspace-brands';
+import {memberClassification} from './member-curation';
 const norm=(s:string)=>s.normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();
 export const channelProfiles={
  celulares:{keywords:['smartphone samsung','iphone apple','motorola smartphone','xiaomi smartphone','carregador usb c baseus','power bank anker','fone bluetooth jbl','capa iphone','suporte celular'],allow:/\b(smartphone|iphone|celular|power ?bank|fone|earbuds|smartwatch|smartband|gadget)\b|\b(carregador|cabo|capa|capinha|pelicula|suporte|adaptador)\b.*\b(usb|tipo c|iphone|samsung|celular|smartphone|xiaomi|motorola)\b/,deny:/\b(tenis|sapato|automotivo|veicular|carro|moto|cozinha|furadeira|brinquedo|miniatura|replica|falsificado)\b/},
@@ -7,6 +8,7 @@ export const channelProfiles={
  automoto:{keywords:['suporte celular veicular','carregador veicular usb','camera de re carro','organizador automotivo','limpeza automotiva','aspirador carro','acessorio motociclista','iluminacao automotiva'],allow:/\b(automotivo|automotiva|veicular|carro|carros|moto|motos|motocicleta|motociclista|capacete)\b/,deny:/\b(tenis|sapato|cozinha|brinquedo|miniatura|replica|falsificado|motorola)\b|\b(freio|pastilha|embreagem|pneu|amortecedor|correia|filtro oleo|vela ignicao|peca universal)\b/},
 } as const;
 export function channelClassification(name:string,brand:OperationId){
+ const member=memberClassification(name,brand);if(member)return member;
  if(brand==='celulares'){const facts=celularFacts(name);return {relevant:!!facts.category&&!facts.blocks.length,category:facts.category?celularLabels[facts.category]:''};}
  const profile=channelProfiles[brand as keyof typeof channelProfiles];
  if(!profile)return null;

@@ -23,5 +23,5 @@ export async function loadCuratedDiscovery(db:SupabaseClient,owner:string,brand:
   db.from('operation_settings').select('shopee_config,radar,celulares_curation').eq('owner_id',owner).eq('brand_id',brand).single(),
  ]);
  if(settings.error||!settings.data)throw new Error('Configuração da curadoria indisponível.');
- return curatedDiscovery(cache,products,new Set(proofs.map(p=>p.product_id)),channelShopeeConfig(settings.data),history,brand,celularesConfigSchema.parse(settings.data.celulares_curation||{}));
+ return curatedDiscovery(cache,products,new Set(proofs.map(p=>p.product_id)),channelShopeeConfig(settings.data,brand),history,brand,celularesConfigSchema.parse(settings.data.celulares_curation||{}));
 }

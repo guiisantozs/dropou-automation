@@ -37,7 +37,7 @@ export function apiError(error:unknown){
 }
 export function dbError(error:{code?:string;message:string}){
  if(error.code==='23505')return new Error('Produto ou publicação duplicada. Atualize o painel.');
- if(['42P01','42883','PGRST202','PGRST205'].includes(error.code||''))return new Error('A estrutura do banco não está configurada. Aplique schema.sql e whatsapp-flow.sql.');
+ if(['42P01','42883','PGRST202','PGRST205'].includes(error.code||''))return new Error('A estrutura do banco está desatualizada. Confira as migrações incrementais pendentes deste projeto; não reaplique o schema inicial.');
  if(error.code==='P0001')return new Error(error.message);
  return new Error('O banco recusou a operação. Verifique a sessão, as permissões e o schema.');
 }

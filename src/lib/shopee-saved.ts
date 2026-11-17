@@ -5,7 +5,13 @@ export function shopeeProductLink(raw:string){
  if(raw.length>2048||/[\s<>\\]/.test(raw))throw new Error('Use um link HTTPS de produto da Shopee.');
  let u:URL;try{u=new URL(raw);}catch{throw new Error('Link inválido. Cole a URL completa da Shopee.');}
  if(u.protocol!=='https:'||u.username||u.password||u.port||!shopeeLinkHosts.includes(u.hostname))throw new Error('Use somente links oficiais de produtos Shopee Brasil.');
- const path=decodeURIComponent(u.pathname),m=path.match(/(?:\/product\/(\d+)\/(\d+)(?:\/|$)|-i\.(\d+)\.(\d+)(?:\/|$))/);
+ let path=decodeURIComponent(u.pathname);
+ if(u.pathname==='/an_redir'){
+  let origin:URL;try{origin=new URL(u.searchParams.get('origin_link')||'');}catch{throw new Error('O link de afiliado não identifica um produto. Copie o link completo na Shopee.');}
+  if(u.hostname!=='s.shopee.com.br'||origin.protocol!=='https:'||origin.username||origin.password||origin.port||!['shopee.com.br','www.shopee.com.br'].includes(origin.hostname))throw new Error('Destino do link Shopee inválido.');
+  path=decodeURIComponent(origin.pathname);
+ }
+ const m=path.match(/(?:\/(?:product|opaanlp)\/(\d+)\/(\d+)(?:\/|$)|-i\.(\d+)\.(\d+)(?:\/|$))/);
  if(m){const shopId=(m[1]||m[3]).replace(/^0+(?=\d)/,''),itemId=(m[2]||m[4]).replace(/^0+(?=\d)/,'');
   if([shopId,itemId].some(id=>!/^\d{1,19}$/.test(id)||BigInt(id)<1||BigInt(id)>BigInt('9223372036854775807')))throw new Error('Identificação do produto inválida.');
   return {url:raw,canonical:`https://shopee.com.br/product/${shopId}/${itemId}`,shopId,itemId};

@@ -12,7 +12,7 @@ export async function loadGeneralDashboard(db:SupabaseClient,owner:string,page:n
  // RPCs inherit the same operation from sessionDb's x-dropou-brand/RLS context.
  // Explicit filters also constrain every direct table read to owner + operation.
  const scoped=<Columns extends string>(table:string,columns:Columns)=>{const query=db.from(table).select(columns).eq('owner_id',owner);return operation==='all'?query:query.eq('brand_id',operation);};
- const discoveryBrands=operation==='all'?['dropou','celulares','tenis','automoto'] as const:isShopeeOperation(operation)?[operation]:[];
+ const discoveryBrands=operation==='all'?['dropou','celulares','tenis','automoto','beleza','casa','natal'] as const:isShopeeOperation(operation)?[operation]:[];
  const [products,publications,jobs,approved,preparedOffers,curated,audit,recent,operationSummary]=await Promise.all([
   readDashboardPages<DashboardProductState>((from,to)=>scoped('products','id,brand_id,curation_state').is('archived_at',null).eq('data->>demo','false').neq('curation_state','rejected').order('id').range(from,to)),
   readDashboardPages<DashboardReceipt>((from,to)=>scoped('dropou_confirmed_publications','id,product_id,brand_id,channel,source,occurred_at').order('brand_id').order('id').range(from,to)),
@@ -32,7 +32,7 @@ export async function loadGeneralDashboard(db:SupabaseClient,owner:string,page:n
  const publishedCounts={telegram:publications.filter(r=>r.channel==='telegram'&&r.source==='telegram_receipt').length,whatsapp:publications.filter(r=>r.channel==='whatsapp'&&['whatsapp_manual','manual_mark'].includes(r.source)).length};
  const distribution=dashboardDistribution(products,publications,jobs);
  const activity=[...(audit.data||[]).map(r=>({id:r.id,title:r.action,brand:r.brand_id,at:r.created_at,kind:'operation' as const})),...(recent.data.entries as {id:string;product_name:string;brand_id:string;channel:string;occurred_at:string|null}[]).filter(r=>r.occurred_at).slice(0,5).map(r=>({id:r.id,title:r.channel==='telegram'?'Publicado no Telegram':'WhatsApp confirmado manualmente',brand:r.brand_id,at:r.occurred_at!,kind:'publication' as const}))].sort((a,b)=>Date.parse(b.at)-Date.parse(a.at)).slice(0,5);
- const curation=curated.reduce((n,rows)=>n+rows.length,0)+products.filter(p=>(['bruto','moda'].includes(p.brand_id)||isLocalOperation(p.brand_id))&&p.curation_state==='pending').length;
+ const curation=curated.reduce((n,rows)=>n+rows.length,0)+products.filter(p=>(['bruto','moda'].includes(p.brand_id))&&p.curation_state==='pending').length;
  const active=new Set(products.map(p=>p.brand_id+':'+p.id));
  const busyOrPublished=new Set([...publications,...jobs].map(r=>r.channel+':'+r.brand_id+':'+r.product_id));
  const prepared=(channel:string)=>new Set(preparedOffers.filter(o=>active.has(o.brand_id+':'+o.product_id)&&!busyOrPublished.has(channel+':'+o.brand_id+':'+o.product_id)).map(o=>o.brand_id+':'+o.product_id)).size;
