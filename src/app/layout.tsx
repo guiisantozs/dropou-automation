@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import '../components/mercado-livre-extension.css';
 import './globals.css';
 import './workspace.css';
 import './premium.css';

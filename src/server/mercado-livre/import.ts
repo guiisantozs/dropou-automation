@@ -1,7 +1,7 @@
 import 'server-only';
 import type {SupabaseClient} from '@supabase/supabase-js';
 import {oauthAccessToken,requireOAuthAdmin} from './oauth';
-import {importMercadoLivreData,type MercadoLivreRequest,type ImportCheck} from './import-core';
+import {importMercadoLivreData,type MercadoLivreRequest,type ImportCheck,type MercadoLivreImportResult} from './import-core';
 import {requestMercadoLivreImport} from './import-http';
 import {resolveMercadoLivreLink} from './resolve-link';
 import {mercadoLivreIdentity} from '../../lib/mercado-livre-link';
@@ -16,7 +16,7 @@ export async function existingMercadoLivreProduct(db:SupabaseClient,owner:string
  const matches=r.data.filter(row=>{if(row.data.mercadoLivreImport?.itemId===itemId||row.data.source?.itemId===itemId)return true;try{return mercadoLivreIdentity(row.data.originalUrl||row.data.affiliateUrl).itemId===itemId;}catch{return false;}});
  return matches.find(row=>!row.archived_at)||matches[0]||null;
 }
-export async function importMercadoLivre(db:SupabaseClient,admin:SupabaseClient,owner:string,operation:OperationId,url:string){
+export async function importMercadoLivre(db:SupabaseClient,admin:SupabaseClient,owner:string,operation:OperationId,url:string):Promise<MercadoLivreImportResult>{
  mercadoLivreIdentity(url);
  const saved=await db.from('operation_link_inbox').upsert({owner_id:owner,brand_id:operation,url,marketplace:'Mercado Livre'},{onConflict:'owner_id,brand_id,url',ignoreDuplicates:true});
  if(saved.error)throw new Error('Não foi possível guardar o link para importação. Tente novamente.');

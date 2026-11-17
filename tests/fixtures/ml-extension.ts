@@ -1,0 +1,4 @@
+import {emptyProduct} from '../../src/lib/product-draft';
+import type {ExtensionInbox} from '../../src/lib/mercado-livre-extension';
+export const extensionFixtureUrl='https://produto.mercadolivre.com.br/MLB-1234567890-headset-_JM';
+export function inboxFixture():ExtensionInbox{return {id:crypto.randomUUID(),request_id:crypto.randomUUID(),original_url:extensionFixtureUrl,candidate_url:'https://meli.la/fixture',identity_key:'item:MLB1234567890',draft:{...emptyProduct(),operation:'dropou',name:'Headset fixture',price:99.9,image:'https://http2.mlstatic.com/fixture.jpg',originalUrl:extensionFixtureUrl,mercadoLivreImport:{inputUrl:extensionFixtureUrl,resolvedUrl:extensionFixtureUrl,itemId:'MLB1234567890',catalogId:null,affiliateState:'pending',affiliateConfirmed:false}},message:'Dados disponíveis. Confira os dados.',state:'pending',product_id:null,existing:false,destination_match:null,created_at:new Date().toISOString()};}

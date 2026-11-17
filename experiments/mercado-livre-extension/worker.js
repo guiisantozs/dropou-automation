@@ -1,11 +1,22 @@
 import {checkCandidate} from './core.mjs';
 import {parseBatchInput, nextItemIndex} from './batch.mjs';
+import {CONNECTION_KEY,DROPOU_ORIGIN,officialDropou,dropouPayload} from './dropou.mjs';
 
 const STORAGE_KEY = 'dropouMercadoLivreJob';
 const ENABLED_KEY = 'dropouMercadoLivreEnabled';
 const DRAFT_KEY = 'dropouMercadoLivreDraft';
 const GENERATOR_URL = 'https://www.mercadolivre.com.br/afiliados/linkbuilder#hub';
 const running = new Set();
+const sending=new Set();
+async function platformMessage(connection,message){
+ const tab=await chrome.tabs.get(connection.tabId);
+ if(!officialDropou(tab.url))throw new Error('A aba mudou de endereço. Reconecte o Dropou.');
+ return chrome.tabs.sendMessage(tab.id,{protocol:'dropou-ml-v1',...message},{frameId:0});
+}
+async function updateTransfer(jobId,index,patch){
+ const latest=await readJob();if(!await isEnabled()||latest?.id!==jobId)return;
+ await saveJob({...latest,items:latest.items.map((item,i)=>i===index?{...item,transfer:{...item.transfer,...patch}}:item)});
+}
 
 // O clique no ícone abre o painel lateral global, que permanece disponível
 // durante a navegação do usuário entre abas. Nenhuma aba de produto é controlada.
@@ -90,12 +101,49 @@ chrome.tabs.onRemoved.addListener(async tabId=>{
 });
 chrome.runtime.onMessage.addListener((request,sender,sendResponse)=>{
   (async()=>{
+    if(chrome.runtime.id&&sender.id!==chrome.runtime.id)throw new Error('Origem não autorizada.');
+    if(sender.tab&&!['getTask','progress','finished'].includes(request?.type))throw new Error('Use o painel da extensão para esta ação.');
+    if(request?.type==='connectDropou'){
+      if(!await isEnabled())throw new Error('Ative a extensão antes de conectar.');
+      const tabs=await chrome.tabs.query({url:DROPOU_ORIGIN+'/*'});
+      const tab=tabs.find(t=>t.active)||tabs[0];
+      if(!tab){await chrome.tabs.create({url:DROPOU_ORIGIN,active:true});throw new Error('Entre no Dropou, selecione a operação e clique em Conectar novamente.');}
+      const result=await platformMessage({tabId:tab.id},{command:'connect'});
+      if(!result?.ok)throw new Error(result?.error||'Abra e atualize a aba do Dropou.');
+      if(!/^[a-f0-9-]{36}$/.test(result.connectionId)||!Number.isFinite(result.expiresAt)||result.expiresAt<=Date.now()||result.expiresAt>Date.now()+301000||!['dropou','bruto','moda','celulares','tenis','automoto'].includes(result.operation))throw new Error('Conexão inválida.');
+      if(!await isEnabled())throw new Error('Extensão desligada.');
+      await chrome.storage.session.set({[CONNECTION_KEY]:{tabId:tab.id,connectionId:result.connectionId,operation:result.operation,expiresAt:result.expiresAt}});
+      const pending=await readJob();if(pending){const items=pending.items.map((item,index)=>item.transfer?.state==='sending'&&!sending.has(pending.id+':'+index)?{...item,transfer:{...item.transfer,state:'error',message:'Confirmação interrompida. Reenvie o mesmo item para consultar o recebimento.'}}:item);await saveJob({...pending,items});}
+      sendResponse({ok:true});return;
+    }
+    if(request?.type==='sendDropou'){
+      if(!await isEnabled())throw new Error('Extensão desligada.');
+      const job=await readJob(),index=request.index,item=job?.items?.[index];
+      if(!job||!Number.isInteger(index)||!item)throw new Error('Resultado indisponível.');
+      if(!['candidate','completed'].includes(job.state))throw new Error('Aguarde a conclusão do lote para enviar seus resultados.');
+      const stored=await chrome.storage.session.get(CONNECTION_KEY),connection=stored[CONNECTION_KEY];
+      if(!connection||connection.expiresAt<=Date.now())throw new Error('Conecte novamente a aba autenticada do Dropou.');
+      const key=job.id+':'+index;if(sending.has(key))throw new Error('Aguarde a confirmação em andamento.');
+      if(item.transfer?.operation&&item.transfer.operation!==connection.operation)throw new Error('Este resultado foi destinado a outra operação. Reconecte a operação original.');
+      const requestId=item.transfer?.requestId||crypto.randomUUID(),payload=dropouPayload(item,requestId);
+      sending.add(key);
+      try{
+       await updateTransfer(job.id,index,{requestId,operation:connection.operation,state:'sending',message:'Aguardando confirmação do Dropou…'});
+       const result=await platformMessage(connection,{command:'receive',connectionId:connection.connectionId,payload});
+       if(!result?.ok||result.requestId!==requestId||!['pending','existing'].includes(result.status))throw new Error(result?.error||'Recebimento não confirmado. Reconecte e tente o mesmo item.');
+       await updateTransfer(job.id,index,{state:result.status,message:result.status==='existing'?'Já cadastrado · confira no Dropou':'Enviado · Aguardando conferência'});
+       await chrome.tabs.update(connection.tabId,{active:true});
+       sendResponse({ok:true});
+      }catch(error){await updateTransfer(job.id,index,{state:'error',message:safeError(error)});throw error;}
+      finally{sending.delete(key);}
+      return;
+    }
     if(request?.type==='setEnabled') {
       // Off acts as explicit stop and clears only data owned by the extension.
       await chrome.storage.session.set({[ENABLED_KEY]:false});
       const old=await readJob();
       await closeTab(old?.tabId);
-      await chrome.storage.session.remove([STORAGE_KEY,DRAFT_KEY]);
+      await chrome.storage.session.remove([STORAGE_KEY,DRAFT_KEY,CONNECTION_KEY]);
       if(request.enabled === true) await chrome.storage.session.set({[ENABLED_KEY]:true});
       sendResponse({ok:true,enabled:request.enabled===true});
       return;

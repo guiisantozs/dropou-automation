@@ -1,3 +1,5 @@
+> Histórico: a ponte explícita extensão → Dropou está implementada na versão 0.5.0, em branch local sem deploy. Consulte [o guia atual](../../docs/mercado-livre-extensao-dropou.md). Espelhamento e automação descritos neste planejamento continuam fora desta entrega.
+
 # Dropou — plano de integração com espelhamento Telegram
 
 **Situação:** somente especificação e protótipo local. Não integra Telegram, API, banco, Vercel ou filas hoje. O código de autenticação MTProto está em outra máquina e não deve ser presumido como versionado.

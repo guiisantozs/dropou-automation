@@ -1,9 +1,9 @@
 {
   "name": "dropou-mercado-livre-extension-poc",
-  "version": "0.3.0",
+  "version": "0.5.0",
   "private": true,
   "type": "module",
   "scripts": {
-    "test": "node --test core.test.mjs batch.test.mjs worker.test.mjs"
+    "test": "node --test core.test.mjs batch.test.mjs worker.test.mjs dropou.test.mjs"
   }
 }

@@ -1,4 +1,5 @@
 import {appendPageToDraft, MAX_BATCH} from './batch.mjs';
+import {CONNECTION_KEY} from './dropou.mjs';
 
 const KEY='dropouMercadoLivreJob';
 const DRAFT_KEY='dropouMercadoLivreDraft';
@@ -111,21 +112,29 @@ function render(job) {
       hint.textContent=item.message;
       li.append(hint);
     }
+    if(item.state==='candidate'&&item.candidate){
+      const button=document.createElement('button');button.type='button';button.textContent=item.transfer?.state==='sending'?'Aguardando confirmação…':'Enviar ao Dropou';button.disabled=!enabled||!['candidate','completed'].includes(job.state)||item.transfer?.state==='sending';
+      button.addEventListener('click',async()=>{button.disabled=true;setError();try{await ask({type:'sendDropou',index});}catch(error){setError(error.message);}finally{await refresh();}});li.append(button);
+      if(item.transfer){const hint=document.createElement('span');hint.className='source';hint.textContent=item.transfer.message;li.append(hint);}
+    }
     return li;
   });
   el('queue').replaceChildren(...entries);
   el('queue').hidden=false;
 }
 async function refresh() {
-  const stored=await chrome.storage.session.get([KEY,ENABLED_KEY,DRAFT_KEY]);
+  const stored=await chrome.storage.session.get([KEY,ENABLED_KEY,DRAFT_KEY,CONNECTION_KEY]);
   if(!draftLoaded) {
     el('source').value=typeof stored[DRAFT_KEY]==='string'?stored[DRAFT_KEY]:'';
     draftLoaded=true;
     countDraft();
   }
   enabled=stored[ENABLED_KEY]===true;
+  const connection=stored[CONNECTION_KEY];el('connectionHint').textContent=connection&&connection.expiresAt>Date.now()?'Conectado: '+connection.operation+' · confirme a operação na aba Dropou':'Selecione a operação na aba autenticada e conecte. A conexão dura cinco minutos.';
+  el('connectDropou').disabled=!enabled;
   render(stored[KEY]||null);
 }
+el('connectDropou').addEventListener('click',async()=>{el('connectDropou').disabled=true;setError();try{await ask({type:'connectDropou'});}catch(error){setError(error.message);}finally{await refresh();}});
 el('toggle').addEventListener('click',async()=>{
   setError();
   el('toggle').disabled=true;
@@ -188,6 +197,6 @@ el('copy').addEventListener('click',async()=>{
   catch{setError('Não foi possível copiar automaticamente. Selecione o link acima.');}
 });
 chrome.storage.onChanged.addListener((changes,area)=>{
-  if(area==='session'&&(changes[KEY]||changes[ENABLED_KEY])) refresh().catch(error=>setError(error.message));
+  if(area==='session'&&(changes[KEY]||changes[ENABLED_KEY]||changes[CONNECTION_KEY])) refresh().catch(error=>setError(error.message));
 });
 refresh().catch(error=>setError(error.message));
