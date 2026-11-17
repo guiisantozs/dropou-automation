@@ -1,10 +1,10 @@
 # Extensão Mercado Livre → Dropou
 
-Primeira ponte explícita, branch `codex/mercado-livre-extension-bridge`, baseada na main `c9ae248`. Sem merge, push, deploy ou migração remota nesta entrega. O código da aplicação e a migração precisam ser instalados em uma publicação posterior antes de a extensão se conectar à produção atual.
+Primeira ponte explícita, implementada na branch `codex/mercado-livre-extension-bridge`, baseada na main `c9ae248`. O usuário autorizou posteriormente a instalação e publicação. A migração incremental foi instalada no Supabase Dropou em 17/11/2026; integração e publicação seguem o fluxo main/GitHub/Vercel existente. SHA e estado efetivo do deploy constam das evidências da liberação e do relatório final.
 
 ## Instalação e primeiro produto
 
-1. Na futura instalação da aplicação, revisar e aplicar somente `supabase/migrations/20261117115743_mercado_livre_extension_inbox.sql` ao projeto Dropou e publicar esta versão. Não reaplicar o schema inicial ou migrations antigas. Não há novas variáveis ou dependências de produção.
+1. A migração `supabase/migrations/20261117115743_mercado_livre_extension_inbox.sql` já foi instalada no projeto Dropou. Não reaplicá-la, nem executar o schema inicial ou migrations antigas. A conexão funciona após o deploy desta aplicação ficar READY no alias oficial. Não há novas variáveis ou dependências de produção.
 2. Em `chrome://extensions`, habilitar o modo desenvolvedor. Recarregar a extensão já instalada, ou carregar sem compactação a pasta `experiments/mercado-livre-extension/`. A versão do manifest é **0.5.0**. Atualizar também a aba do Dropou após recarregar a extensão.
 3. Manter o Chrome aberto e entrar normalmente no Mercado Livre. Abrir `https://dropou-automation.vercel.app`, entrar no Dropou e selecionar uma operação autorizada com Mercado Livre: Tech & Games, Bruto, Moda, Celulares, Tênis ou Auto & Moto. O consolidado exige selecionar uma operação; Beleza/Casa/Natal conservam a integração Shopee existente.
 4. No painel lateral da extensão, clicar **Ativar** e **Conectar ao Dropou**. Conferir a operação exibida. A conexão da aba dura cinco minutos e é invalidada ao recarregar, trocar de conta ou operação. Reconectar quando necessário. Se a aba não existir, a extensão abre a origem oficial; entrar e conectar novamente.

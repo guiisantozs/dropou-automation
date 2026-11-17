@@ -4,7 +4,7 @@ O painel agora oferece **Conectar ao Dropou** e **Enviar ao Dropou** em cada can
 
 Para recarregar, abrir `chrome://extensions`, atualizar esta extensão e recarregar a aba oficial do Dropou. Entrar na plataforma, selecionar a operação, ativar e conectar pelo painel. Depois converter até cinco links, enviar individualmente e conferir na seção **Extensão Mercado Livre** antes de abrir o modal premium existente. A conexão dura cinco minutos; reenvios usam o mesmo identificador.
 
-**Esta primeira entrega é uma branch local sem merge/deploy.** A aplicação e a migração incremental precisam ser instaladas numa etapa posterior para a conexão funcionar na produção. Guia completo, limitações e resultados: [Integração com Dropou](../../docs/mercado-livre-extensao-dropou.md). Os registros anteriores abaixo descrevem a evolução do conversor; a ausência de integração com a plataforma deixou de descrever esta versão.
+**Instalação e publicação autorizadas posteriormente.** A migração incremental já foi instalada no Dropou; aguarde a confirmação do deploy READY no alias oficial e atualize a aba antes de conectar. Guia completo, limitações e resultados: [Integração com Dropou](../../docs/mercado-livre-extensao-dropou.md). Os registros históricos abaixo descrevem a evolução do conversor; a ausência de integração com a plataforma deixou de descrever esta versão.
 
 ## Histórico do experimento (até 0.4)
 
