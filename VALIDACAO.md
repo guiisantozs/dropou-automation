@@ -534,3 +534,12 @@ Fila/Telegram/historico/multicanal foram exercitados com fixtures automatizadas 
 ## 2026-11-16 · Instalação e publicação autorizadas
 
 Pedido posterior autoriza envio ao GitHub e deploy Vercel. A migração 20261117003706_karen_manual_telegram_bots foi aplicada somente ao projeto Dropou e registrada atomicamente no histórico (SHA-256 do arquivo: 8238723f63bc55ac36a4eca804ccae6679a6062d8d5382a9699c6bce351e691f). Não reaplicar. Postcheck remoto: bots exclusivos corretos, três automações false, um cron existente, 44 jobs/43 deliveries/202 eventos/dois vínculos preservados. Nomes das três variáveis privadas confirmados em Production na Vercel, sem baixar valores. As senhas e os dois logins foram validados na etapa anterior e não foram repetidos para deploy. A recuperação de e-mail depende de URL/SMTP compatíveis; a configuração Auth remota não foi alterada nesta publicação. SHA Git e estado efetivo do deploy são conferidos no relatório final.
+
+## 2026-11-16 · Revalidação final dos três bots Telegram
+
+- Repositório Dropou, branch `main`, base `9f2b5bd`, inicialmente limpa e sincronizada com `origin/main`. Implementação existente preservada; atualização somente do guia para refletir a instalação já concluída.
+- Reexecutados `npm.cmd test` (481/481), `npm.cmd run typecheck` e `npm.cmd run build`: aprovados. Incluem migração em PGlite, isolamento, permissões, bot exclusivo/token ausente, confirmação, recibos e prevenção de duplicatas com transporte simulado.
+- Supabase de produção consultado somente em transação de leitura: versão `20261117003706` presente e SQL registrado igual ao arquivo local; três CHECKs validados, RLS ativo e RPC manual restrita ao servidor. Nenhuma migração reaplicada.
+- As três variáveis privadas estão presentes em Production na Vercel; valores não baixados nem mostrados. Os três canais ainda não estão cadastrados/verificados. Bots reais e permissões devem ser verificados pelo administrador no dashboard após cadastrar cada destino.
+- Três automações permanecem false, WhatsApp sem destino e Shopee automática desativada; permanece um único `dropou-telegram-dispatch`. Nenhum cron, rotina, MTProto, consulta de produto ou mensagem real acionado como teste.
+- Deploy da implementação `9f2b5bd` encontrado READY com alias de produção. Após publicar esta correção documental, conferir novamente SHA, READY e disponibilidade por GET sem sessão; resultados efetivos no relatório final.

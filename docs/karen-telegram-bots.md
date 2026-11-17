@@ -1,6 +1,6 @@
 # Bots Telegram das operações Karen
 
-Implementação local em 16/11/2026, baseada na `main` limpa `cdc4417`. A conexão dos bots reais depende da instalação da migração, das variáveis privadas no servidor e da configuração de cada canal. Nenhuma mensagem real, migração remota, push ou deploy foi executado nesta etapa.
+Integração implementada em `9f2b5bd`, publicada na Vercel e revalidada em 16/11/2026. A migração já está aplicada no Supabase Dropou e as três variáveis privadas estão presentes em Production. Falta configurar e verificar cada canal no dashboard. Nenhuma mensagem real foi enviada como teste.
 
 ## Variáveis privadas
 
@@ -10,13 +10,13 @@ Implementação local em 16/11/2026, baseada na `main` limpa `cdc4417`. A conex�
 | `casa` | Cantinho & Charme | `TELEGRAM_CASA_BOT_TOKEN` |
 | `natal` | Clima de Natal | `TELEGRAM_NATAL_BOT_TOKEN` |
 
-Preencher os valores somente no ambiente privado do servidor (`.env.local` ignorado no desenvolvimento; variáveis privadas da Vercel no futuro deploy). Não usar prefixo `NEXT_PUBLIC_`. O banco e a interface guardam apenas o nome da variável, nunca o token. Não trocar as variáveis dos bots antigos. A ausência do token exclusivo produz erro com o nome da variável pendente; não há fallback para o bot principal.
+Os três nomes já foram conferidos em Production, sem baixar ou mostrar seus valores. No desenvolvimento, usar somente `.env.local` ignorado. Não usar prefixo `NEXT_PUBLIC_`. O banco e a interface guardam apenas o nome da variável, nunca o token. Não trocar as variáveis dos bots antigos. A ausência do token exclusivo produz erro com o nome da variável pendente; não há fallback para o bot principal.
 
 ## Migração e ordem de instalação
 
-Nova migração CLI: `supabase/migrations/20261117003706_karen_manual_telegram_bots.sql`. Foi validada localmente com a cadeia completa de migrações em PGlite. Continua **pendente de aplicação remota**. Não reaplicar schema, seeds ou migrações históricas.
+Migração CLI: `supabase/migrations/20261117003706_karen_manual_telegram_bots.sql`. Validada localmente com a cadeia completa de migrações em PGlite e **já aplicada em produção**, registrada como versão `20261117003706`, nome `karen_manual_telegram_bots`. A conferência remota de leitura confirmou que o SQL registrado corresponde ao arquivo local. Não reaplicar schema, seeds ou esta migração.
 
-Em uma etapa posterior autorizada: conferir o histórico do projeto Dropou, instalar somente a migração nova, preencher as três variáveis privadas e publicar a aplicação. Não fazer deploy deste código antes da migração: a configuração e o dispatcher dependem dos novos CHECKs e da RPC de agendamentos manuais. O arquivo anterior `20261116192906_karen_dashboards_membership.sql` e as demais migrações aplicadas permanecem intactos.
+A dependência de banco exigida pela configuração e pelo dispatcher está instalada: os três CHECKs estão validados e a RPC de agendamentos manuais permite execução somente pelo servidor. O arquivo anterior `20261116192906_karen_dashboards_membership.sql` e as demais migrações aplicadas permanecem intactos.
 
 A migração amplia o enum textual de `telegram_bot_env`, atribui o bot correto somente às três marcas e valida esse vínculo em um CHECK. Um trigger aplica o padrão exclusivo em novas inserções de configurações; UPDATEs incompatíveis são recusados. As configurações das marcas antigas não recebem UPDATE.
 
@@ -60,15 +60,15 @@ Espelhamento MTProto, configuração WhatsApp, publicação em lote envolvendo a
 
 ## Validação e limites
 
-Suíte completa: **470/470**, incluindo os bots antigos. Novos testes PGlite/Telegram simulado validam os três destinos, token ausente, bot incompatível, canal inválido, ausência de permissão, verificação sem mensagens, confirmação de teste, autorização por integrante, execução de agendamento com flags false, troca de destino/chave, entrega incerta, restrições WhatsApp/fallback e grants/RLS. Typecheck e build de produção aprovados.
+Revalidação completa: **481/481**, incluindo os bots antigos. Testes PGlite/Telegram simulado validam os três destinos, token ausente, bot incompatível, canal inválido, ausência de permissão, verificação sem mensagens, confirmação de teste, autorização por integrante, execução de agendamento com flags false, troca de destino/chave, entrega incerta, restrições WhatsApp/fallback e grants/RLS. `npm.cmd test`, `npm.cmd run typecheck` e `npm.cmd run build` executados novamente e aprovados.
 
 Chrome/Next compilado: **36 combinações** (configurações, publicar e agendar × três marcas × 320/375/768/1440 px). Fluxos administrativos de salvar/verificar/teste explícito e fluxos de integrante/publicação/agendamento/token ausente conferidos. APIs de navegador interceptadas, nenhuma rede externa, nenhum overflow horizontal ou erro de página. Capturas desktop/celular inspecionadas em `outputs/karen-telegram-review/screenshots/` (ignoradas). Três GETs locais sem sessão retornaram 401.
 
 QA HTTP adicional em processo localhost isolado: **18 verificações** nas rotas Next reais, com Auth/Supabase/Telegram simulados e todas as demais saídas de rede recusadas. Confirmadas as recusas de configuração/verificação por integrante, acesso a operação/recurso não associado, bot adulterado, canal inválido, ativação de rotina, envio sem confirmação/chave, WhatsApp agendado e replay do UUID do teste. A verificação não chamou métodos de envio; o teste expressamente confirmado recebeu somente uma resposta simulada de `sendMessage` por rodada. Artefatos em `outputs/telegram-http-result.json` (ignorado), sem credenciais reais.
 
-Auditoria local de arquivos versionáveis sem credenciais/artefatos privados; `git diff --check` aprovado. Estes testes não comprovam a conexão dos bots reais nem as permissões nos canais de produção. Essa verificação só poderá ocorrer após a instalação e a configuração privada descritas acima.
+Auditoria local de arquivos versionáveis sem credenciais/artefatos privados; `git diff --check` aprovado. A leitura remota confirmou os três bots exclusivos, RLS ativo, automações pausadas, WhatsApp sem destino e um único cron existente. Os três canais ainda estão sem configuração/verificação. Estes testes não comprovam a validade dos tokens nem as permissões dos bots reais: o administrador deve cadastrar o canal e usar **Verificar conexão**, depois confirmar manualmente qualquer teste de envio.
 
-Referências: [Telegram Bot API](https://core.telegram.org/bots/api#getchatmember), [Supabase RLS](https://supabase.com/docs/guides/database/postgres/row-level-security). Changelog Supabase consultado antes da migração; CLI 3.1.0 usada apenas para gerar o arquivo local.
+Referências: [Telegram Bot API](https://core.telegram.org/bots/api#getchatmember), [Supabase RLS](https://supabase.com/docs/guides/database/postgres/row-level-security). Changelog Supabase consultado antes da implementação; migração gerada e instalação conferida com a CLI oficial.
 
 
 ## 2026-11-16 · Instalação e publicação autorizadas
