@@ -12,11 +12,25 @@ import {emptyProduct} from '../src/lib/product-draft';
 import {formatCaption} from '../src/lib/ai';
 import type {Offer} from '../src/lib/offers';
 import type {api} from '../src/lib/api';
+import {pricedDraftCaption} from '../src/lib/publication-copy';
 function domFixture(){
  const {JSDOM}=createRequire(import.meta.url)('jsdom'),dom=new JSDOM('<div id="root"></div>',{url:'https://dropou.test'}),previous=new Map<string,PropertyDescriptor|undefined>();
  for(const [key,value] of Object.entries({window:dom.window,self:dom.window,document:dom.window.document,navigator:dom.window.navigator,Image:dom.window.Image,IS_REACT_ACT_ENVIRONMENT:true})){previous.set(key,Object.getOwnPropertyDescriptor(globalThis,key));Object.defineProperty(globalThis,key,{value,configurable:true,writable:true});}
  return {dom,container:document.getElementById('root')!,restore(){dom.window.close();for(const [key,value]of previous){if(value)Object.defineProperty(globalThis,key,value);else Reflect.deleteProperty(globalThis,key);}}};
 }
+test('the full offer page also reviews and schedules unconfirmed data with one Agendar click',async()=>{
+ const {container,restore}=domFixture(),root=createRoot(container),p={...emptyProduct(),operation:'bruto' as const,name:'Produto de exemplo',price:160,inStock:null,checkedAt:null,affiliateUrl:'https://meli.la/fixture'},text=pricedDraftCaption(p),offer={id:crypto.randomUUID(),product_id:p.id,caption:text,snapshot:p,status:'pronto'} as Offer;
+ const checked={...p,inStock:true,checkedAt:new Date().toISOString()},calls:{path:string;body:any}[]=[],request=(async(path:string,method='GET',body?:any)=>{
+  if(method==='POST')calls.push({path,body});
+  if(path==='/api/publication-config')return {enabled:false,slots:['09:00'],telegram:{available:true,title:'Canal fixture',key:'a'.repeat(64)}};
+  if(path==='/api/offers'){assert.equal(body.review,true);assert.equal(body.caption,text);assert.deepEqual(body.expected,p);return {offer:{...offer,snapshot:checked},serverNow:checked.checkedAt};}
+  if(path.endsWith('/schedule')){assert.equal(body.confirmed,true);assert.equal(body.allowSafe,false);assert.equal(body.caption,text);assert.ok(Date.parse(body.scheduledAt)>Date.now());return {saved:true};}
+  if(path.endsWith('/offer'))return {};throw Error('Unexpected '+path);
+ }) as typeof api;
+ try{await act(async()=>root.render(createElement(PublicationActions,{product:p,offer,text,initialAction:'schedule',request,context:{},save:async()=>{throw Error('No extra save click');},onUpdate:async()=>{},onEdit(){}})));
+  const modal=container.querySelector('[role=dialog]')!;assert.ok(!modal.textContent?.includes('Conferi agora'));const button=[...modal.querySelectorAll<HTMLButtonElement>('button')].find(b=>b.textContent==='Agendar')!;assert.equal(button.disabled,false);assert.equal(calls.length,0);await act(async()=>button.click());assert.deepEqual(calls.map(c=>c.path),['/api/offers','/api/offers/'+offer.id+'/schedule']);
+ }finally{await act(async()=>root.unmount());restore();}
+});
 test('saved offer enables manual preparation, explains blocks and confirms Telegram destination without duplicate calls or AI',async()=>{
  const {dom,container,restore}=domFixture(),root=createRoot(container),p={...emptyProduct(),name:'Controle de teste',affiliateUrl:'https://meli.la/test',price:160,checkedAt:new Date().toISOString(),inStock:true,status:'pronto' as const},text=formatCaption(p),offer={id:crypto.randomUUID(),product_id:p.id,caption:text,snapshot:p,status:'pronto'} as Offer;
  const calls:string[]=[],copied:string[]=[];Object.defineProperty(dom.window.navigator,'clipboard',{configurable:true,value:{writeText:async(text:string)=>{copied.push(text);}}});

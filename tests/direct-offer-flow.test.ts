@@ -29,6 +29,27 @@ function model(operation:typeof operationSchema.options[number]):QuickOfferData{
  return {product,offer:{id:crypto.randomUUID(),product_id:product.id,snapshot:product,caption:pricedDraftCaption(product),status:'pronto',created_at:product.createdAt,updated_at:product.createdAt},serverNow:new Date().toISOString()};
 }
 
+test('Agendar itself reviews the visible imported snapshot in every operation, without another confirmation',async t=>{
+ for(const brand of operationSchema.options)await t.test(brand,async()=>{
+  const f=fixture(),d=model(brand),writes:{path:string;body:any}[]=[];d.product.inStock=null;d.product.checkedAt=null;d.preparationNeedsReview=true;
+  const approved={...d.product,inStock:true,checkedAt:new Date().toISOString()},reviewed={...d.offer!,snapshot:approved};
+  const request=(async(path:string,method='GET',body?:any)=>{
+   if(method==='POST')writes.push({path,body});
+   if(path==='/api/publication-config')return {enabled:true,slots:['09:00'],telegram:{available:true,title:'Canal fixture',key:'a'.repeat(64)}};
+   if(path.endsWith('/offer'))return d;
+   if(path==='/api/offers'){assert.equal(body.review,true);assert.deepEqual(body.expected,d.product);assert.equal(body.caption,d.offer!.caption);return {offer:reviewed,serverNow:approved.checkedAt};}
+   if(path.endsWith('/schedule')){assert.equal(body.confirmed,true);assert.equal(body.allowSafe,false);assert.equal(body.caption,reviewed.caption);assert.equal(body.mode,'verified');return {saved:true};}
+   throw Error('Unexpected request '+path);
+  }) as typeof api;
+  try{await act(async()=>f.root.render(createElement(QuickOfferModal,{target:{id:d.product.id,operation:brand,intent:'schedule'},request,attempts:new Set<string>(),onClose(){}})));
+   assert.equal(f.container.querySelector('#quick-offer-title')?.textContent,'Agendar oferta');assert.ok(!f.container.textContent?.includes('Conferi os dados exibidos'));
+   const button=[...f.container.querySelectorAll<HTMLButtonElement>('.quick-offer-actions button')].find(b=>b.textContent==='Agendar')!;assert.equal(button.disabled,false);assert.equal(writes.length,0);
+   await act(async()=>button.click());assert.deepEqual(writes.map(c=>c.path),['/api/offers','/api/offers/'+reviewed.id+'/schedule']);
+   assert.ok(!writes.some(c=>/telegram$|publish$|automation|reconfirm|\/ai\//.test(c.path)));
+  }finally{await act(async()=>f.root.unmount());await f.close();}
+ });
+});
+
 test('Conferir is visible outside menus in dashboard and catalog cards of every operation',()=>{
  for(const brand of operationSchema.options){const d=model(brand),row={id:d.product.id,brand_id:brand,kind:'product',data:d.product,destinations:[],entered_at:d.product.createdAt,expires_at:new Date(Date.now()+86400000).toISOString(),pinned:false} as unknown as CatalogRow;
   const html=renderToStaticMarkup(createElement('div',null,createElement(GeneralProductCard,{product:d.product,onMessage(){}}),createElement(CatalogProductRow,{row,now:Date.now(),busy:false,onOpen(){},onRepost(){},onPin(){},onHistory(){},onRemove(){}}))),dom=new JSDOM(html);
@@ -46,7 +67,7 @@ test('each operation saves, schedules and publishes directly in the premium moda
    assert.ok(![...f.container.querySelectorAll('button')].some(b=>/^(Continuar|Próximo)$/.test(b.textContent||'')));
    const button=[...f.container.querySelectorAll<HTMLButtonElement>('.quick-offer-actions button')].find(b=>b.textContent?.trim()===action)!;assert.ok(button);assert.equal(button.disabled,false);
    await act(async()=>button.click());
-   const writes=calls.filter(c=>c.method==='POST');assert.equal(writes.length,1,JSON.stringify(writes));assert.ok(writes[0].path.endsWith(action==='Salvar'?'/api/offers':action==='Agendar'?'/schedule':'/telegram'));
+   const writes=calls.filter(c=>c.method==='POST');assert.equal(writes.length,action==='Agendar'?2:1,JSON.stringify(writes));if(action==='Agendar'){assert.equal(writes[0].path,'/api/offers');assert.equal(writes[0].body.review,true);}assert.ok(writes.at(-1)!.path.endsWith(action==='Salvar'?'/api/offers':action==='Agendar'?'/schedule':'/telegram'));
    assert.ok(!calls.some(c=>/reconfirm|\/ai\/|\/automation/.test(c.path)));assert.match(f.container.textContent!,action==='Salvar'?/Oferta salva/:action==='Agendar'?/Agendamento salvo/:/Telegram confirmou/);
   }finally{await act(async()=>f.root.unmount());await f.close();}
  });

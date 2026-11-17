@@ -2,7 +2,7 @@ import type {Product} from './domain';
 import type {Offer} from './offers';
 import {publicationBlock,type PublicationContext} from './publication';
 import {publicationPlan} from './publication-copy';
-export type SavedPublication=PublicationContext&{product:Product;offer?:Offer|null};
+export type SavedPublication=PublicationContext&{product:Product;offer?:Offer|null;curationState?:string};
 export function savedPublicationState(value:SavedPublication|undefined,now=Date.now()){
  const job=value?.jobs?.find(j=>j.channel==='telegram'),receipt=value?.delivery;
  const posted=value?.channels?value.channels.telegram.published:!!(receipt?.state==='sent'&&receipt.message_ids?.length||job?.state==='sent'&&job.message_ids?.length);

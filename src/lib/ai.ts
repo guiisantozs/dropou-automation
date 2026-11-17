@@ -2,6 +2,7 @@ import {z} from 'zod';
 import {caption, freshPrice, money, Product} from './domain';
 import {safeInstallments,shortProductName} from './commerce';
 import {dropouCaption,dropouCalls,dropouCategory} from './dropou-captions';
+import {generatedCaptionProduct} from './caption-generation';
 
 export const PROMPT_VERSION='dropou-2';
 export const brands={
@@ -58,6 +59,7 @@ export function renderCaption(p:Product,brand:Brand='dropou',headline=localHeadl
 }
 // Draft previews use this formatter with an explicit "not revalidated" label in the UI.
 export function formatCaption(p:Product,brand:Brand='dropou',headline=localHeadline(p,brand)){
+ p=generatedCaptionProduct(p);headline=safeHeadline(headline,p,brand);
  if(brand==='dropou')return dropouCaption(p,headline);
  const old=p.previousVerified&&p.previousPrice&&p.previousPrice>p.price?p.previousPrice:null;
  const savings=old?(Math.round(old*100)-Math.round(p.price*100))/100:0;

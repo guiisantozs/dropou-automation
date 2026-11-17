@@ -3,7 +3,7 @@ import type {ProductChannelSummary} from './channel-state';
 import type {PublicationJob} from './publication';
 import type {PublicationHistoryEntry} from './publication-history';
 export type ScheduledDestination=PublicationJob&{brand_id:string;product_id:string;offer_id:string;name:string;data:Product;schedule_batch_id?:string;schedule_batch_position?:number;batch_result?:{items:{state:string}[]}};
-export type SchedulePage={jobs:ScheduledDestination[];channels:Record<string,ProductChannelSummary>;more:boolean;total:number;serverNow:string;summary:{today:number;pending:number;attention:number;next:string|null}};
+export type SchedulePage={jobs:ScheduledDestination[];execution?:Record<string,{paused:boolean}>;channels:Record<string,ProductChannelSummary>;more:boolean;total:number;serverNow:string;summary:{today:number;pending:number;attention:number;next:string|null}};
 export type PublishedRecord=PublicationHistoryEntry&{source:'telegram_receipt'|'whatsapp_manual'|'manual_mark';snapshot:Product;actor_id:string|null;actor_name?:string};
 export type RecordsPage={entries:PublishedRecord[];more:boolean;total:number;serverNow:string;allowedBrands:string[];admin:boolean;operators:{id:string;label:string}[]};
 export type DatePreset='today'|'yesterday'|'week'|'month'|'custom';
@@ -12,8 +12,9 @@ export function publicationRange(preset:DatePreset,now=Date.now()){
  const today=publicationDay(now),shift=(days:number)=>new Date(Date.parse(today+'T12:00:00Z')+days*86400000).toISOString().slice(0,10);
  return preset==='yesterday'?{from:shift(-1),to:shift(-1)}:preset==='week'?{from:shift(-6),to:today}:preset==='month'?{from:today.slice(0,8)+'01',to:today}:{from:today,to:today};
 }
-export function schedulingStatus(job:Pick<ScheduledDestination,'state'|'channel'|'scheduled_at'>,now=Date.now()){
- if(job.state==='sent')return job.channel==='telegram'?'Publicado':'Publicado manualmente';
+export function schedulingStatus(job:Pick<ScheduledDestination,'state'|'channel'|'scheduled_at'>&{message_ids?:string[]},now=Date.now()){
+ if(job.state==='sent')return job.channel==='telegram'?(job.message_ids?.length?'Publicado':'Confirmação pendente'):'Publicado manualmente';
+ if(job.state==='cancelled')return 'Cancelado';
  if(job.state==='failed')return 'Falhou';if(job.state==='sending')return 'Publicando';if(job.state==='uncertain')return 'Entrega incerta';if(job.state==='partial')return 'Envio parcial';if(job.state==='blocked')return 'Precisa de revisão';
  if(['queued','ready'].includes(job.state)&&Date.parse(job.scheduled_at)<now)return job.channel==='whatsapp'?'Pendente manual · atrasado':'Atrasado';
  return job.channel==='whatsapp'?'Envio manual agendado':'Agendado';

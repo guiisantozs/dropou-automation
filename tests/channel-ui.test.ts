@@ -63,7 +63,7 @@ test('recent products and catalog show proven Telegram publication separately fr
 });
 
 test('dashboard upcoming uses the Telegram job date and clearly warns when automatic sends are paused',()=>{
- const p=product(),at='2026-11-07T20:00:00Z',html=renderToStaticMarkup(createElement(DashboardOverview,{products:[p],publications:[],automation:false,channelStatus:{[p.id]:{telegram:{...unpublished,state:'queued',scheduledAt:at},whatsapp:unpublished}},overview:true,onCreate(){},onOpen(){},onPreview(){},onImport(){},onNavigate(){}}));
+ const future=new Date(Date.now()+86400000);future.setUTCHours(20,0,0,0);const p=product(),at=future.toISOString(),html=renderToStaticMarkup(createElement(DashboardOverview,{products:[p],publications:[],automation:false,channelStatus:{[p.id]:{telegram:{...unpublished,state:'queued',scheduledAt:at},whatsapp:unpublished}},overview:true,onCreate(){},onOpen(){},onPreview(){},onImport(){},onNavigate(){}}));
  assert.match(html,/Agendamentos automáticos pausados/);assert.match(html,/não haverá envio automático/);assert.match(html,/Telegram agendado/);assert.match(html,/17:00/);assert.doesNotMatch(html,/Nenhum agendamento nos produtos exibidos/);
 });
 

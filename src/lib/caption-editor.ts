@@ -15,6 +15,8 @@ export function captionError(text:string,p:Product){
  const amounts=rawAmounts.map(v=>cents(v!));
  if(!amounts.includes(cents(p.price)))return 'Mantenha o preço registrado na legenda; para mudá-lo, edite e confira o produto.';
  if(amounts.some(v=>!allowed.has(v)))return 'A legenda contém um valor diferente dos preços e condições comprovados.';
+ if(/US\$|€|frete\s+gr[aá]tis|cupom|brinde|[uú]ltimas?\s+unidades?|menor\s+pre[cç]o|desconto\s+garantido/i.test(text))return 'Remova alegações comerciais que não estão comprovadas nos dados da oferta.';
+ if(/desconto|economiz/i.test(text)&&(!p.previousVerified||!p.previousPrice||p.previousPrice<=p.price))return 'O desconto não está comprovado nos dados da oferta.';
  if(/\bpix\b/i.test(text)&&p.paymentMethod!=='pix')return 'Pix não está confirmado para este preço.';
  for(const m of text.matchAll(/\b(\d+)\s*x\s*(?:de\s*)?R\$/gi))if(!plan||Number(m[1])!==plan.count)return 'Confira o parcelamento nos dados do produto antes de usá-lo na legenda.';
  if(/sem juros/i.test(text)&&!plan?.interestFree)return 'A condição sem juros não está comprovada.';

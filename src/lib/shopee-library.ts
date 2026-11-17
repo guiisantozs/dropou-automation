@@ -1,7 +1,7 @@
 import type {SavedShopeeProduct} from './shopee-saved';
 import {savedPublicationState,type SavedPublication} from './saved-publication';
 import {channelStateLabel} from './channel-state';
-export type SavedShopeeData={publications?:Record<string,SavedPublication>;serverNow?:string;products:SavedShopeeProduct[];total:number;more:boolean;credentialsReady:boolean;budget:{used:number;limit:number;globalUsed:number;globalLimit:number}};
+export type SavedShopeeData={executorPaused?:boolean;publications?:Record<string,SavedPublication>;serverNow?:string;products:SavedShopeeProduct[];total:number;more:boolean;credentialsReady:boolean;budget:{used:number;limit:number;globalUsed:number;globalLimit:number}};
 export type LibraryFilter='all'|'ready'|'posted'|'curation';
 export function libraryPublication(data:SavedShopeeData,row:SavedShopeeProduct){return row.prepared_product_id?data.publications?.[row.prepared_product_id]:undefined;}
 export function libraryState(value:SavedPublication|undefined,now:number){const state=savedPublicationState(value,now),canonical=value?.channels?.telegram.state,attention=canonical&&['sending','uncertain','partial','failed','blocked','queued'].includes(canonical)?channelStateLabel('telegram',canonical):'',telegram=state.telegram||attention;const posted=state.posted||!!value?.channels?.whatsapp.published;return {...state,telegram,attention,published:posted,ready:!posted&&!state.common&&!telegram};}

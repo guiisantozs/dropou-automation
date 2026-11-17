@@ -2,7 +2,7 @@ import {Product} from './domain';
 import {Offer} from './offers';
 import {publicationPlan,PublicationPreference} from './publication-copy';
 import type {ProductChannelSummary} from './channel-state';
-export type PublicationJob={id:string;state:string;channel:'telegram'|'whatsapp';scheduled_at:string;destination_title:string;error?:string;attempts:number;message_ids:string[];sent_at?:string};
+export type PublicationJob={id:string;state:string;channel:'telegram'|'whatsapp';scheduled_at:string;destination_title:string;error?:string;caption?:string;publication_mode?:string;attempts:number;message_ids:string[];sent_at?:string};
 export type PublicationConfig={enabled:boolean;manualTelegramScheduling?:boolean;slots?:string[];timezone?:'America/Bahia';serverNow?:string;whatsapp?:{name:string;url:string};telegram:{available:boolean;id?:string;title?:string;key?:string;reason?:string}};
 export type ManualPublication={id:string;channel:'whatsapp';destination:string;published_at:string;review_required?:boolean;confirmed_by?:string;confirmed_at?:string;confirmation_source?:string;caption?:string};
 export type PublicationContext={channels?:ProductChannelSummary;destinations?:{whatsapp:{name:string;url:string}};serverNow?:string;job?:PublicationJob;jobs?:PublicationJob[];whatsapp?:ManualPublication;archived?:boolean;republications?:{id:string;channel:'telegram'|'whatsapp'}[];delivery?:{state:string;message_ids:string[];destination_title:string;sent_at?:string;error?:string}};

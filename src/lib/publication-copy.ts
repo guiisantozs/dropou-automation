@@ -5,6 +5,7 @@ import {freshPrice,money,Product} from './domain';
 import {dropouCaption} from './dropou-captions';
 import {isLocalOperation} from './workspace-brands';
 import {validShopeeAffiliateLink} from './shopee-affiliate';
+import {generatedCaptionProduct} from './caption-generation';
 export type PublicationMode='verified'|'safe';
 export type PublicationPreference='auto'|'safe'|'priced';
 export function publicationIdentityError(p:Product){
@@ -26,6 +27,7 @@ export function safePublicationCaption(p:Product){
  return [copy.headline,'⚡ *'+name+'*','🛒 Veja o preço e a disponibilidade atualizados na loja 👇\n'+p.affiliateUrl,'As condições podem ter mudado.',copy.closing].join('\n\n');
 }
 export function pricedDraftCaption(p:Product){
+ p=generatedCaptionProduct(p);
  if((p.operation||'dropou')==='dropou')return dropouCaption(p);
  const parts=safePublicationCaption(p).split('\n\n');
  return [parts[0],parts[1],'💙 *POR '+money(p.price)+(p.paymentMethod==='pix'?' no Pix':'')+'!*','🛒 CONFIRA A OFERTA 👇\n'+p.affiliateUrl,parts[4]].join('\n\n');

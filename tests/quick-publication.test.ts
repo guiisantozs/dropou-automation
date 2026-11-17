@@ -53,3 +53,16 @@ test('saving edits uses only the existing save API, explicit review and canonica
  await storeQuickOffer(request,d,text,true);assert.equal(calls[1].body.review,true);assert.ok(!calls.some(c=>/telegram|schedule|publish$/.test(c.path)));
  await assert.rejects(()=>storeQuickOffer(request,{...d,archived:true},text));assert.equal(calls.length,2);
 });
+
+test('schedule review bypasses only redundant confirmation and retains concrete commercial and delivery blocks',()=>{
+ const d=fixture(),text=d.offer!.caption,unreviewed={...d,preparationNeedsReview:true,product:{...d.product,inStock:null,checkedAt:null}};
+ assert.equal(quickPublicationReason(unreviewed,text,'telegram',now,media,true),null);
+ for(const patch of [{inStock:false},{price:0},{affiliateUrl:'https://invalid.example'},{demo:true}])assert.ok(quickPublicationReason({...unreviewed,product:{...unreviewed.product,...patch}},text,'telegram',now,media,true));
+ assert.ok(quickPublicationReason(unreviewed,text+'\nEconomize!','telegram',now,media,true));
+ assert.ok(quickPublicationReason({...unreviewed,delivery:{state:'uncertain',message_ids:[],destination_title:'Fixture'}},text,'telegram',now,media,true));
+});
+
+test('review refuses a server caption change instead of scheduling text the operator did not approve',async()=>{
+ const d=fixture(),request=(async()=>({offer:{...d.offer!,caption:'Changed elsewhere'}})) as typeof api;
+ await assert.rejects(()=>storeQuickOffer(request,d,d.offer!.caption,true),/legenda mudou/);
+});
