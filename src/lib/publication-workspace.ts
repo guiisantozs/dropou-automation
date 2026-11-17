@@ -2,7 +2,7 @@ import type {Product} from './domain';
 import type {ProductChannelSummary} from './channel-state';
 import type {PublicationJob} from './publication';
 import type {PublicationHistoryEntry} from './publication-history';
-export type ScheduledDestination=PublicationJob&{brand_id:string;product_id:string;offer_id:string;name:string;data:Product};
+export type ScheduledDestination=PublicationJob&{brand_id:string;product_id:string;offer_id:string;name:string;data:Product;schedule_batch_id?:string;schedule_batch_position?:number;batch_result?:{items:{state:string}[]}};
 export type SchedulePage={jobs:ScheduledDestination[];channels:Record<string,ProductChannelSummary>;more:boolean;total:number;serverNow:string;summary:{today:number;pending:number;attention:number;next:string|null}};
 export type PublishedRecord=PublicationHistoryEntry&{source:'telegram_receipt'|'whatsapp_manual'|'manual_mark';snapshot:Product;actor_id:string|null;actor_name?:string};
 export type RecordsPage={entries:PublishedRecord[];more:boolean;total:number;serverNow:string;allowedBrands:string[];admin:boolean;operators:{id:string;label:string}[]};

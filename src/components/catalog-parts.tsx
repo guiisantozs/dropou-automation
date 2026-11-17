@@ -1,5 +1,6 @@
 'use client';
 import {CalendarDays,Clock3,ExternalLink,Gamepad2,Headphones,House,Info,Lamp,Package,Pin,PinOff,RotateCw,Search,Smartphone,Sparkles,SprayCan,TreePine,Wrench,Shirt,Footprints,Car} from 'lucide-react';
+import type {ReactNode} from 'react';
 import type {CatalogDestination,CatalogRow} from '@/lib/catalog';
 import {catalogRetention} from '@/lib/catalog';
 import {money} from '@/lib/domain';
@@ -19,9 +20,9 @@ export function CatalogDestinationBadges({destinations,published,onHistory}:{des
  const shown=destinations.filter(d=>!!d.publishedAt===published);
  return <div className="catalog-destination-badges">{shown.slice(0,2).map(d=><button key={d.channel+':'+d.name} onClick={()=>onHistory(d)} title={d.name+' · '+(d.publishedAt?publicationDate(d.publishedAt):d.scheduledAt?'Agendado: '+publicationDate(d.scheduledAt):'Ainda não publicado')}><ChannelMark channel={d.channel}/><span>{d.name||d.channel}</span>{!published&&d.state!=='not_published'&&<small>{d.state==='queued'||d.state==='ready'?'Agendado':d.state==='uncertain'||d.state==='partial'?'Revisar':'Pendente'}</small>}</button>)}{!shown.length&&<small>{published?'Sem confirmação neste destino':destinations.length?'Todos os destinos confirmados':'Nenhum destino configurado'}</small>}</div>;
 }
-export function CatalogProductRow({row,now,busy,onOpen,onRepost,onPin,onHistory,onRemove,onEdit}:{row:CatalogRow;now:number;busy:boolean;onOpen:()=>void;onRepost:()=>void;onPin:()=>void;onHistory:()=>void;onRemove:()=>void;onEdit?:()=>void}){
+export function CatalogProductRow({row,now,busy,onOpen,onRepost,onPin,onHistory,onRemove,onEdit,selection}:{row:CatalogRow;now:number;busy:boolean;onOpen:()=>void;onRepost:()=>void;onPin:()=>void;onHistory:()=>void;onRemove:()=>void;onEdit?:()=>void;selection?:ReactNode}){
  return <article className="catalog-product-row" data-product-id={row.id}>
-  <div className="catalog-product-identity"><button className="catalog-product-photo" onClick={onOpen} aria-label={'Abrir oferta: '+row.data.name}><ProductMedia product={row.data}/></button><div><div className="catalog-name-line"><h3 title={row.data.name}>{row.data.shortName||row.data.name}</h3>{row.pinned&&<span className="catalog-pinned-label"><Pin size={10}/>Fixado</span>}</div><p>{row.data.niche}{row.kind==='saved'?' · Importação pendente':''}</p><CatalogExpiration row={row} now={now}/></div></div>
+  <div className="catalog-product-identity">{selection}<button className="catalog-product-photo" onClick={onOpen} aria-label={'Abrir oferta: '+row.data.name}><ProductMedia product={row.data}/></button><div><div className="catalog-name-line"><h3 title={row.data.name}>{row.data.shortName||row.data.name}</h3>{row.pinned&&<span className="catalog-pinned-label"><Pin size={10}/>Fixado</span>}</div><p>{row.data.niche}{row.kind==='saved'?' · Importação pendente':''}</p><CatalogExpiration row={row} now={now}/></div></div>
   <div className="catalog-price"><span className="catalog-mobile-label">Preço</span><strong>{row.data.price>0?money(row.data.price):'Indisponível'}</strong></div>
   <div className="catalog-category"><span>{row.data.niche||'Sem categoria'}</span></div>
   <div className="catalog-marketplace"><MarketplaceBadge store={row.data.store||'Shopee'}/></div>

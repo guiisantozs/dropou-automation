@@ -70,7 +70,7 @@ test('dashboard upcoming uses the Telegram job date and clearly warns when autom
 test('schedule loads real pending totals without activating automation or listing approved products',async()=>{
  const {container,close}=fixture(),root=(await import('react-dom/client')).createRoot(container),calls:any[]=[];
  const request=(async(path:string,method='GET')=>{calls.push({path,method});return {jobs:[],channels:{},total:0,more:false,serverNow:new Date().toISOString(),summary:{today:0,pending:0,attention:0,next:null}};}) as typeof api;
- try{await act(async()=>root.render(createElement(PublicationSchedule,{request})));assert.match(container.textContent!,/Nenhuma publicação agendada/);assert.ok(calls.every(c=>c.method==='GET'&&c.path.startsWith('/api/publication-jobs')));assert.equal([...container.querySelectorAll('button')].some(b=>b.textContent==='Ativar próximos agendamentos'),false);}finally{await act(async()=>root.unmount());close();}
+ try{await act(async()=>root.render(createElement(PublicationSchedule,{request})));assert.match(container.textContent!,/Nenhum produto agendado ainda/);assert.ok(calls.every(c=>c.method==='GET'&&(c.path.startsWith('/api/publication-jobs')||c.path==='/api/operations')));assert.equal([...container.querySelectorAll('button')].some(b=>b.textContent==='Ativar próximos agendamentos'),false);}finally{await act(async()=>root.unmount());close();}
 });
 
 test('history rows show saved destination, actual and scheduled times, message link and a distinct manual actor',()=>{

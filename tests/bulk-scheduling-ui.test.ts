@@ -1,0 +1,47 @@
+import {test} from 'node:test';
+import assert from 'node:assert/strict';
+import {readFileSync} from 'node:fs';
+import {createRequire} from 'node:module';
+import {act,createElement} from 'react';
+import {createRoot} from 'react-dom/client';
+import {renderToStaticMarkup} from 'react-dom/server';
+import BatchScheduleModal,{BatchSelectionBar} from '../src/components/batch-scheduling';
+import PublicationSchedule from '../src/components/publication-schedule';
+import {shopeeProduct} from '../src/lib/shopee-product';
+import {pricedDraftCaption} from '../src/lib/publication-copy';
+import {nextPublicationSlots,bahiaInstant} from '../src/lib/publication';
+import type {api} from '../src/lib/api';
+import {operationSchema} from '../src/lib/workspace-brands';
+const {JSDOM}=createRequire(import.meta.url)('jsdom');
+const product=shopeeProduct({shopId:'123',itemId:'456',name:'Produto fixture',price:30,priceMax:30,image:'',offerLink:'https://s.shopee.com.br/fixture',productLink:'https://shopee.com.br/product/123/456',rating:null,sales:null,commission:null,reportedDiscount:null,checkedAt:new Date().toISOString()},crypto.randomUUID(),'beleza');
+function fixture(){const dom=new JSDOM('<div id="root"></div>',{url:'https://dropou.test'}),old=new Map<string,PropertyDescriptor|undefined>();for(const [k,v]of Object.entries({window:dom.window,self:dom.window,document:dom.window.document,navigator:dom.window.navigator,IS_REACT_ACT_ENVIRONMENT:true})){old.set(k,Object.getOwnPropertyDescriptor(globalThis,k));Object.defineProperty(globalThis,k,{value:v,configurable:true,writable:true});}return {dom,root:createRoot(document.getElementById('root')!),container:document.getElementById('root')!,close(){dom.window.close();for(const [k,v]of old){if(v)Object.defineProperty(globalThis,k,v);else Reflect.deleteProperty(globalThis,k);}}};}
+const button=(text:string)=>[...document.querySelectorAll<HTMLButtonElement>('button')].find(b=>b.textContent?.trim()===text)!;
+test('shared modal preserves selections between pages, requires explicit repost and collective confirmation, and shows partial results',async()=>{
+ const f=fixture(),calls:{url:URL;method:string;body:any}[]=[],a={id:product.id,kind:'product',brand_id:'beleza',product_id:product.id,data:product,reviewed:false,published_at:null,pending:false,expired:false,curation_state:'pending'},otherId=crypto.randomUUID(),b={...a,id:otherId,product_id:otherId,data:{...product,id:otherId},published_at:new Date().toISOString()},stamp=nextPublicationSlots(['23:59'])[0].value;
+ let prepare:any;const request=(async(path:string,method='GET',body?:any)=>{const url=new URL(path,'https://dropou.test');calls.push({url,method,body});assert.equal(url.searchParams.get('brand'),'beleza');if(url.pathname==='/api/operations')return {operations:[{brand_id:'beleza',routine_slots:['23:59'],telegram_title:'Canal fixture'}]};if(method==='GET')return {rows:url.searchParams.get('page')==='1'?[b]:[a],total:2,more:url.searchParams.get('page')!=='1',operations:['beleza']};if(body.action==='prepare'){prepare=body;return {id:body.id,brand_id:'beleza',channel:'telegram',scheduled_at:body.scheduledAt,target:{title:'Canal fixture'},items:body.items.map((r:any,index:number)=>({key:r.operation+':'+r.kind+':'+r.id,name:'Produto '+index,expected:product,caption:pricedDraftCaption(product),productId:product.id,repost:r.repost,...(index===1?{error:'Preço precisa de revisão'}:{})})),executor:{authorized:true,note:'Um produto por minuto. Nenhum envio durante a revisão.'}};}return {id:body.id,scheduledAt:bahiaInstant(stamp),items:prepare.items.map((r:any,index:number)=>({key:r.operation+':'+r.kind+':'+r.id,name:'Produto '+index,state:index===0?'queued':'failed',error:index===1?'Preço precisa de revisão':undefined}))};}) as typeof api;
+ try{
+  await act(async()=>{f.root.render(createElement(BatchScheduleModal,{operation:'beleza',request,initialAt:stamp,onClose(){}}));await new Promise(r=>setTimeout(r,40));});await act(async()=>new Promise(r=>setTimeout(r,40)));
+  const select=()=>[...f.container.querySelectorAll<HTMLInputElement>('.batch-product-list input[type=checkbox]')];assert.equal(select()[0].checked,false);await act(async()=>select()[0].click());
+  await act(async()=>document.querySelector<HTMLButtonElement>('[aria-label="Próxima página de produtos"]')!.click());await act(async()=>new Promise(r=>setTimeout(r,40)));assert.match(f.container.textContent!,/1 selecionado/);assert.equal(select()[0].checked,false,'published item must never be automatically selected');await act(async()=>select()[0].click());await act(async()=>document.querySelector<HTMLInputElement>('.batch-repost-confirm input')!.click());
+  await act(async()=>button('Revisar agendamento').click());assert.equal(prepare.items.length,2);assert.equal(prepare.items[1].repost,true);assert.equal(calls.filter(c=>c.method==='POST').length,1);assert.equal(button('Confirmar e agendar válidos').disabled,true);assert.match(f.container.textContent!,/Preço precisa de revisão/);
+  await act(async()=>document.querySelector<HTMLInputElement>('.batch-collective-confirm input')!.click());await act(async()=>button('Confirmar e agendar válidos').click());assert.equal(calls.filter(c=>c.method==='POST').length,2);assert.equal(calls.at(-1)!.body.confirmed,true);assert.match(f.container.textContent!,/1 produto\(s\) agendado/);assert.match(f.container.textContent!,/1 precisam de revisão/);assert.ok(!calls.some(c=>/\/offers\/|\/telegram|\/ai\//.test(c.url.pathname)));
+ }finally{await act(async()=>f.root.unmount());f.close();}
+});
+test('schedule empty action opens the shared picker immediately and configured hours always select future dates',async()=>{
+ const f=fixture(),stamp=new Date().toISOString(),reads:string[]=[],data={jobs:[],channels:{},total:0,more:false,serverNow:stamp,summary:{today:0,pending:0,attention:0,next:null}};
+ const request=(async(path:string)=>{const u=new URL(path,'https://dropou.test');reads.push(u.pathname);if(u.pathname==='/api/operations')return {operations:[{brand_id:'beleza',routine_slots:['00:00','23:59'],display_name:'Toque de Beleza'}]};if(u.pathname==='/api/schedule-batches')return {rows:[],total:0,more:false,operations:['beleza']};return data;}) as typeof api;
+ try{await act(async()=>f.root.render(createElement(PublicationSchedule,{operation:'beleza',initialData:data,request})));assert.match(f.container.textContent!,/Nenhum produto agendado ainda/);assert.equal(f.container.querySelectorAll('.schedule-operation-slots button').length,2);const slots=[...f.container.querySelectorAll<HTMLButtonElement>('.schedule-operation-slots button')];assert.ok(slots.every(b=>/Hoje|Amanhã/.test(b.textContent!)));await act(async()=>button('Agendar primeiros produtos').click());assert.equal(f.container.querySelector('[role=dialog] h2')?.textContent,'Agendar produtos');assert.ok(reads.every(p=>!p.includes('/telegram')));}finally{await act(async()=>f.root.unmount());f.close();}
+});
+test('batch controls are shared only by the three requested pages and preserve operation themes',()=>{
+ for(const file of ['catalog-workspace','shopee-saved-products'])assert.match(readFileSync('src/components/'+file+'.tsx','utf8'),/BatchSelectionBar/);
+ for(const file of ['general-dashboard','dashboard-overview','product-operations'])assert.doesNotMatch(readFileSync('src/components/'+file+'.tsx','utf8'),/BatchScheduleModal|BatchSelectionBar|Agendar selecionados/);
+ assert.match(readFileSync('src/components/publication-schedule.tsx','utf8'),/BatchScheduleModal/);
+ const css=readFileSync('src/app/bulk-scheduling.css','utf8');assert.match(css,/var\(--primary\)/);assert.match(css,/var\(--surface\)/);assert.doesNotMatch(css,/#[0-9a-f]{3,8}\b/i);
+ for(const operation of operationSchema.options){const html=renderToStaticMarkup(createElement(BatchSelectionBar,{operation,page:[],selection:[],setSelection(){}}));assert.match(html,/Selecionar página/);}
+});
+
+test('catalog and saved-link aliases stay selected as one canonical product without changing the original reference',async()=>{
+ const f=fixture(),savedId=crypto.randomUUID(),initial={id:product.id,kind:'product' as const,operation:'beleza' as const,productId:product.id,repost:false};let prepared:any;
+ const request=(async(path:string,method='GET',body?:any)=>{const u=new URL(path,'https://dropou.test');if(u.pathname==='/api/operations')return {operations:[{brand_id:'beleza',routine_slots:['23:59']}]};if(method==='GET')return {rows:[{id:savedId,kind:'saved',brand_id:'beleza',product_id:product.id,data:product,reviewed:false,pending:false,expired:false,curation_state:'pending'}],operations:['beleza'],total:1,more:false};prepared=body;return {id:body.id,brand_id:'beleza',channel:'telegram',scheduled_at:body.scheduledAt,target:{title:'Fixture'},items:[],executor:{note:'Fixture'}};}) as typeof api;
+ try{await act(async()=>{f.root.render(createElement(BatchScheduleModal,{operation:'beleza',initialSelection:[initial],initialAt:nextPublicationSlots(['23:59'])[0].value,request,onClose(){}}));await new Promise(r=>setTimeout(r,30));});await act(async()=>new Promise(r=>setTimeout(r,30)));assert.equal(f.container.querySelector<HTMLInputElement>('.batch-product-list .batch-select input')!.checked,true);await act(async()=>button('Revisar agendamento').click());assert.equal(prepared.items.length,1);assert.equal(prepared.items[0].id,product.id);assert.equal(prepared.items[0].kind,'product');}finally{await act(async()=>f.root.unmount());f.close();}
+});
