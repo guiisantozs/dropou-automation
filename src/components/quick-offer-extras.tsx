@@ -20,7 +20,7 @@ export default function QuickOfferExtras({data,text,request,busy,publicationDisa
  const [working,setWorking]=useState(false),[aiConsent,setAiConsent]=useState(false),[repost,setRepost]=useState<Channel>(),[confirmed,setConfirmed]=useState(false),[history,setHistory]=useState(initiallyOpenHistory),lock=useRef(false),repostRequest=useRef('');
  const product=data.product,brand=product.operation||'dropou';
  async function run(fn:()=>Promise<void>){if(lock.current||busy)return;lock.current=true;setWorking(true);onError('');try{await fn();}catch(e){onError((e as Error).message);}finally{lock.current=false;setWorking(false);}}
- return <div className="quick-offer-extra-body"><button className="secondary" disabled={busy||working} onClick={onEdit}><Pencil size={14}/>Editar dados do produto</button>
+ return <div className="quick-offer-extra-body"><button className="secondary" disabled={busy||working} onClick={onEdit}><Pencil size={14}/>Editar detalhes</button>
   <TelegramMediaOptions compact={isShopeeOperation(brand)} product={product} value={media} onChange={onMedia}/>
   {media.mediaMode==='photo'&&<details><summary>Conferir foto da publicação</summary><PublicationPhoto product={product}/></details>}
   {!data.archived&&<PublicationPhotoEditor request={request} product={product} onStored={onUpdate}/>}

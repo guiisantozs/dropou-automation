@@ -331,3 +331,11 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
 ## 2026-11-16 · Instalação e publicação autorizadas
 
 Pedido posterior autoriza envio ao GitHub e deploy Vercel. A migração 20261117003706_karen_manual_telegram_bots foi aplicada somente ao projeto Dropou e registrada atomicamente no histórico (SHA-256 do arquivo: 8238723f63bc55ac36a4eca804ccae6679a6062d8d5382a9699c6bce351e691f). Não reaplicar. Postcheck remoto: bots exclusivos corretos, três automações false, um cron existente, 44 jobs/43 deliveries/202 eventos/dois vínculos preservados. Nomes das três variáveis privadas confirmados em Production na Vercel, sem baixar valores. As senhas e os dois logins foram validados na etapa anterior e não foram repetidos para deploy. A recuperação de e-mail depende de URL/SMTP compatíveis; a configuração Auth remota não foi alterada nesta publicação. SHA Git e estado efetivo do deploy são conferidos no relatório final.
+
+
+## 2026-11-16 · Fluxo direto de ofertas
+
+- Base main 9c37b12, inicialmente limpa. Conferir visível nos cards abre o QuickOfferModal existente; removidos os desvios automáticos para editor/cadastro em importações e listas operacionais. Menus reservados a ações secundárias, edição avançada opcional e curadoria Aprovar/Rejeitar preservada.
+- Carregamento inicial usa dados do card, leituras paralelas e preparação idempotente do link salvo dentro do modal. Escopo e ID canônico validados; needsReview permanece uma pendência até revisão explícita. Estoque false não é convertido por Salvar. Agendar executa diretamente usando o horário exibido. Serviços, permissões e recibos existentes preservados; nenhum backend/schema modificado.
+- Validação: 525/525 testes completos; typecheck/build aprovados. Chrome com APIs interceptadas: 148 layouts em 320/375/768/1440, consolidado/nove operações, dashboard/modal/catálogo e sete bibliotecas Shopee. URL preservada, Conferir fora do menu, nenhum wizard no caminho principal, temas herdados, sem overflow/erros/rede externa; ações simuladas e capturas inspecionadas. Guia e inventário em docs/fluxo-direto-ofertas.md.
+- Sem mensagens reais, consultas externas de produto, geração paga, ativação de integração, migração remota, push ou deploy. O formulário antigo continua opcional; dados inválidos e destinos não configurados bloqueiam publicação dentro do modal.

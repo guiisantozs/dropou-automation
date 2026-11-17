@@ -543,3 +543,11 @@ Pedido posterior autoriza envio ao GitHub e deploy Vercel. A migração 20261117
 - As três variáveis privadas estão presentes em Production na Vercel; valores não baixados nem mostrados. Os três canais ainda não estão cadastrados/verificados. Bots reais e permissões devem ser verificados pelo administrador no dashboard após cadastrar cada destino.
 - Três automações permanecem false, WhatsApp sem destino e Shopee automática desativada; permanece um único `dropou-telegram-dispatch`. Nenhum cron, rotina, MTProto, consulta de produto ou mensagem real acionado como teste.
 - Deploy da implementação `9f2b5bd` encontrado READY com alias de produção. Após publicar esta correção documental, conferir novamente SHA, READY e disponibilidade por GET sem sessão; resultados efetivos no relatório final.
+
+
+## 2026-11-16 · Fluxo direto de ofertas
+
+- Base main 9c37b12, inicialmente limpa. Conferir visível nos cards abre o QuickOfferModal existente; removidos os desvios automáticos para editor/cadastro em importações e listas operacionais. Menus reservados a ações secundárias, edição avançada opcional e curadoria Aprovar/Rejeitar preservada.
+- Carregamento inicial usa dados do card, leituras paralelas e preparação idempotente do link salvo dentro do modal. Escopo e ID canônico validados; needsReview permanece uma pendência até revisão explícita. Estoque false não é convertido por Salvar. Agendar executa diretamente usando o horário exibido. Serviços, permissões e recibos existentes preservados; nenhum backend/schema modificado.
+- Validação: 525/525 testes completos; typecheck/build aprovados. Chrome com APIs interceptadas: 148 layouts em 320/375/768/1440, consolidado/nove operações, dashboard/modal/catálogo e sete bibliotecas Shopee. URL preservada, Conferir fora do menu, nenhum wizard no caminho principal, temas herdados, sem overflow/erros/rede externa; ações simuladas e capturas inspecionadas. Guia e inventário em docs/fluxo-direto-ofertas.md.
+- Sem mensagens reais, consultas externas de produto, geração paga, ativação de integração, migração remota, push ou deploy. O formulário antigo continua opcional; dados inválidos e destinos não configurados bloqueiam publicação dentro do modal.

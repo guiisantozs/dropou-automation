@@ -48,6 +48,8 @@
 .catalog-destination-badges button>span:not(.general-brand-mark){max-width:100px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.catalog-destination-badges small{font-size:8px;color:var(--ink-muted);line-height:1.5}.catalog-destination-badges button>small{font-size:7px}
 .catalog-publication-date{font-size:9px}.catalog-publication-date>button{display:flex;flex-wrap:wrap;gap:4px;align-items:center;color:var(--ink);border:0;background:transparent;padding:0;cursor:pointer;text-align:left;font-size:9px;line-height:1.6}.catalog-publication-date>small{font-size:8px;color:var(--ink-muted)}
 .catalog-row-actions{display:flex;align-items:center;justify-content:end;gap:6px}
+.catalog-row-actions{flex-wrap:wrap}
+.catalog-row-actions .catalog-open{order:-1;width:auto;height:32px;padding:0 9px;gap:5px;background:var(--primary);border-color:var(--primary);color:var(--primary-ink);font-size:10px;font-weight:600}
 .catalog-repost{display:inline-flex;align-items:center;justify-content:center;gap:6px;min-height:30px;padding:0 11px;color:var(--primary-ink);background:var(--primary);border:1px solid var(--primary);border-radius:20px;font-size:9px;font-weight:800;white-space:nowrap;cursor:pointer}
 .catalog-open,.catalog-pin{display:inline-flex;align-items:center;justify-content:center;padding:0;width:29px;height:29px;border:1px solid var(--border);border-radius:12px;background:var(--subtle);color:var(--ink);cursor:pointer;flex-shrink:0}
 .catalog-workspace button:disabled{opacity:.45;cursor:default}.catalog-row-menu{position:relative}.catalog-row-menu summary{cursor:pointer;font-size:12px;letter-spacing:1px;list-style:none;color:var(--ink-muted);padding:4px 0}
