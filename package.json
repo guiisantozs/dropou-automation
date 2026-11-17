@@ -11,7 +11,8 @@
     "typecheck": "tsc --noEmit",
     "test": "tsx --test tests/*.test.ts",
     "worker:telegram": "node --env-file-if-exists=.env.local --import tsx scripts/telegram-mtproto-worker.ts",
-    "worker:telegram:check": "node --env-file-if-exists=.env.local --import tsx scripts/check-telegram-mtproto-worker.ts"
+    "worker:telegram:check": "node --env-file-if-exists=.env.local --import tsx scripts/check-telegram-mtproto-worker.ts",
+    "members:passwords": "node --import tsx scripts/set-member-initial-passwords.ts"
   },
   "keywords": [],
   "author": "",

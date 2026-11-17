@@ -86,7 +86,7 @@ test('failed authentication preserves the saved original and never prepares or s
 test('member access permits shared Shopee but keeps credentials, bots, sends and settings restricted',()=>{
  for(const brand of ['beleza','casa','natal']){
   for(const path of ['/api/shopee/saved-products','/api/shopee/automation','/api/products/lookup','/api/products/resolve'])assert.equal(operationIntegrationUnavailable(brand,path,'POST'),false);
-  for(const path of ['/api/integrations/shopee','/api/shopee/test-telegram','/api/telegram/connections','/api/offers/00000000-0000-4000-8000-000000000001/telegram','/api/publication-config'])assert.equal(operationIntegrationUnavailable(brand,path,'POST'),true);
+  for(const path of ['/api/integrations/shopee','/api/shopee/test-telegram','/api/telegram/connections','/api/publication-config'])assert.equal(operationIntegrationUnavailable(brand,path,'POST'),true);
  }
  assert.equal(workspaceAdminRequired('/api/shopee/automation','PATCH'),true);
 });
@@ -163,7 +163,7 @@ test('incremental member Shopee integration preserves RLS, central ownership and
    await one("select dropou_member_search_complete($1,'beleza',$2,$3)",[owner,token,'a'.repeat(64)]);
    assert.equal((await one("select dropou_member_search_window($1,'beleza',$2,$3,3) r",[owner,token,'a'.repeat(64)])).r.cached,true);
    await assert.rejects(db.query("select dropou_member_search_window($1,'casa',$2,$3,3)",[owner,token,'a'.repeat(64)]),/Reserva/);
-   await assert.rejects(db.exec("update operation_settings set automation_enabled=true where brand_id='beleza'"));await assert.rejects(db.exec("update operation_settings set telegram_chat_id='-100123456' where brand_id='casa'"));
+   await assert.rejects(db.exec("update operation_settings set automation_enabled=true where brand_id='beleza'"));await assert.rejects(db.exec("update operation_settings set telegram_bot_env='TELEGRAM_BELEZA_BOT_TOKEN' where brand_id='casa'"));
    assert.equal((await one("select count(*) n from operation_settings where brand_id in ('beleza','casa','natal') and automation_enabled")).n,0);
   });
  }finally{await db.close();}

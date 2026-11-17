@@ -1,3 +1,5 @@
+import {operationSupports} from '@/lib/operation-capabilities';
+import {bindTelegramTarget} from './telegram-operation-config';
 ﻿import 'server-only';
 import {adminDb} from './db';
 import {operationSettings} from './operations';
@@ -17,6 +19,7 @@ export async function publicationAdmin(owner:string){
 export async function queuePublication(owner:string,offerId:string,channel:'telegram'|'whatsapp',at:string,caption:string,targetKey?:string,mode:PublicationMode='verified',sourceCaption=caption,allowSafe=false,presentation?:TelegramPresentation,republicationKey?:string,actorId?:string){
  const {db}=await publicationAdmin(owner);
  const scoped=await db.from('offers').select('brand_id,product_id').eq('id',offerId).eq('owner_id',owner).single();if(scoped.error)throw dbError(scoped.error);
+ if(!operationSupports(scoped.data.brand_id,channel==='telegram'?'telegramManual':'whatsappDestination'))throw new Error('FORBIDDEN: Integração indisponível nesta operação.');
  const productState=await db.from('products').select('curation_state,archived_at').eq('id',scoped.data.product_id).eq('owner_id',owner).single();if(productState.error)throw dbError(productState.error);if(productState.data.curation_state==='rejected'||productState.data.archived_at)throw new Error('Produto rejeitado ou arquivado.');
  const manual=await db.from('product_channel_marks').select('id').eq('owner_id',owner).eq('product_id',scoped.data.product_id).eq('channel',channel).is('revoked_at',null).limit(1);if(manual.error)throw dbError(manual.error);if(manual.data?.length&&!republicationKey)throw new Error('Publicação manual já registrada. Para repostar, copie a legenda e registre a nova publicação manual pelo catálogo.');
  const settings=channel==='whatsapp'?await operationSettings(db,owner,scoped.data.brand_id):null;
@@ -31,8 +34,9 @@ export async function dispatchJob(id:string,automatic:boolean){
  if(before.data.shopee_offer_id&&before.data.publication_mode==='official'){const {shopeeAutomation}=await import('./shopee/automation');return shopeeAutomation().dispatch(id);}
  const target=before.data.channel==='telegram'?await telegramTarget(before.data.owner_id,before.data.brand_id,true):undefined;
  const env=target?await operationTelegramEnv(before.data.owner_id,before.data.brand_id):undefined;
+ if(target&&bindTelegramTarget(target,before.data.owner_id,before.data.brand_id,env!).key!==target.key)throw new Error('O bot mudou. Confira a confirmação novamente.');
  const claim=await db.rpc('dropou_publication_claim_v2',{p_job:id,p_target:target?.key||'whatsapp',p_automatic:automatic});if(claim.error)throw publicationDbError(claim.error);if(!claim.data)return {sent:false};
- let job=claim.data;
+ let job=claim.data;const manualSchedule=!operationSupports(job.brand_id,'automaticPublishing');
  async function downgrade(){const r=await db.rpc('dropou_publication_downgrade',{p_job:id});if(r.error)throw publicationDbError(r.error);job=r.data;}
  async function receipt(ids:string[],state:string,error?:string){const result=await db.rpc('dropou_publication_receipt',{p_job:id,p_ids:ids,p_state:state,p_error:error||null});if(result.error)throw new Error('Falha ao registrar entrega. Confira o canal; não repita o envio.');}
  let receivedIds:string[]=[];
@@ -46,8 +50,8 @@ export async function dispatchJob(id:string,automatic:boolean){
   let needsSafe=false;
   const progress=(ids:string[])=>{receivedIds=ids;return receipt(ids,'sending');};
   const beforeSend=async()=>{
-   if(automatic){const pause=await db.from('telegram_dispatch_config').select('automation_enabled').eq('id',true).single();if(pause.error||!pause.data.automation_enabled)throw new TelegramFailure('Automação pausada antes do envio. Autorize novamente quando retomar.','failed');}
-   const settings=await db.from('operation_settings').select('automation_enabled,telegram_chat_id').eq('owner_id',job.owner_id).eq('brand_id',job.brand_id).single();if(settings.error||(automatic&&!settings.data.automation_enabled)||(settings.data.telegram_chat_id||'')!==env!.DROPOU_TARGET_SETTING||(settings.data.telegram_chat_id&&settings.data.telegram_chat_id!==target!.id))throw new TelegramFailure('A operação foi pausada ou o destino mudou. Confira antes de autorizar novamente.','failed');
+   if(automatic&&!manualSchedule){const pause=await db.from('telegram_dispatch_config').select('automation_enabled').eq('id',true).single();if(pause.error||!pause.data.automation_enabled)throw new TelegramFailure('Automação pausada antes do envio. Autorize novamente quando retomar.','failed');}
+   const settings=await db.from('operation_settings').select('automation_enabled,telegram_chat_id,telegram_bot_env').eq('owner_id',job.owner_id).eq('brand_id',job.brand_id).single();if(settings.error||settings.data.telegram_bot_env!==env!.DROPOU_BOT_SETTING||(automatic&&!manualSchedule&&!settings.data.automation_enabled)||(settings.data.telegram_chat_id||'')!==env!.DROPOU_TARGET_SETTING||(settings.data.telegram_chat_id&&settings.data.telegram_chat_id!==target!.id))throw new TelegramFailure('A operação foi pausada ou o destino mudou. Confira antes de autorizar novamente.','failed');
    if(job.publication_mode!=='safe'&&!freshPrice(product)){
     needsSafe=job.allow_safe&&receivedIds.length===0;
     throw new TelegramFailure('Conferência expirou antes do envio. A prévia precisa ser adaptada.','failed');

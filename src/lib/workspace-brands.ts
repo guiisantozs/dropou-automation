@@ -10,9 +10,9 @@ export const workspaceBrands=[
  {id:'celulares',name:'Dropou | Celulares & Gadgets',category:'Celulares e acessórios',status:'A configurar',tone:'orange',icon:'phone'},
  {id:'tenis',name:'Dropou | Tênis & Sneakers',category:'Tênis e sneakers',status:'A configurar',tone:'orange',icon:'shoe'},
  {id:'automoto',name:'Dropou | Auto & Moto',category:'Acessórios automotivos',status:'A configurar',tone:'orange',icon:'car'},
- {id:'beleza',name:'Toque de Beleza',category:'Beleza e autocuidado',status:'Shopee · envios desativados',tone:'berry',icon:'sparkles'},
- {id:'casa',name:'Cantinho & Charme',category:'Casa e decoração',status:'Shopee · envios desativados',tone:'lilac',icon:'house'},
- {id:'natal',name:'Clima de Natal',category:'Decoração natalina',status:'Shopee · envios desativados',tone:'green',icon:'tree'},
+ {id:'beleza',name:'Toque de Beleza',category:'Beleza e autocuidado',status:'Shopee · Telegram manual',tone:'berry',icon:'sparkles'},
+ {id:'casa',name:'Cantinho & Charme',category:'Casa e decoração',status:'Shopee · Telegram manual',tone:'lilac',icon:'house'},
+ {id:'natal',name:'Clima de Natal',category:'Decoração natalina',status:'Shopee · Telegram manual',tone:'green',icon:'tree'},
  {id:'all',name:'Todas as operações',category:'Visão administrativa',status:'Consolidado',tone:'blue',icon:'gamepad'},
 ] as const;
 export type WorkspaceBrandId=typeof workspaceBrands[number]['id'];

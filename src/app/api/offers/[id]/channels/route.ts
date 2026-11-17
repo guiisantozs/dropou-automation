@@ -1,4 +1,5 @@
 import {createHash} from 'node:crypto';
+import {operationSupports} from '@/lib/operation-capabilities';
 import {isDeepStrictEqual} from 'node:util';
 import {z} from 'zod';
 import {sessionDb,apiError,dbError} from '@/server/session';
@@ -13,7 +14,7 @@ export const runtime='nodejs';
 export async function GET(request:Request,context:{params:Promise<{id:string}>}){try{
  const {user,db,access}=await sessionDb(request),id=z.uuid().parse((await context.params).id);
  const source=await db.from('offers').select('product_id').eq('id',id).eq('owner_id',user.id).single();if(source.error)throw dbError(source.error);
- const {db:admin}=await publicationAdmin(user.id),settings=await admin.from('operation_settings').select('*').eq('owner_id',user.id).in('brand_id',access.brands);if(settings.error)throw dbError(settings.error);
+ const {db:admin}=await publicationAdmin(user.id),settings=await admin.from('operation_settings').select('*').eq('owner_id',user.id).in('brand_id',access.brands.filter(brand=>operationSupports(brand,'automaticPublishing')));if(settings.error)throw dbError(settings.error);
  const origin=await admin.from('products').select('canonical_url').eq('id',source.data.product_id).eq('owner_id',user.id).single();if(origin.error)throw dbError(origin.error);
  const products=await admin.from('products').select('id,brand_id,archived_at,curation_state').eq('owner_id',user.id).eq('canonical_url',origin.data.canonical_url).in('brand_id',access.brands);if(products.error)throw dbError(products.error);
  const jobs=await admin.from('telegram_jobs').select('product_id,channel,state').eq('owner_id',user.id).in('product_id',products.data.map(p=>p.id));if(jobs.error)throw dbError(jobs.error);
@@ -32,7 +33,7 @@ export async function GET(request:Request,context:{params:Promise<{id:string}>})
 const schema=z.object({requestId:z.uuid(),confirmed:z.literal(true),expected:productSchema,caption:z.string().min(1).max(4000),targets:z.array(z.object({brand:operationSchema,key:z.string().length(64)})).min(1).max(6),scheduledAt:z.string().datetime().optional(),mediaMode:z.enum(['photo','link_preview','text']),photoConfirmed:z.boolean()});
 export async function POST(request:Request,context:{params:Promise<{id:string}>}){try{
  const {user,actorId,access}=await sessionDb(request),id=z.uuid().parse((await context.params).id),body=schema.parse(await request.json());
- if(new Set(body.targets.map(t=>t.brand)).size!==body.targets.length||body.targets.some(t=>!access.brands.includes(t.brand)))throw new Error('FORBIDDEN: Selecione somente canais distintos autorizados.');
+ if(new Set(body.targets.map(t=>t.brand)).size!==body.targets.length||body.targets.some(t=>!access.brands.includes(t.brand)||!operationSupports(t.brand,'automaticPublishing')))throw new Error('FORBIDDEN: Selecione somente canais distintos autorizados. As operações com bot exclusivo exigem publicação individual.');
  if(body.scheduledAt&&Date.parse(body.scheduledAt)<=Date.now())throw new Error('Escolha um horário futuro.');
  const issue=publicationCaptionError(body.caption,body.expected,'verified')||telegramPresentationError(body.expected,body);if(issue)throw new Error(issue);
  const {db}=await publicationAdmin(user.id);
