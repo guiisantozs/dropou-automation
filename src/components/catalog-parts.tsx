@@ -7,6 +7,7 @@ import {money} from '@/lib/domain';
 import {operationName,type OperationScope} from '@/lib/workspace-brands';
 import {publicationDate} from '@/lib/publication-history';
 import ProductMedia from './product-media';
+import {DeleteTrigger} from './delete-button';
 import {ChannelMark,MarketplaceBadge} from './general-brand-marks';
 
 export function CatalogBanner({operation,rows}:{operation:OperationScope;rows:CatalogRow[]}){
@@ -29,7 +30,7 @@ export function CatalogProductRow({row,now,busy,onOpen,onRepost,onPin,onHistory,
   <div className="catalog-published"><span className="catalog-mobile-label">Publicado em</span><CatalogDestinationBadges destinations={row.destinations} published onHistory={onHistory}/>{row.published_at&&!row.destinations.some(d=>d.publishedAt)&&<button className="catalog-history-link" onClick={onHistory}>Ver publicação anterior</button>}</div>
   <div className="catalog-publication-date"><span className="catalog-mobile-label">Última publicação</span>{row.published_at?<button onClick={onHistory}><CalendarDays size={12}/>{publicationDate(row.published_at)}</button>:<small>Ainda não publicado</small>}</div>
   <div className="catalog-missing"><span className="catalog-mobile-label">Ainda não publicado em</span><CatalogDestinationBadges destinations={row.destinations} published={false} onHistory={onHistory}/></div>
-  <div className="catalog-row-actions"><button className="catalog-repost" disabled={busy||!!row.archived_at||row.curation_state==='rejected'||row.kind==='saved'} onClick={onRepost}><RotateCw size={13}/><span>Republicar</span></button><button className="catalog-open" aria-label={'Conferir: '+row.data.name} title="Conferir" disabled={busy} onClick={onOpen}><ExternalLink size={14}/><span>Conferir</span></button><details className="catalog-row-menu"><summary aria-label={'Mais opções: '+row.data.name}>•••</summary><div>{onEdit&&row.kind==='product'&&<button disabled={busy} onClick={onEdit}>Editar detalhes</button>}<CatalogPin row={row} busy={busy} onPin={onPin}/><span>{row.pinned?'Desafixar':'Fixar produto'}</span>{row.kind==='product'&&<button disabled={busy} onClick={onHistory}>Histórico por destino</button>}<button disabled={busy} onClick={onRemove}>Excluir produto…</button></div></details></div>
+  <div className="catalog-row-actions"><button className="catalog-repost" disabled={busy||!!row.archived_at||row.curation_state==='rejected'||row.kind==='saved'} onClick={onRepost}><RotateCw size={13}/><span>Republicar</span></button><button className="catalog-open" aria-label={'Conferir: '+row.data.name} title="Conferir" disabled={busy} onClick={onOpen}><ExternalLink size={14}/><span>Conferir</span></button><details className="catalog-row-menu"><summary aria-label={'Mais opções: '+row.data.name}>•••</summary><div>{onEdit&&row.kind==='product'&&<button disabled={busy} onClick={onEdit}>Editar detalhes</button>}<CatalogPin row={row} busy={busy} onPin={onPin}/><span>{row.pinned?'Desafixar':'Fixar produto'}</span>{row.kind==='product'&&<button disabled={busy} onClick={onHistory}>Histórico por destino</button>}<DeleteTrigger disabled={busy} label={'Excluir produto: '+row.data.name} text="Excluir produto" onClick={onRemove}/></div></details></div>
  </article>;
 }
 export const CatalogSearchIcon=Search;

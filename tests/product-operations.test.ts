@@ -17,7 +17,7 @@ test('catalog exposes deletion for failed imported links without preparing or ma
  const request=(async(path:string,method='GET',body?:any)=>{calls.push({path,method,body});if(method==='DELETE'){assert.equal(path,'/api/shopee/saved-products?brand=tenis');assert.deepEqual(body,{id});removed=true;return {removed:true};}assert.equal(method,'GET');assert.ok(path.startsWith('/api/product-operations?'));return data();}) as typeof api;
  const root=createRoot(document.getElementById('root')!);try{
   await act(async()=>root.render(createElement(ProductOperations,{operation:'tenis',mode:'catalog',initialData:data(),request,onOpen(){throw Error('Pending import must not open a product');},onNavigate(){}})));
-  const button=(name:string)=>[...document.querySelectorAll<HTMLButtonElement>('button')].find(b=>b.textContent?.trim()===name)!;
+  const button=(name:string)=>[...document.querySelectorAll<HTMLButtonElement>('button')].find(b=>b.textContent?.trim()===name||name==='Excluir'&&b.getAttribute('aria-label')?.startsWith('Excluir produto:'))!;
   assert.equal(calls.length,0);assert.equal(button('Excluir').closest('details'),null);assert.ok(document.querySelector('a[href*="/ofertas/nova"]'));assert.equal(button('Já publiquei no Telegram'),undefined);
   await act(async()=>button('Excluir').click());assert.equal(calls.length,0);await act(async()=>button('Cancelar').click());assert.equal(calls.length,0);
   await act(async()=>button('Excluir').click());await act(async()=>button('Confirmar exclusão').click());
