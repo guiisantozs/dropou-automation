@@ -6,6 +6,8 @@ import {generatedCaptionProduct} from './caption-generation';
 
 export const PROMPT_VERSION='dropou-2';
 export const brands={
+ kess:{name:'Achadinhos da Kess',tone:'Prático e acolhedor, utilidades e achadinhos com informações comprovadas',closing:'#publi | Achadinhos da Kess'},
+ 'primeiro-lar':{name:'Nosso Primeiro Lar | Enxoval & Casa Nova',tone:'Acolhedor e funcional, enxoval e essenciais da primeira casa, sem alegações inventadas',closing:'#publi | Nosso Primeiro Lar'},
  beleza:{name:'Toque de Beleza',tone:'Beleza e autocuidado, sem promessas médicas ou resultados não comprovados',closing:'#publi | Toque de Beleza'},
  casa:{name:'Cantinho & Charme',tone:'Aconchegante, casa e organização, com informações comprovadas',closing:'#publi | Cantinho & Charme'},
  natal:{name:'Clima de Natal',tone:'Natal clássico e acolhedor, sem urgência ou descontos inventados',closing:'#publi | Clima de Natal'},
@@ -18,7 +20,7 @@ export const brands={
  bruto:{name:'Bruto & Barato',tone:'Prático, direto, ferramentas, oficina e utilidade comprovada',closing:'🛠️ Bruto & Barato — ferramenta certa para o seu dia!'},
  moda:{name:'Moda Masculina',tone:'Moderno, estilo masculino e custo-benefício, sem promessas inventadas',closing:'🖤 Estilo e custo-benefício para o seu dia.'},
 } as const;
-export const brandSchema=z.enum(['dropou','barato','linda','bruto','moda','celulares','tenis','automoto','beleza','casa','natal']);
+export const brandSchema=z.enum(['dropou','barato','linda','bruto','moda','celulares','tenis','automoto','beleza','casa','natal','kess','primeiro-lar']);
 export type Brand=keyof typeof brands;
 export const generationSchema=z.object({productIds:z.array(z.string().uuid()).min(1).max(20),brand:brandSchema.default('dropou'),variants:z.number().int().min(1).max(3).default(1)});
 export type GenerationResult={productId:string;captions:string[];source:'openai'|'cache'|'local';message?:string;model?:string};
@@ -33,6 +35,8 @@ export function generationError(p:Product){
  return null;
 }
 export function localHeadline(p:Product,brand:Brand='dropou',variation=0){
+ if(brand==='kess')return ['🛍️ UM ACHADINHO PARA O SEU DIA!','✨ UTILIDADE PARA SUA ROTINA!','💗 CONFIRA ESSE ACHADO DA KESS!'][variation%3];
+ if(brand==='primeiro-lar')return ['🏡 UM ESSENCIAL PARA O SEU PRIMEIRO LAR!','💙 UM ACHADO PARA O SEU ENXOVAL!','🍳 PRATICIDADE PARA A CASA NOVA!'][variation%3];
  if(brand==='beleza')return '✨ UM TOQUE DE AUTOCUIDADO!';
  if(brand==='casa')return '🏡 UM CHARME PARA SUA CASA!';
  if(brand==='natal')return '🎄 UM ACHADINHO PARA O SEU NATAL!';

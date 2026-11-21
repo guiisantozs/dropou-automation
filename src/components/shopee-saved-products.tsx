@@ -38,7 +38,7 @@ function LibraryPhoto({row,publication}:{row:SavedShopeeProduct;publication?:Sav
 function ShopeeLibrary({operation,request=apiForOperation(operation),onOpen,initialData,initialSettings,query='',onSettings=()=>{},onActivity=()=>{},onClearSearch=()=>{}}:Props){
  const quick=useQuickOffer(),batch=useBatchSelection();
  const batchRef=(row:SavedShopeeProduct):BatchRef=>({id:row.id,kind:'saved',operation:operation as OperationId,productId:row.prepared_product_id||undefined,repost:false});
- const CategoryIcon=operation==='celulares'?Smartphone:operation==='tenis'?Footprints:operation==='automoto'?Car:operation==='beleza'?Sparkles:operation==='casa'?House:operation==='natal'?TreePine:Gamepad2;
+ const CategoryIcon=operation==='celulares'?Smartphone:operation==='tenis'?Footprints:operation==='automoto'?Car:operation==='beleza'||operation==='kess'?Sparkles:operation==='casa'||operation==='primeiro-lar'?House:operation==='natal'?TreePine:Gamepad2;
  const [data,setData]=useState(initialData),[settings,setSettings]=useState(initialSettings),[text,setText]=useState(''),[importing,setImporting]=useState(false),[busy,setBusy]=useState(false),[message,setMessage]=useState(''),[error,setError]=useState(''),[progress,setProgress]=useState<{done:number;total:number}>(),[removeId,setRemoveId]=useState<string|null>(null),[filter,setFilter]=useState<LibraryFilter>('all'),[sort,setSort]=useState('newest'),[grid,setGrid]=useState(false),[sessionEvents,setSessionEvents]=useState<LibraryEvent[]>([]);
  const [page,setPage,ready]=useWorkspaceField(operation+':saved:page',0,validPage),[clock,setClock]=useState(()=>serverClock(initialData?.serverNow)),[,tick]=useState(0);
  const alive=useRef(true),locked=useRef(false),sequence=useRef(0);const now=clockNow(clock);

@@ -21,7 +21,7 @@ export const productSchema = z.object({
   features:z.array(z.string().trim().min(1).max(80)).max(2).optional(),featuresVerified:z.boolean().optional(),
   imagePath:z.string().regex(/^[a-f0-9-]{36}\/[a-f0-9-]{36}\.(?:jpg|webp)$/).optional(),thumbnailPath:z.string().regex(/^[a-f0-9-]{36}\/[a-f0-9-]{36}\.webp$/).optional(),needsHumanReview:z.boolean().optional(),
   installmentPlan:z.object({count:z.number().int().min(2).max(24),amount:z.number().positive().max(1e6),interestFree:z.boolean()}).optional(),
-  creativeHeadline:z.string().max(105).optional(),creativeBrand:z.enum(['dropou','barato','linda','bruto','moda','celulares','tenis','automoto','beleza','casa','natal']).optional(),socialVerified:z.boolean().optional(),
+  creativeHeadline:z.string().max(105).optional(),creativeBrand:z.enum(['dropou','barato','linda','bruto','moda','celulares','tenis','automoto','beleza','casa','natal','kess','primeiro-lar']).optional(),socialVerified:z.boolean().optional(),
   visualDetails:z.object({condition:z.enum(['novo','seminovo','usado','recondicionado']).optional(),brand:z.string().max(80).nullable(),model:z.string().max(100).nullable(),selectedVariant:z.string().max(100).nullable(),rating:z.number().min(0).max(5).nullable(),salesCount:z.string().max(60).nullable(),sellerName:z.string().max(120).nullable(),displayedDiscount:z.number().min(0).max(100).nullable(),uncertainFields:z.array(z.string().max(40)).max(20)}).optional(),
   source:z.object({provider:z.enum(['mercado_livre','shopee']),itemId:z.string().max(100),verifiedAt:z.string().datetime(),priceEndpoint:z.string().url(),referenceAmount:z.number().positive().nullable(),previousEvidence:z.enum(['none','recorded_history'])}).optional(),
 }).superRefine((p, ctx) => {

@@ -12,7 +12,7 @@ export async function loadGeneralDashboard(db:SupabaseClient,owner:string,page:n
  // RPCs inherit the same operation from sessionDb's x-dropou-brand/RLS context.
  // Explicit filters also constrain every direct table read to owner + operation.
  const scoped=<Columns extends string>(table:string,columns:Columns)=>{const query=db.from(table).select(columns).eq('owner_id',owner);return operation==='all'?query:query.eq('brand_id',operation);};
- const discoveryBrands=operation==='all'?['dropou','celulares','tenis','automoto','beleza','casa','natal'] as const:isShopeeOperation(operation)?[operation]:[];
+ const discoveryBrands=operation==='all'?['dropou','celulares','tenis','automoto','beleza','casa','natal','kess','primeiro-lar'] as const:isShopeeOperation(operation)?[operation]:[];
  const [products,publications,jobs,approved,preparedOffers,curated,audit,recent,operationSummary]=await Promise.all([
   readDashboardPages<DashboardProductState>((from,to)=>scoped('products','id,brand_id,curation_state').is('archived_at',null).eq('data->>demo','false').neq('curation_state','rejected').order('id').range(from,to)),
   readDashboardPages<DashboardReceipt>((from,to)=>scoped('dropou_confirmed_publications','id,product_id,brand_id,channel,source,occurred_at').order('brand_id').order('id').range(from,to)),

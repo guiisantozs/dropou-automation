@@ -14,15 +14,17 @@ import {shopeeProduct} from '@/lib/shopee-product';
 import {dropouCaption} from '@/lib/dropou-captions';
 import {historyPeriod} from '@/lib/publication-history';
 import {loadCuratedDiscovery} from '@/server/shopee/curation';
+import {memberCurationView,memberViewSchema} from '@/lib/member-curation-view';
 function checked(r:{data:any;error:any}){if(r.error)throw dbError(r.error);return r.data;}
 export async function GET(request:Request){try{
  const {db,user,operation}=await sessionDb(request);if(!isShopeeOperation(operation))throw new Error('Selecione Dropou | Tech & Games.');
- const q=z.object({category:z.enum(['all',...celularCategories]).default('all'),sort:celularSortSchema.default('relevance'),stage:z.enum(['curation','approved','catalog','recent','archived']).default('approved'),page:z.coerce.number().int().min(0).max(10000).default(0),q:z.string().max(180).default(''),store:z.enum(['Mercado Livre','Shopee']).optional(),channel:z.enum(['telegram','whatsapp']).optional(),from:z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),to:z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),dashboard:z.enum(['true','false']).default('false')}).parse(Object.fromEntries(new URL(request.url).searchParams));
+ const params=Object.fromEntries(new URL(request.url).searchParams);
+ const q=z.object({category:(isLocalOperation(operation)?z.string().max(80):z.enum(['all',...celularCategories])).default('all'),sort:celularSortSchema.default('relevance'),stage:z.enum(['curation','approved','catalog','recent','archived']).default('approved'),page:z.coerce.number().int().min(0).max(10000).default(0),q:z.string().max(180).default(''),store:z.enum(['Mercado Livre','Shopee']).optional(),channel:z.enum(['telegram','whatsapp']).optional(),from:z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),to:z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),dashboard:z.enum(['true','false']).default('false')}).parse(params);
  const {start,end}=historyPeriod(q.from,q.to);
  if(q.stage==='catalog'||q.stage==='approved')await maintainSavedProducts(adminDb(),user.id,operation);
  const list=q.stage==='curation'?Promise.resolve({data:null,error:null}):db.rpc('dropou_operational_products',{p_stage:q.stage,p_page:q.page,p_q:q.q,p_store:q.store||null,p_channel:q.channel||null,p_from:start,p_to:end});
  const [result,summary,recent,curated]=await Promise.all([list,db.rpc('dropou_operation_summary'),q.dashboard==='true'?db.rpc('dropou_operational_products',{p_stage:'recent'}):Promise.resolve({data:null,error:null}),loadCuratedDiscovery(db,user.id,operation)]);
- const visible=operation==='celulares'&&q.stage==='curation'?celularesView(curated,q.category,q.sort):curated;
+ const visible=q.stage==='curation'&&isLocalOperation(operation)?memberCurationView(curated,operation,memberViewSchema.parse(params)):operation==='celulares'&&q.stage==='curation'?celularesView(curated,z.enum(['all',...celularCategories]).parse(q.category),q.sort):curated;
  const data=q.stage==='curation'?{total:visible.length,rows:visible.slice(q.page*24,(q.page+1)*24)}:checked(result),counts={...checked(summary),pending:curated.length},recentData=checked(recent);
  const ids=[...new Set<string>([...(q.stage==='curation'?[]:data.rows.filter((r:any)=>r.kind!=='saved').map((r:any)=>r.id)),...(recentData?.rows.map((r:any)=>r.id)||[])])];
  const chunks=[];for(let i=0;i<ids.length;i+=24)chunks.push(ids.slice(i,i+24));

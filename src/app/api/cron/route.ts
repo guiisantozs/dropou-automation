@@ -3,6 +3,7 @@ import {adminDb} from '@/server/db';
 import {dispatchJob} from '@/server/telegram-offer';
 import {shopeeAutomation} from '@/server/shopee/automation';
 import {maintainSavedProducts} from '@/server/saved-retention';
+import {memberOperations} from '@/lib/workspace-brands';
 export const runtime='nodejs';
 export const dynamic='force-dynamic';
 export const maxDuration=60;
@@ -17,7 +18,7 @@ export async function POST(request:Request){
   const manualOnly=!config.data.automation_enabled;
   // Sending jobs never return to the queue after a crash or a timeout.
   let staleQuery=db.from('telegram_jobs').select('id,message_ids').eq('channel','telegram').eq('state','sending').lt('started_at',new Date(Date.now()-120000).toISOString());
-  if(manualOnly)staleQuery=staleQuery.in('brand_id',['beleza','casa','natal']);
+  if(manualOnly)staleQuery=staleQuery.in('brand_id',[...memberOperations]);
   const stale=await staleQuery.limit(20);
   if(stale.error)throw stale.error;
   for(const job of stale.data||[]){const r=await db.rpc('dropou_publication_receipt',{p_job:job.id,p_ids:job.message_ids,p_state:'uncertain',p_error:'Execução interrompida. Confira o canal antes de repetir.'});if(r.error)throw r.error;}

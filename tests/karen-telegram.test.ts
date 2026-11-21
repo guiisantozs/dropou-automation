@@ -14,7 +14,7 @@ import {productKey} from '../src/lib/domain';
 import {formatCaption} from '../src/lib/ai';
 import type {ShopeeOffer} from '../src/lib/shopee-automation';
 const owner='60000000-0000-4000-8000-000000000001',member='60000000-0000-4000-8000-000000000002',other='60000000-0000-4000-8000-000000000003';
-const brands=['beleza','casa','natal'] as const;
+const brands=['beleza','casa','natal','kess','primeiro-lar'] as const;
 
 test('dedicated bot resolution never falls back or accepts another operation; legacy choices stay compatible',async()=>{
  for(const [i,brand] of brands.entries()){
@@ -23,7 +23,7 @@ test('dedicated bot resolution never falls back or accepts another operation; le
   assert.equal(operationSettingsSchema.safeParse({...settings,telegram_bot_env:'TELEGRAM_BOT_TOKEN'}).success,false);
   assert.equal(telegramOperationConfig(settings,brand,env).TELEGRAM_BOT_TOKEN,'fixture-'+brand);
   assert.throws(()=>telegramOperationConfig(settings,brand,{TELEGRAM_BOT_TOKEN:'fixture-main'}),new RegExp(tokenEnv));
-  assert.throws(()=>telegramOperationConfig({...settings,telegram_bot_env:dedicatedTelegramBots[brands[(i+1)%3]]},brand,env),/exclusivo/);
+  assert.throws(()=>telegramOperationConfig({...settings,telegram_bot_env:dedicatedTelegramBots[brands[(i+1)%brands.length]]},brand,env),/exclusivo/);
   const target={id:settings.telegram_chat_id,title:'Fixture',key:'a'.repeat(64)},bound=bindTelegramTarget(target,owner,brand,telegramOperationConfig(settings,brand,env));
   assert.notEqual(bound.key,target.key);assert.notEqual(bound.key,bindTelegramTarget(target,other,brand,telegramOperationConfig(settings,brand,env)).key);
   assert.notEqual(bound.key,bindTelegramTarget(target,owner,brand,telegramOperationConfig(settings,brand,{...env,[tokenEnv]:'fixture-rotated'})).key);
@@ -72,17 +72,17 @@ test('incremental migration permits only actor-authorized Telegram while all aut
    await db.exec(readFileSync('supabase/migrations/'+f,'utf8'));
    if(f.includes('publication_dispatch_and_review')){await db.query('insert into telegram_dispatch_config(id,secret,owner_ids,destination_key) values(true,$1,$2,$3)',['fixture-only',[owner],'a'.repeat(64)]);await db.exec(readFileSync('supabase/optional-price-publication.sql','utf8'));}
   }
-  assert.deepEqual((await db.query("select * from operation_settings where brand_id not in ('beleza','casa','natal') order by brand_id")).rows,legacy);
-  await role();await db.query("select dropou_assign_member($1,$1,$2,'operator',array['beleza','casa','natal'],null)",[owner,member]);await db.query("select dropou_assign_member($1,$1,$2,'operator',array['tenis'],null)",[owner,other]);
+  assert.deepEqual((await db.query("select * from operation_settings where brand_id not in ('beleza','casa','natal','kess','primeiro-lar') order by brand_id")).rows,legacy);
+  await role();await db.query("select dropou_assign_member($1,$1,$2,'operator',array['beleza','casa','natal','kess','primeiro-lar'],null)",[owner,member]);await db.query("select dropou_assign_member($1,$1,$2,'operator',array['tenis'],null)",[owner,other]);
   for(const b of brands)await db.query('update operation_settings set telegram_chat_id=$1,telegram_title=$2,telegram_verified_at=now() where owner_id=$3 and brand_id=$4',[target(b).id,target(b).title,owner,b]);
-  await t.test('three independent sends use their saved destinations and real-receipt path with no WhatsApp evidence',async()=>{
-   for(const b of brands){const o=await create(b);await assert.rejects(queue(o,member,target(brands[(brands.indexOf(b)+1)%3])),/Destino/);await assert.rejects(queue(o,other),/acesso/);
+  await t.test('member operations use independent destinations and real-receipt path with no WhatsApp evidence',async()=>{
+   for(const b of brands){const o=await create(b);await assert.rejects(queue(o,member,target(brands[(brands.indexOf(b)+1)%brands.length])),/Destino/);await assert.rejects(queue(o,other),/acesso/);
     const j=await queue(o);assert.equal((await claim(j,target(b).key)).state,'sending');await one("select dropou_publication_receipt($1,'[\"7\"]','sent',null)",[j.id]);assert.equal((await one('select state,attempts from telegram_jobs where id=$1',[j.id])).attempts,1);assert.equal(await claim(j,target(b).key),null);
     await role(member,b,'authenticated');assert.equal((await one("select count(*) n from deliveries where channel='telegram'")).n,1);assert.equal((await one('select count(*) n from publications')).n,0);
     await role();
    }
   });
-  await t.test('authorized future jobs dispatch when due with both automation flags false',async()=>{const o=await create('beleza'),j=await queue(o,member,target('beleza'),new Date(Date.now()+3600000).toISOString());assert.equal(await claim(j,target('beleza').key),null);await db.query("update telegram_jobs set scheduled_at=now()-interval '1 second' where id=$1",[j.id]);assert.ok((await db.query('select * from dropou_due_manual_telegram_jobs()')).rows.length);assert.equal((await claim(j,target('beleza').key)).state,'sending');await one("select dropou_publication_receipt($1,'[]','uncertain','Fixture')",[j.id]);assert.equal(await claim(j,target('beleza').key),null);});
+  await t.test('authorized future jobs dispatch when due with both automation flags false',async()=>{for(const brand of ['kess','primeiro-lar'] as const){const o=await create(brand),j=await queue(o,member,target(brand),new Date(Date.now()+3600000).toISOString());assert.equal(await claim(j,target(brand).key),null);await db.query("update telegram_jobs set scheduled_at=now()-interval '1 second' where id=$1",[j.id]);assert.ok((await db.query('select * from dropou_due_manual_telegram_jobs()')).rows.length);assert.equal((await claim(j,target(brand).key)).state,'sending');await one("select dropou_publication_receipt($1,'[]','uncertain','Fixture')",[j.id]);assert.equal(await claim(j,target(brand).key),null);}});
   await t.test('changed bot binding, destination, actor access and missing authorization never dispatch',async()=>{
    for(const mode of ['key','destination','actor','missing']){const o=await create('casa'),j=await queue(o);if(mode==='destination')await db.exec("update operation_settings set telegram_chat_id='-100999' where brand_id='casa'");if(mode==='actor')await db.query('update operation_members set active=false where member_id=$1',[member]);if(mode==='missing')await db.query('update telegram_jobs set queued_by=null where id=$1',[j.id]);assert.equal(await claim(j,mode==='key'?'x'.repeat(64):target('casa').key),null);assert.equal((await one('select state from telegram_jobs where id=$1',[j.id])).state,'blocked');await db.query('update operation_members set active=true where member_id=$1',[member]);await db.exec("update operation_settings set telegram_chat_id='-1002' where brand_id='casa'");}
   });

@@ -3,6 +3,18 @@ import type {OperationId} from './workspace-brands';
 // Product types, rather than generic audience words, define each niche.
 const unsafe=/\b(ferramentas?|furadeira|parafusadeira|automotiv\w*|veicular|motociclet\w*|videogame|playstation|xbox|smartphone|iphone|celular|notebook|gamer|hospital\w*|medicamento|suplemento|replica|falsificado)\b/;
 export const memberCurationProfiles={
+ kess:{
+  keywords:['potes hermeticos cozinha','organizador gaveta','suporte celular mesa','carregador usb c','fone bluetooth','bolsa feminina','carteira masculina','garrafa termica','luminaria de mesa','kit utensilios cozinha'],
+  categories:[['Utilidades domésticas',/\b(potes? hermeticos?|utensilios? (?:de |para )?cozinha|kit utensilios|garrafa termica|jogo de panelas|escorredor|forma de silicone|tabua de corte)\b/],['Organização',/\b(organizador(?:es)?|cesto organizador|caixa organizadora|colmeia organizadora|sapateira)\b/],['Celular e eletrônicos acessíveis',/\b(suporte (?:de |para )?celular|carregador usb|cabo usb|cabo tipo c|capa (?:para )?(?:celular|iphone|samsung)|capinha|pelicula (?:de |para )?celular|fone bluetooth|power bank|luminaria de mesa|mouse|teclado|caixa de som)\b/],['Acessórios e presentes úteis',/\b(bolsa feminina|bolsa masculina|carteira feminina|carteira masculina|necessaire|mochila|relogio|oculos de sol|brinco|colar|pulseira|caneca|copo termico|kit presente)\b/],['Dia a dia',/\b(guarda chuva|lancheira|garrafa de agua|squeeze|porta (?:chaves|documentos|cartoes)|suporte notebook|escova de limpeza)\b/]],
+  negative:/\b(medicamento|suplemento|hospital\w*|ortoped\w*|automotiv\w*|veicular|arma|airsoft|replica|falsificado|somente caixa|apenas caixa|brinquedo adulto|geladeira|maquina de lavar)\b/,
+  minPrice:3,maxPrice:500,
+ },
+ 'primeiro-lar':{
+  keywords:['jogo panelas','jogo talheres','jogo pratos copos','potes hermeticos','kit utensilios cozinha','jogo cama casal','kit edredom casal','jogo toalhas banho','kit banheiro','cesto roupa varal','kit enxoval casa nova','balde mop limpeza'],
+  categories:[['Cozinha',/\b(panelas?|talheres?|faqueiro|pratos?|copos?|xicaras?|potes? hermeticos?|utensilios? (?:de |para )?cozinha|kit utensilios|escorredor|porta tempero|tabua de corte|frigideira|assadeira|air fryer|fritadeira|liquidificador|batedeira|mixer|cafeteira|sanduicheira|chaleira eletrica|panela eletrica)\b/],['Quarto e enxoval',/\b(jogos? de cama|jogo cama|edredom|edredons|travesseiros?|lencois|lencol|colchas?|cobre leito|protetor (?:de )?colchao|fronhas?|kit (?:de )?enxoval|enxoval (?:casal|casa|cama))\b/],['Banheiro',/\b(toalhas? (?:de )?(?:banho|rosto)|jogo (?:de )?toalhas|tapete (?:de |para )?banheiro|kit (?:de )?banheiro|porta (?:sabonete|escova|toalha)|organizador (?:de |para )?banheiro)\b/],['Lavanderia e limpeza',/\b(baldes?|cestos? (?:de |para )?roupas?|varais|varal|mop|rodo|vassoura|pa de lixo|escova de limpeza|kit (?:de )?limpeza|organizador (?:de |para )?lavanderia)\b/],['Organização da primeira casa',/\b(organizador (?:de |para )?(?:cozinha|gaveta|armario)|caixa organizadora|colmeia organizadora|cesto organizador|kit casa nova)\b/]],
+  negative:/\b(decorativ\w*|decoracao|escultura|vaso|flores artificiais|guirlanda|natal\w*|papai noel|cortina|quadro|poster|roupa de bebe|enxoval bebe|enxoval maternidade|infantil|boneca|brinquedo|pet|cachorro|gato|hospital\w*|automotiv\w*|veicular|replica|falsificado)\b/,
+  minPrice:5,maxPrice:1200,
+ },
  beleza:{
   keywords:['kit maquiagem','batom feminino','base corretivo maquiagem','serum facial skincare','hidratante corporal feminino','perfume feminino','shampoo mascara capilar','kit manicure unhas','pincel maquiagem'],
   categories:[['Maquiagem',/\b(maquiagem|batom|batons|base facial|base liquida|corretivo|rimel|mascara de cilios|paleta de sombras|blush|delineador|gloss|pincel de maquiagem)\b/],['Skincare e autocuidado',/\b(skincare|serum facial|hidratante|creme (?:facial|corporal|para (?:pele|rosto|maos))|protetor solar|sabonete facial|limpeza facial|esfoliante|agua micelar)\b/],['Perfumes femininos',/\bperfume feminino\b|\bbody splash\b/],['Cabelo',/\b(shampoo|condicionador|mascara capilar|oleo capilar|escova de cabelo|secador de cabelo|chapinha|touca de cetim|presilha|tratamento capilar)\b/],['Manicure e acessórios',/\b(manicure|esmalte|unhas|lixa de unha|alicate de cuticula|esponja de maquiagem|necessaire|kit beleza)\b/]],
@@ -30,7 +42,8 @@ export function memberClassification(name:string,operation:OperationId){
  const category=profile.categories.find(([,pattern])=>pattern.test(title))?.[0]||'';
  const seasonal=operation!=='natal'||/\b(natal|natalin[oa]s?|papai noel)\b/.test(title);
  const homeContext=operation!=='casa'||!/\borganizador(?:es)?\b/.test(title)||/\b(casa|lar|banheiro|cozinha|quarto|sala|decorativ[oa]s?|gaveta|armario|closet|prateleira)\b/.test(title);
- const relevant=!!category&&seasonal&&homeContext&&!unsafe.test(title)&&!profile.negative.test(title);
+ const memberUnsafe=operation==='kess'?/\b(hospital\w*|medicamento|suplemento|replica|falsificado)\b/:unsafe;
+ const relevant=!!category&&seasonal&&homeContext&&!memberUnsafe.test(title)&&!profile.negative.test(title);
  return {relevant,category:relevant?category:''};
 }
 // Keep quantity, volume, color and shade: these can identify different kits/variants.

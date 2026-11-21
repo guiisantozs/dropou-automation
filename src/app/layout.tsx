@@ -17,6 +17,7 @@ import './catalog.css';
 import './workspace-polish.css';
 import './bulk-scheduling.css';
 import './delete-button.css';
+import './kesia-workspaces.css';
 import OperationTheme from '@/components/operation-theme';
 import PublicationSync from '@/components/publication-sync';
 import RecoveryRedirect from '@/components/recovery-redirect';
